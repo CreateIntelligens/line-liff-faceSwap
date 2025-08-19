@@ -1,4 +1,5 @@
 import './bootstrap';
+import '../css/app.css';  // 引入 Tailwind CSS
 import { createApp } from 'vue'
 import MbtiQuiz from './mbti/App.vue'
 // 如果還有其他 component 可以繼續 import

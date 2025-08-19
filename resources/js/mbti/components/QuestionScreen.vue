@@ -1,75 +1,95 @@
 <template>
-  <div class="question-screen">
+  <div class="w-full h-screen min-h-[932px] bg-primary relative overflow-hidden flex items-start justify-center pt-8">
     <!-- 背景裝飾線條 -->
-    <div class="background-lines group-77"></div>
-    <div class="background-lines group-75"></div>
-    
-    <!-- 標題區域 -->
-    <div class="title-section">
-      <div class="title-container">
-        <img src="/images/group97.png" alt="標題背景" class="title-background">
-        <h1 class="title-text">MBTI測試</h1>
-      </div>
+    <div class="absolute top-0 left-0 w-full h-full pointer-events-none">
+      <img src="/images/vector-5.svg" class="absolute opacity-20" alt="">
+      <img src="/images/vector-13.svg" class="absolute opacity-20" alt="">
+      <img src="/images/vector-14.svg" class="absolute opacity-20" alt="">
     </div>
     
-    <!-- 問題區域 -->
-    <div class="question-section">
-      <div class="question-box">
-        <div class="question-bg"></div>
-        <div class="question-accent"></div>
-        <div class="dots">
-          <div class="dot"></div>
-          <div class="dot"></div>
-          <div class="dot"></div>
+    <!-- 主要內容容器 -->
+    <div class="relative w-full max-w-[390px] px-4">
+      <!-- 標題區域 -->
+      <div class="w-full mb-4">
+        <div class="relative w-full">
+          <img src="/images/group97.png" alt="標題背景" class="w-full block">
+          <h1 class="absolute inset-0 flex items-center justify-center font-inter font-black text-4xl leading-tight text-center text-black m-0 p-0">
+            MBTI測試
+          </h1>
         </div>
-        <p class="question-text">{{ currentQuestion?.question }}</p>
       </div>
       
-      <!-- 進度指示器 -->
-      <div class="progress-indicator">({{ currentQuestionIndex + 1 }}/{{ totalQuestions }})</div>
-    </div>
-    
-    <!-- 選項區域 -->
-    <div class="options-section">
-      <!-- 選項 A -->
-      <div 
-        class="option"
-        :class="[
-          selectedOption === currentQuestion?.options[0]?.value ? 'option-b selectedOption selected' : 'option-a',
-        ]"
-        @click="selectOption(currentQuestion?.options[0]?.value)"
-      >
-        <div class="option-content">
-          <div class="option-letter">
-            <span>A</span>
+      <!-- 問題區域 -->
+      <div class="w-full">
+        <div class="relative w-full min-h-[145px] mb-6">
+          <div class="w-full h-full bg-white border-[1.9px] border-black">
+            <div class="w-full h-[18.06px] bg-accent border-[1.9px] border-black">
+              <div class="px-4 pt-[5px] flex gap-1">
+                <div class="w-[7.6px] h-[7.6px] bg-black rounded-full"></div>
+                <div class="w-[7.6px] h-[7.6px] bg-black rounded-full"></div>
+                <div class="w-[7.6px] h-[7.6px] bg-black rounded-full"></div>
+              </div>
+            </div>
+            <div class="p-8 flex items-center justify-center">
+              <p class="font-inter font-bold text-xl leading-tight text-center text-black">
+                {{ currentQuestion?.question }}
+              </p>
+            </div>
           </div>
-          <span class="option-text">{{ currentQuestion?.options[0]?.text }}</span>
+          
+          <!-- 進度指示器 -->
+          <div class="absolute left-1/2 -translate-x-1/2 top-[26px] font-inter font-bold text-xs leading-tight text-center text-black">
+            ({{ currentQuestionIndex + 1 }}/{{ totalQuestions }})
+          </div>
         </div>
-        <div class="checkmark">✓</div>
       </div>
       
-      <!-- 選項 B -->
-      <div 
-        class="option"
-        :class="[
-          selectedOption === currentQuestion?.options[1]?.value ? 'option-b selectedOption selected' : 'option-a',
-        ]"
-        @click="selectOption(currentQuestion?.options[1]?.value)"
-      >
-        <div class="option-content">
-          <div class="option-letter">
-            <span>B</span>
+      <!-- 選項區域 -->
+      <div class="w-full mt-8 px-4">
+        <!-- 選項 A -->
+        <div 
+          class="w-full h-[50px] flex items-center justify-between px-6 py-3 border-2 border-black cursor-pointer transition-all duration-300 mb-[29px] mx-auto relative"
+          :class="[
+            selectedOption === currentQuestion?.options[0]?.value 
+              ? 'bg-primary text-white' 
+              : 'bg-accent text-black'
+          ]"
+          @click="selectOption(currentQuestion?.options[0]?.value)"
+        >
+          <div class="flex items-center gap-3">
+            <div class="w-[26px] h-[26px] bg-white border-[1.58px] border-black flex items-center justify-center font-inter font-bold text-[15.76px] text-black">
+              <span>A</span>
+            </div>
+            <span class="font-inter font-bold text-xs leading-tight">{{ currentQuestion?.options[0]?.text }}</span>
           </div>
-          <span class="option-text">{{ currentQuestion?.options[1]?.text }}</span>
+          <div class="w-6 h-6 text-2xl font-light hidden absolute right-4 top-1/2 -translate-y-1/2" :class="{ '!block': selectedOption === currentQuestion?.options[0]?.value }">✓</div>
         </div>
-        <div class="checkmark">✓</div>
+        
+        <!-- 選項 B -->
+        <div 
+          class="w-full h-[50px] flex items-center justify-between px-6 py-3 border-2 border-black cursor-pointer transition-all duration-300 mb-[29px] mx-auto relative"
+          :class="[
+            selectedOption === currentQuestion?.options[1]?.value 
+              ? 'bg-primary text-white' 
+              : 'bg-accent text-black'
+          ]"
+          @click="selectOption(currentQuestion?.options[1]?.value)"
+        >
+          <div class="flex items-center gap-3">
+            <div class="w-[26px] h-[26px] bg-white border-[1.58px] border-black flex items-center justify-center font-inter font-bold text-[15.76px] text-black">
+              <span>B</span>
+            </div>
+            <span class="font-inter font-bold text-xs leading-tight">{{ currentQuestion?.options[1]?.text }}</span>
+          </div>
+          <div class="w-6 h-6 text-2xl font-light hidden absolute right-4 top-1/2 -translate-y-1/2" :class="{ '!block': selectedOption === currentQuestion?.options[1]?.value }">✓</div>
+        </div>
       </div>
     </div>
-    
-    <!-- 底部按鈕區域 -->
-    <div class="button-section">
+
+    <!-- 底部按鈕區域 - 移到白色框框外面 -->
+    <div class="fixed bottom-4 left-1/2 -translate-x-1/2 w-full max-w-[390px] px-4 flex justify-center">
       <button 
-        class="btn-next" 
+        class="w-[280px] h-[60px] bg-accent border-2 border-black rounded-lg font-poppins font-bold text-lg leading-normal text-[#333333] cursor-pointer transition-all duration-300 ease-in-out hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed" 
         :disabled="!selectedOption"
         @click="answerQuestion"
       >
@@ -104,393 +124,14 @@ function answerQuestion() {
 }
 </script>
 
-<style scoped>
+<style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Poppins:wght@700&display=swap');
 
-.question-screen {
-  width: 100vw;
-  height: 1000px !important;
-  min-height: 932px;
-  background: #5E60FE;
-  position: relative;
-  overflow: hidden;
-}
-
-/* 背景裝飾線條 */
-.background-lines {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-/* 標題區域 */
-.title-section {
-  position: absolute;
-  left: 24px;
-  top: 36px;
-  width: 382px;
-}
-
-.title-container {
-  position: relative;
-  width: 100%;
-}
-
-.title-background {
-  width: 100%;
-  display: block;
-}
-
-.title-text {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
+.font-inter {
   font-family: 'Inter', sans-serif;
-  font-weight: 900;
-  font-size: 42px;
-  line-height: 1.21;
-  text-align: center;
-  color: #000000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0;
-  padding: 0;
 }
 
-/* 問題區域 */
-.question-section {
-  position: absolute;
-  left: 29px;
-  top: 180px;
-  width: 372px;
-  height: 564px;
-}
-
-.question-box {
-  position: relative;
-  width: 372px;
-  height: 145px;
-  margin-bottom: 25px;
-}
-
-.question-bg {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 372px;
-  height: 564px;
-  background: #FFFFFF;
-  border: 1.9px solid #000000;
-}
-
-.question-accent {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 372px;
-  height: 18.0547px;
-  background: #F5D34D;
-  border: #000000 1.9px solid;
-}
-
-.dots {
-  display: flex;
-  gap: 4px;
-  position: absolute;
-  left: 16px;
-  top: 5px;
-  z-index: 2;
-}
-
-.dots .dot {
-  width: 7.6px;
-  height: 7.6px;
-  background: #000;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.question-text {
-  position: absolute;
-  left: 32px;
-  top: 53.47px;
-  width: 308px;
-  height: 72.64px;
-  font-family: 'Inter', sans-serif;
-  font-weight: 700;
-  font-size: 20px;
-  line-height: 1.21;
-  text-align: center;
-  color: #000000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.progress-indicator {
-  position: absolute;
-  left: 168px;
-  top: 33px;
-  width: 29px;
-  height: 15px;
-  font-family: 'Inter', sans-serif;
-  font-weight: 700;
-  font-size: 12px;
-  line-height: 1.21;
-  text-align: center;
-  color: #000000;
-}
-
-/* 選項區域 */
-.options-section {
-  position: relative;
-  left: 49px;
-  top: 355px;
-  width: 337px;
-}
-
-.option {
-  width: 100%;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 24px;
-  border: 2px solid #000000;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  margin-bottom: 29px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.option-a {
-  background: #F5D34D;
-}
-
-.option-b {
-  background: #5E60FE;
-}
-
-.option-content {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.option-letter {
-  width: 26px;
-  height: 26px;
-  background: #FFFFFF;
-  border: 1.58px solid #000000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Inter', sans-serif;
-  font-weight: 700;
-  font-size: 15.76px;
-  color: #000000;
-}
-
-.option-text {
-  font-family: 'Inter', sans-serif;
-  font-weight: 700;
-  font-size: 12px;
-  line-height: 1.21;
-  color: #000000;
-}
-
-.option-b .option-text {
-  color: #FFFFFF;
-}
-
-.checkmark {
-  width: 24px;
-  height: 24px;
-  color: #000000;
-  font-size: 24px;
-  font-weight: 300;
-  display: none;
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.option:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.option.selected .checkmark {
-  display: block !important;
-}
-
-.option-b.selected .checkmark {
-  color: #FFFFFF;
-}
-
-/* 底部按鈕區域 */
-.button-section {
-  position: absolute;
-  left: 50%;
-  top: 850px;
-  transform: translateX(-50%);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.btn-next {
-  width: 280px;
-  height: 60px;
-  background: #F5D34D;
-  border: 2px solid #000000;
-  border-radius: 8px;
+.font-poppins {
   font-family: 'Poppins', sans-serif;
-  font-weight: 700;
-  font-size: 18px;
-  line-height: 1.5;
-  color: #333333;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  z-index: 100;
-}
-
-.btn-next:hover {
-  transform: translateY(-2px);
-}
-
-.btn-next:active {
-  transform: translateY(0);
-}
-
-.btn-next:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 響應式設計 */
-@media (max-width: 430px) {
-  .question-screen {
-    width: 100vw;
-    height: 100vh;
-    min-height: 932px;
-  }
-  
-  .title-section {
-    width: 90%;
-    left: 5%;
-  }
-  
-  .title-text {
-    font-size: calc(24px + 2vw);
-  }
-  
-  .question-section {
-    width: 90%;
-    left: 5%;
-  }
-  
-  .question-box {
-    width: 100%;
-  }
-  
-  .question-bg, .question-accent {
-    width: 100%;
-  }
-  
-  .question-text {
-    width: 85%;
-    left: 7.5%;
-  }
-  
-  .options-section {
-    width: 90%;
-    left: 5%;
-  }
-  
-  .option {
-    width: 90%;
-  }
-  
-  .btn-next {
-    max-width: 280px;
-  }
-}
-
-@media (max-height: 932px) and (orientation: portrait) {
-  .question-screen {
-    height: 100vh;
-    min-height: 800px;
-  }
-  
-  .question-section {
-    height: auto;
-    top: 160px;
-  }
-  
-  .options-section {
-    top: 335px;
-  }
-  
-  .button-section {
-    bottom: unset;
-    top: 750px;
-    position: absolute;
-  }
-  
-  .title-section {
-    top: 20px;
-    height: 90px;
-  }
-}
-
-@media (max-height: 700px) and (orientation: portrait) {
-  .question-text {
-    font-size: 16px;
-  }
-  
-  .title-text {
-    font-size: 28px;
-  }
-  
-  .title-section {
-    height: 80px;
-  }
-  
-  .question-box {
-    height: 120px;
-  }
-  
-  .question-bg {
-    height: 110px;
-  }
-  
-  .options-section {
-    top: 310px;
-  }
-  
-  .option {
-    height: 45px;
-    margin-bottom: 20px;
-  }
-  
-  .option-text {
-    font-size: 11px;
-  }
-  
-  .option-letter {
-    width: 22px;
-    height: 22px;
-    font-size: 13px;
-  }
 }
 </style>

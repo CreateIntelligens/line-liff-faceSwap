@@ -1,4 +1,5 @@
 <template>
+  <!-- iphone15 -->
   <div class="app">
     <!-- Welcome Screen -->
     <WelcomeScreen 
@@ -63,7 +64,6 @@ import rawQuestions from './data/mbti-questions.json'
 const mbtiType = ref(null)
 const externalUserId = ref(null)
 const result = ref('')
-const userId = ref('ThisIsEmily')
 const taskId = ref('')
 const currentStep = ref('loading') // 初始狀態設定為loading
 const selectedQuestions = ref([])
