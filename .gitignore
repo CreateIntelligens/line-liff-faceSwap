@@ -25,3 +25,4 @@ dump.rdb
 .DS_Store
 /public/web
 **/gcp_storage_api_key.json
+.config/

@@ -199,22 +199,14 @@ async function processUpload() {
     return new Blob([u8arr], { type: mime });
   }
 
-  const resultType = getCookie('mbti_result_type');
-  const userInfoJson = getCookie('mbti_user_info');
   const formData = new FormData();
   formData.append('file', dataURLtoBlob(uploadedImage.value), uploadedFileName.value);
-  formData.append('resultType', resultType);
   formData.append('userId', window.uid);
-  if (userInfoJson) {
-    formData.append('userInfo', userInfoJson);
-  }
   console.log('上傳資料:', {
-    resultType,
-    userId: window.uid,
-    userInfo: userInfoJson
+    userId: window.uid
   })
   try {
-    const response = await fetch('https://f2d8-60-248-142-124.ngrok-free.app/api/mbti', {
+    const response = await fetch('https://f2d8-60-248-142-124.ngrok-free.app/api/faceswap', {
       method: 'POST',
       headers: {
         'ngrok-skip-browser-warning': 'true'
