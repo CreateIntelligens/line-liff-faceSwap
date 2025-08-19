@@ -1,9 +1,7 @@
 import './bootstrap';
 import '../css/app.css';  // 引入 Tailwind CSS
 import { createApp } from 'vue'
-import FaceSwapApp from './mbti/App.vue'
-// 如果還有其他 component 可以繼續 import
-// import AnotherComponent from './pages/Another.vue'
+import FaceSwapApp from './faceswap/App.vue'
 
 const components = {
   FaceSwapApp,

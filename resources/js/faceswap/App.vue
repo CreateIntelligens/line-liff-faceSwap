@@ -6,25 +6,14 @@
       v-if="currentStep === 'faceswap-home'"
       @enter-face-swap="enterFaceSwap"
     />
-
-    <!-- Upload Screen -->
-    <UploadScreen 
-      v-else-if="currentStep === 'upload'"
-      :result="result.value"
-      :task-id="taskId"
-      @upload-processed="handleUploadProcessed"
-      :error-message="uploadError"
-    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onBeforeMount } from 'vue'
-import UploadScreen from './components/UploadScreen.vue'
 import FaceSwapHomepage from './components/FaceSwapHomepage.vue'
 
 // 狀態
-const result = ref('')
 const taskId = ref('')
 const currentStep = ref('faceswap-home') // 初始狀態設定為換臉首頁
 const uploadError = ref('')
@@ -99,23 +88,6 @@ function enterFaceSwap() {
   currentStep.value = 'upload'
 }
 
-// 處理上傳完成
-function handleUploadProcessed(uploadData) {
-  console.log('接收到上傳數據:', uploadData)
-  
-  // 如果有task_id，記錄它
-  if (uploadData && uploadData.task_id) {
-    taskId.value = uploadData.task_id
-    uploadError.value = ''
-    
-    // 可以根據需要跳轉到其他頁面
-    console.log('上傳完成，taskId:', taskId.value)
-  } else {
-    // 處理錯誤情況
-    uploadError.value = '上傳失敗，請稍後再試'
-    currentStep.value = 'upload'
-  }
-}
 </script>
 
 <style scoped>
