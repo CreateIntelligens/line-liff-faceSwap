@@ -6,17 +6,43 @@
       v-if="currentStep === 'faceswap-home'"
       @enter-face-swap="enterFaceSwap"
     />
+
+    <!-- Face Swap Template Selection -->
+    <FaceSwapTemplateSelection
+      v-if="currentStep === 'template-selection'"
+      @next-step="handleTemplateSelection"
+      @back="goBack"
+    />
+
+    <!-- Face Swap Upload -->
+    <FaceSwapUpload
+      v-if="currentStep === 'upload'"
+      @back="goBack"
+      @generate="handleGenerate"
+    />
+
+    <!-- Face Swap Result -->
+    <FaceSwapResult
+      v-if="currentStep === 'result'"
+      @back="goBack"
+      @regenerate="handleRegenerate"
+      @download="handleDownload"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onBeforeMount } from 'vue'
 import FaceSwapHomepage from './components/FaceSwapHomepage.vue'
+import FaceSwapTemplateSelection from './components/FaceSwapTemplateSelection.vue'
+import FaceSwapUpload from './components/FaceSwapUpload.vue'
+import FaceSwapResult from './components/FaceSwapResult.vue'
 
 // 狀態
 const taskId = ref('')
+const userId = ref('') // 用戶 ID
 const currentStep = ref('faceswap-home') // 初始狀態設定為換臉首頁
-const uploadError = ref('')
+const selectedTemplate = ref('')
 const isInitialized = ref(false)
 
 // 主要初始化函數
@@ -85,7 +111,45 @@ onMounted(() => {
 
 // 進入臉部交換工具
 function enterFaceSwap() {
+  currentStep.value = 'template-selection'
+}
+
+// 處理模板選擇
+function handleTemplateSelection(data) {
+  selectedTemplate.value = data.selectedTemplate
   currentStep.value = 'upload'
+}
+
+// 處理生成請求
+function handleGenerate(data) {
+  console.log('開始生成換臉:', data)
+  // 在這裡可以調用 API 或處理生成邏輯
+  // 生成完成後導航到��果頁面
+  currentStep.value = 'result'
+}
+
+// 處理重新生成
+function handleRegenerate() {
+  console.log('重新生成換臉')
+  // 返回到模板選擇步驟重新開始
+  currentStep.value = 'template-selection'
+}
+
+// 處理下載到官方帳號
+function handleDownload() {
+  console.log('下載至官方帳號')
+  // 在這裡可以調用下載 API
+}
+
+// 返回上一步
+function goBack() {
+  if (currentStep.value === 'template-selection') {
+    currentStep.value = 'faceswap-home'
+  } else if (currentStep.value === 'upload') {
+    currentStep.value = 'template-selection'
+  } else if (currentStep.value === 'result') {
+    currentStep.value = 'upload'
+  }
 }
 
 </script>
@@ -94,6 +158,8 @@ function enterFaceSwap() {
 .app {
   font-family: 'Inter', sans-serif;
   overflow-x: hidden;
+  background-color: #333333;
+  min-height: 100vh;
 }
 
 .conversation-id-screen {
