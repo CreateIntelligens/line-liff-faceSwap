@@ -2,8 +2,8 @@
  * Roadshow API 服務 - 純粹的API串接，不改變UI
  */
 
-const API_BASE = 'https://d7445102946d.ngrok-free.app/api';
-const AUTH_TOKEN = '123'; // 根據API文檔，使用 "123" 作為認證token
+const API_BASE = 'https://stg-line-crm.fanpokka.ai/api';
+const AUTH_TOKEN = '123'; 
 
 export const roadshowService = {
     /**
