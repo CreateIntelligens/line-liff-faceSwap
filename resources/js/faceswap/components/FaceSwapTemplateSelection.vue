@@ -1,5 +1,13 @@
 <template>
+  <!-- History Page -->
+  <FaceSwapHistory 
+    v-if="showHistoryPage" 
+    @back="showHistoryPage = false"
+  />
+  
+  <!-- Main Template Selection Page -->
   <div
+    v-if="!showHistoryPage"
     class="relative mx-auto my-0 bg-[#333333] h-[774px] w-[375px] max-md:w-full max-md:max-w-screen-md max-sm:w-full max-sm:h-auto max-sm:min-h-[774px]"
     data-name="換臉_橫式範本"
   >
@@ -132,8 +140,9 @@
         </div>
       </div>
       <div
-        class="mt-9 text-base font-bold text-center text-[#EBD8B2]"
+        class="mt-9 text-base font-bold text-center text-[#EBD8B2] cursor-pointer hover:text-[#d4c29a] transition-colors"
         data-name="圖片生成紀錄"
+        @click="showHistory"
       >
         圖片生成紀錄
       </div>
@@ -144,10 +153,12 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { roadshowService } from "../../services/roadshowService.js";
+import FaceSwapHistory from "./FaceSwapHistory.vue";
 
 const emit = defineEmits(["next-step", "back"]);
 
 const selectedTemplate = ref("");
+const showHistoryPage = ref(false);
 
 // 在組件掛載時獲取模板列表
 onMounted(async () => {
@@ -173,6 +184,10 @@ function nextStep() {
   if (selectedTemplate.value) {
     emit("next-step", { selectedTemplate: selectedTemplate.value });
   }
+}
+
+function showHistory() {
+  showHistoryPage.value = true;
 }
 </script>
 
