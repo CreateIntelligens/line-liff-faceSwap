@@ -1,5 +1,7 @@
 <template>
-  <div class="min-h-screen bg-[#333333] flex flex-col">
+  <div
+    class="relative mx-auto my-0 bg-[#333333] h-[774px] w-[375px] max-md:w-full max-md:max-w-screen-md max-sm:w-full max-sm:h-auto max-sm:min-h-[774px]"
+  >
     <!-- Face Swap History Page -->
     <FaceSwapHistory 
       v-if="showHistory" 

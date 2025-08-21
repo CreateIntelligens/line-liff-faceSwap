@@ -1,8 +1,10 @@
 <template>
-  <div class="min-h-screen bg-[#333333] flex flex-col">
+  <div
+    class="relative mx-auto my-0 bg-[#333333] h-[774px] w-[375px] max-md:w-full max-md:max-w-screen-md max-sm:w-full max-sm:h-auto max-sm:min-h-[774px]"
+  >
     <!-- Header -->
     <div
-      class="flex gap-5 justify-center items-center px-5 py-6 w-full font-bold border-b border-[#EBD8B2] min-h-20"
+      class="flex gap-5 justify-center items-center px-5 py-6 font-bold border-b border-[#EBD8B2] min-h-20"
     >
       <div class="text-xl text-[#EBD8B2]">AI換臉</div>
       <div
