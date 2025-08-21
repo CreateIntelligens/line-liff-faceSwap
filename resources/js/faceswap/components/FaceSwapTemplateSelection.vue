@@ -142,11 +142,28 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
+import { roadshowService } from "../../services/roadshowService.js";
 
 const emit = defineEmits(["next-step", "back"]);
 
 const selectedTemplate = ref("");
+
+// 在組件掛載時獲取模板列表
+onMounted(async () => {
+  try {
+    console.log('🔍 嘗試獲取模板列表...');
+    const result = await roadshowService.getTemplates();
+    if (result && result.success) {
+      console.log('✅ 模板列表獲取成功:', result.templates);
+      // 4個模板佈局保持不變：左上1、右上2、左下3、右下4
+    } else {
+      console.log('⚠️ API調用失敗，使用預設模板佈局');
+    }
+  } catch (error) {
+    console.log('⚠️ 使用預設模板佈局，錯誤:', error.message);
+  }
+});
 
 function selectTemplate(templateId) {
   selectedTemplate.value = templateId;
@@ -159,6 +176,3 @@ function nextStep() {
 }
 </script>
 
-<style scoped>
-/* Additional hover effects and animations can be added here */
-</style>

@@ -74,54 +74,86 @@
       </div>
       <!-- Main Content -->
       <div class="flex-1 px-6 pb-8 pt-4 border border-[#EBD8B2]">
-        <!-- Current Step Label -->
-     
-        <!-- Header Logo and Crown -->
-        <div class="flex justify-between items-start">
-          <img 
-            class="h-5 object-contain" 
-            src="https://api.builder.io/api/v1/image/assets/TEMP/de482b87c9c17cee473acb6454371b535acb8d1b?width=599" 
-            alt="標準字" 
-          />
-          <img 
-            class="w-12 h-12 object-contain transform -rotate-[10.809deg]" 
-            src="https://api.builder.io/api/v1/image/assets/TEMP/2404d6238dca7a10ae577f3ba74faa4ec02d24e9?width=91" 
-            alt="皇冠" 
-          />
+        <!-- 載入狀態 -->
+        <div v-if="isLoading" class="flex flex-col items-center justify-center h-60">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#EBD8B2] mb-4"></div>
+          <div class="text-[#EBD8B2] text-center">
+            <div class="text-lg font-bold mb-2">{{ loadingMessage }}</div>
+            <div class="text-sm">{{ loadingSubMessage }}</div>
+          </div>
         </div>
-
-        <!-- Images Section -->
-        <div class="space-y-6">
-          <!-- Original Image with Star -->
-          <div class="relative">
+        
+        <!-- 錯誤狀態 -->
+        <div v-else-if="error" class="flex flex-col items-center justify-center h-60">
+          <div class="text-red-400 text-center">
+            <div class="text-lg font-bold mb-2">生成失敗</div>
+            <div class="text-sm mb-4">{{ error }}</div>
+            <button 
+              @click="retryCheckStatus"
+              class="px-4 py-2 bg-[#EBD8B2] text-[#333] rounded-md hover:bg-[#d4c29a] transition-colors"
+            >
+              重試
+            </button>
+          </div>
+        </div>
+        
+        <!-- 結果內容 -->
+        <div v-else-if="taskResult" class="space-y-6">
+          <!-- Header Logo and Crown -->
+          <div class="flex justify-between items-start">
             <img 
-              class="w-full h-60 object-cover rounded-md" 
-              src="https://api.builder.io/api/v1/image/assets/TEMP/7c6a9d35fa58d57ac3634da1c3cff5d948925fac?width=584" 
-              alt="原圖" 
+              class="h-5 object-contain" 
+              src="https://api.builder.io/api/v1/image/assets/TEMP/de482b87c9c17cee473acb6454371b535acb8d1b?width=599" 
+              alt="標準字" 
             />
             <img 
-              class="absolute -left-2 -bottom-2 w-14 h-14 object-contain" 
-              src="https://api.builder.io/api/v1/image/assets/TEMP/7b08a9934bfc575c52c100d8132b5f128780d934?width=106" 
-              alt="星" 
+              class="w-12 h-12 object-contain transform -rotate-[10.809deg]" 
+              src="https://api.builder.io/api/v1/image/assets/TEMP/2404d6238dca7a10ae577f3ba74faa4ec02d24e9?width=91" 
+              alt="皇冠" 
             />
           </div>
 
-          <!-- Result Image -->
-          <div>
-            <img 
-              class="w-full h-60 object-cover rounded-md" 
-              src="https://api.builder.io/api/v1/image/assets/TEMP/2f3fc83fb9651fb35607428f3bc56850dbfa0677?width=584" 
-              alt="結果圖" 
-            />
-          </div>
+          <!-- Images Section -->
+          <div class="space-y-6">
+            <!-- Original Image with Star -->
+            <div class="relative">
+              <img 
+                class="w-full h-60 object-cover rounded-md" 
+                src="https://api.builder.io/api/v1/image/assets/TEMP/7c6a9d35fa58d57ac3634da1c3cff5d948925fac?width=584" 
+                alt="原圖" 
+              />
+              <img 
+                class="absolute -left-2 -bottom-2 w-14 h-14 object-contain" 
+                src="https://api.builder.io/api/v1/image/assets/TEMP/7b08a9934bfc575c52c100d8132b5f128780d934?width=106" 
+                alt="星" 
+              />
+            </div>
 
-          <!-- Bottom Logo -->
-          <div class="flex justify-center">
-            <img 
-              class="h-8 object-contain" 
-              src="https://api.builder.io/api/v1/image/assets/TEMP/3f99b54e280534e7c39a8d8bae3acd04680b9c57?width=425" 
-              alt="0815" 
-            />
+            <!-- Result Image -->
+            <div v-if="generatedImages.length > 0">
+              <img 
+                v-for="(image, index) in generatedImages" 
+                :key="index"
+                class="w-full h-60 object-cover rounded-md mb-4" 
+                :src="image" 
+                :alt="`生成結果 ${index + 1}`" 
+              />
+            </div>
+            <div v-else class="w-full h-60 bg-gray-700 rounded-md flex items-center justify-center">
+              <div class="text-[#EBD8B2] text-center">
+                <div class="text-lg font-bold mb-2">生成中...</div>
+                <div class="text-sm">請稍候，正在處理您的圖片</div>
+              </div>
+            </div>
+
+            <!-- Bottom Logo -->
+            <div class="flex justify-center">
+              <img 
+                class="h-8 object-contain" 
+                src="https://api.builder.io/api/v1/image/assets/TEMP/3f99b54e280534e7c39a8d8bae3acd04680b9c57?width=425" 
+                alt="0815" 
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -141,8 +173,14 @@
           
           <!-- Download Button -->
           <button 
-            class="flex-1 h-11 flex justify-center items-center rounded-md cursor-pointer transition-all duration-300 bg-gradient-to-r from-[#EE95FF] via-[#F192FF] via-[#B9B9FB] to-[#AFCBF7] hover:shadow-lg"
+            class="flex-1 h-11 flex justify-center items-center rounded-md cursor-pointer transition-all duration-300"
+            :class="
+              taskResult && taskResult.status === 'completed'
+                ? 'bg-gradient-to-r from-[#EE95FF] via-[#F192FF] via-[#B9B9FB] to-[#AFCBF7] hover:shadow-lg'
+                : 'bg-[#C7C7C7] cursor-not-allowed'
+            "
             @click="downloadToOfficial"
+            :disabled="!taskResult || taskResult.status !== 'completed'"
           >
             <div class="font-noto-sans-tc text-base font-bold text-[#333]">
               下載至官方帳號
@@ -163,8 +201,21 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import FaceSwapHistory from './FaceSwapHistory.vue'
+import { roadshowService } from '../../services/roadshowService.js'
+
+// Define props
+const props = defineProps({
+  taskId: {
+    type: String,
+    default: ''
+  },
+  userId: {
+    type: String,
+    default: ''
+  }
+});
 
 // Define emits for parent component communication
 const emit = defineEmits(['back', 'regenerate', 'download'])
@@ -172,15 +223,128 @@ const emit = defineEmits(['back', 'regenerate', 'download'])
 // State for showing history page
 const showHistory = ref(false)
 
+// 任務相關狀態
+const isLoading = ref(false)
+const error = ref(null)
+const taskResult = ref(null)
+const generatedImages = ref([])
+
+// 載入狀態訊息
+const loadingMessage = ref('檢查任務狀態...')
+const loadingSubMessage = ref('請稍候')
+
+// 監聽taskId變化
+watch(() => props.taskId, (newTaskId) => {
+  if (newTaskId) {
+    console.log('🔄 檢測到新的taskId:', newTaskId)
+    checkTaskStatus()
+  }
+}, { immediate: true })
+
+// 檢查任務狀態
+async function checkTaskStatus() {
+  if (!props.taskId) {
+    console.warn('⚠️ 沒有taskId，無法檢查狀態')
+    return
+  }
+  
+  try {
+    isLoading.value = true
+    error.value = null
+    loadingMessage.value = '檢查任務狀態...'
+    loadingSubMessage.value = '請稍候'
+    
+    console.log(`🔍 檢查任務狀態: ${props.taskId}`)
+    const result = await roadshowService.checkTaskStatus(props.taskId)
+    
+    if (result && result.success) {
+      taskResult.value = result.data
+      console.log('✅ 任務狀態獲取成功:', result.data)
+      
+      // 根據狀態處理
+      handleTaskStatus(result.data)
+    } else {
+      error.value = result?.error?.message || '檢查任務狀態失敗'
+      console.error('❌ 檢查任務狀態失敗:', result?.error)
+    }
+  } catch (err) {
+    error.value = '網路錯誤，請檢查連線'
+    console.error('❌ 檢查任務狀態時發生錯誤:', err)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 處理任務狀態
+function handleTaskStatus(data) {
+  const status = data.status
+  console.log(`📊 任務狀態: ${status}`)
+  
+  switch (status) {
+    case 'pending':
+      loadingMessage.value = '任務等待中'
+      loadingSubMessage.value = '正在排隊處理...'
+      // 延遲後再次檢查
+      setTimeout(checkTaskStatus, 3000)
+      break
+      
+    case 'processing':
+      loadingMessage.value = '正在處理中'
+      loadingSubMessage.value = '請稍候，正在生成您的頭像...'
+      // 延遲後再次檢查
+      setTimeout(checkTaskStatus, 2000)
+      break
+      
+    case 'completed':
+      loadingMessage.value = '生成完成！'
+      loadingSubMessage.value = ''
+      // 處理生成的圖片
+      if (data.images && data.images.length > 0) {
+        generatedImages.value = data.images
+        console.log('🖼️ 生成的圖片:', data.images)
+      }
+      break
+      
+    case 'failed':
+      error.value = '任務處理失敗，請重新生成'
+      console.error('❌ 任務處理失敗')
+      break
+      
+    default:
+      error.value = '未知的任務狀態'
+      console.warn('❓ 未知的任務狀態:', status)
+  }
+}
+
+// 重試檢查狀態
+function retryCheckStatus() {
+  error.value = null
+  checkTaskStatus()
+}
+
 // Handle regenerate button click
 function regenerate() {
+  console.log('🔄 重新生成')
   emit('regenerate')
 }
 
 // Handle download to official account button click
 function downloadToOfficial() {
-  emit('download')
+  if (taskResult.value && taskResult.value.status === 'completed') {
+    console.log('📥 下載至官方帳號')
+    emit('download')
+  } else {
+    console.warn('⚠️ 任務尚未完成，無法下載')
+  }
 }
+
+// 組件掛載時檢查狀態
+onMounted(() => {
+  if (props.taskId) {
+    console.log('🚀 組件掛載，開始檢查任務狀態:', props.taskId)
+    checkTaskStatus()
+  }
+})
 </script>
 
 <style scoped>

@@ -61,12 +61,7 @@ async function initializeApp() {
     if (userId.value) {
       try {
         console.log(`查詢用戶 ${userId.value} 的歷史 avatars`)
-        const res = await fetch(`https://f2d8-60-248-142-124.ngrok-free.app/api/faceswap/user/${userId.value}/avatars`, {
-          headers: {
-            'ngrok-skip-browser-warning': 'true'
-          }
-        })
-        const data = await res.json()
+        const data = await roadshowService.getUserHistory(userId.value)
         console.log('歷史 avatars 數據:', data)
         
         if (data.result && data.result.avatars && data.result.avatars.length > 0) {

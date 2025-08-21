@@ -147,7 +147,7 @@
               <img
                 :src="uploadedImagePreview"
                 :alt="uploadedImage.name"
-                class="w-full h-full object-cover rounded-md"
+                class="w-full h-full object-contain rounded-md bg-gray-800"
               />
             </div>
           </div>
@@ -230,8 +230,23 @@
 <script setup>
 import { ref, computed } from "vue";
 import { onUnmounted } from "vue";
+import { roadshowService } from "../../services/roadshowService.js";
+
+const props = defineProps({
+  selectedTemplate: {
+    type: String,
+    default: ''
+  }
+});
 
 const emit = defineEmits(["back", "generate"]);
+
+// 人物選擇對應到 target_face_index
+const characterToFaceIndex = {
+  'character1': 0, // 朱芯儀
+  'character2': 1, // 溫昇豪  
+  'character3': 2  // 隋棠
+};
 
 const selectedCharacter = ref("");
 const uploadedImage = ref(null);
@@ -288,21 +303,68 @@ function goBack() {
   emit("back");
 }
 
-function generateFaceSwap() {
+async function generateFaceSwap() {
   if (canGenerate.value) {
     isGenerating.value = true;
     showFirstDialog.value = true;
-    // 延遲一下再發送事件，讓用戶看到彈窗
-    setTimeout(() => {
+    
+    try {
+      console.log('🚀 開始生成頭像...');
+      console.log('📋 選擇的模板:', props.selectedTemplate);
+      console.log('👤 選擇的角色:', selectedCharacter.value);
+      console.log('🎯 target_face_index:', characterToFaceIndex[selectedCharacter.value]);
+      
+      // 準備FormData - 純粹的API調用，不改變UI
+      const formData = new FormData();
+      formData.append('userId', 'abc'); // 使用你設定的用戶ID
+      formData.append('file', uploadedImage.value);
+      formData.append('template_id', props.selectedTemplate || 'template1'); // 使用選擇的模板ID
+      formData.append('target_face_index', characterToFaceIndex[selectedCharacter.value] || 0); // 根據選擇的人物對應到face_index
+      formData.append('userInfo', `選擇的角色: ${selectedCharacter.value}`);
+      
+      console.log('📤 發送API請求，FormData內容:');
+      for (let [key, value] of formData.entries()) {
+        console.log(`  ${key}:`, value);
+      }
+      
+      // 調用API生成頭像
+      const result = await roadshowService.generateAvatar(formData);
+      
+      if (result && result.success) {
+        console.log('✅ 頭像生成任務已創建:', result);
+        // 延遲一下再發送事件，讓用戶看到彈窗
+        setTimeout(() => {
+          showFirstDialog.value = false;
+          showSecondDialog.value = true;
+          setTimeout(() => {
+            emit("generate", {
+              selectedCharacter: selectedCharacter.value,
+              uploadedImage: uploadedImage.value,
+              taskId: result.result?.task_id
+            });
+          }, 1000);
+        }, 1000);
+      } else if (result && result.error) {
+        // 處理特定錯誤狀態
+        if (result.error.status === 403) {
+          throw new Error('權限不足，無法生成頭像');
+        } else if (result.error.status === 400) {
+          throw new Error('請求格式錯誤，請檢查上傳的檔案');
+        } else if (result.error.status !== 200) {
+          throw new Error('生成失敗，請重新上傳');
+        } else {
+          throw new Error('生成失敗');
+        }
+      } else {
+        throw new Error('生成失敗');
+      }
+    } catch (error) {
+      console.error('❌ 生成頭像失敗:', error);
+      isGenerating.value = false;
       showFirstDialog.value = false;
-      showSecondDialog.value = true;
-      setTimeout(() => {
-        emit("generate", {
-          selectedCharacter: selectedCharacter.value,
-          uploadedImage: uploadedImage.value,
-        });
-      }, 1000);
-    }, 1000);
+      showSecondDialog.value = false;
+      alert('生成失敗，請稍後再試');
+    }
   }
 }
 
