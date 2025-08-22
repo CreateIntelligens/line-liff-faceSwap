@@ -22,12 +22,12 @@
       <!-- Usage counter -->
       <div class="flex justify-center items-center w-[114px] h-8 rounded-[50px] bg-[#EBD8B2]">
         <div class="font-noto-sans-tc text-xs font-bold text-[#333]">
-          剩餘次數：1/10
+          已生成：1/10
         </div>
       </div>
     </div>
 
-    <!-- Grid of history items -->
+
     <div class="flex-1 px-6 py-8">
       <!-- Loading state -->
       <div v-if="isLoading" class="flex flex-col items-center justify-center py-12">

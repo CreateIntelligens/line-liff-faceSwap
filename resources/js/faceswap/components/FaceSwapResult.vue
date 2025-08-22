@@ -18,7 +18,7 @@
         </div>
         <div class="flex justify-center items-center w-[114px] h-8 rounded-[50px] bg-[#EBD8B2]">
           <div class="text-xs font-bold text-[#333]">
-            剩餘次數：1/10
+            已生成：1/10
           </div>
         </div>
       </div>
