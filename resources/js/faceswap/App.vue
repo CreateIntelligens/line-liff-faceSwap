@@ -60,14 +60,18 @@ async function initializeApp() {
   console.log('=== 換臉應用程序初始化開始 ===')
 
   try {
+    // 重置所有狀態，確保重整後是乾淨的狀態
+    currentStep.value = 'faceswap-home'
+    selectedTemplate.value = ''
+    taskId.value = ''
+    
     // 檢查用戶 ID
     if (!userId.value) {
       console.log('用戶 ID 未設置，顯示臉部交換首頁')
-      currentStep.value = 'faceswap-home'
       return
     }
     
-    // 查詢歷史 avatars
+    // 查詢歷史 avatars（僅用於更新用戶使用量，不改變頁面狀態）
     if (userId.value) {
       try {
         console.log(`查詢用戶 ${userId.value} 的歷史 avatars`)
@@ -88,25 +92,16 @@ async function initializeApp() {
         userUsage.value = avatars.length
         console.log('📊 用戶使用量已更新:', userUsage.value)
         
-        if (avatars.length > 0) {
-          // 取第一筆
-          taskId.value = avatars[0].task_id || avatars[0].id
-          currentStep.value = 'result'
-          console.log('找到歷史 avatar，設置 taskId:', taskId.value)
-        } else {
-          currentStep.value = 'faceswap-home'
-        }
+        // 重整後總是回到首頁，不自動跳轉到結果頁面
+        console.log('重整後回到首頁')
       } catch (e) {
         console.error('查詢歷史 avatars 時發生錯誤:', e)
-        currentStep.value = 'faceswap-home' // 錯誤時顯示臉部交換首頁
+        // 錯誤時保持首頁狀態
       }
-    } else {
-      currentStep.value = 'faceswap-home'
-      console.log('無用戶 ID，顯示臉部交換首頁')
     }
   } catch (error) {
     console.error('初始化過程發生錯誤:', error)
-    currentStep.value = 'faceswap-home' // 錯誤時顯示臉部交換首頁
+    // 錯誤時保持首頁狀態
   }
   
   isInitialized.value = true

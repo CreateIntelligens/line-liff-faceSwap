@@ -50,15 +50,23 @@
     <div class="flex-1 flex flex-col max-w-md mx-auto w-full px-5">
       <!-- Selected Template Image -->
       <div class="mb-8">
-        <img
-          class="w-full h-[273px] object-cover rounded-md"
-          :src="getTemplateImage(props.selectedTemplate)"
-          :alt="getTemplateName(props.selectedTemplate)"
-        />
+        <div v-if="props.selectedTemplate" class="w-full h-[273px]">
+          <img
+            class="w-full h-full object-cover rounded-md"
+            :src="getTemplateImage(props.selectedTemplate)"
+            :alt="getTemplateName(props.selectedTemplate)"
+          />
+        </div>
+        <div v-else class="w-full h-[273px] flex items-center justify-center bg-gray-700 rounded-md border-2 border-dashed border-[#EBD8B2]">
+          <div class="text-center text-[#EBD8B2]">
+            <div class="text-lg font-bold mb-2">請先選擇模板</div>
+            <div class="text-sm">請回到上一步選擇您想要的換臉模板</div>
+          </div>
+        </div>
       </div>
 
       <!-- Character Selection -->
-      <div class="mb-8">
+      <div v-if="props.selectedTemplate" class="mb-8">
         <h3 class="text-base font-bold text-center text-[#EBD8B2] mb-4">
           請選擇要換臉的人物
         </h3>
@@ -81,82 +89,94 @@
 
       <!-- Upload Section -->
       <div class="flex-1">
-        <div class="flex items-center gap-3 mb-6">
-          <img
-            src="/images/step2_inprogress.png"
-            class="w-[26px] h-[26px] object-contain"
-            alt="Step 2 In Progress"
-          />
-          <h3 class="text-base font-bold text-[#EBD8B2]">
-            請上傳一張正面清晰的原始圖片
-          </h3>
-        </div>
+        <div v-if="props.selectedTemplate">
+          <div class="flex items-center gap-3 mb-6">
+            <img
+              src="/images/step2_inprogress.png"
+              class="w-[26px] h-[26px] object-contain"
+              alt="Step 2 In Progress"
+            />
+            <h3 class="text-base font-bold text-[#EBD8B2]">
+              請上傳一張正面清晰的原始圖片
+            </h3>
+          </div>
 
-        <!-- Upload Area -->
-        <div class="mb-6">
-          <div
-            class="flex h-[200px] flex-col items-center justify-center gap-5 border-2 border-dashed border-[#EBD8B2] bg-[#969696] cursor-pointer hover:bg-[#a0a0a0] transition-colors rounded-md"
-            @click="triggerFileUpload"
-            @dragover.prevent
-            @drop.prevent="handleDrop"
-          >
-            <div v-if="!uploadedImage" class="flex flex-col items-center gap-3">
-              <!-- Upload Icon -->
-              <div class="w-[50px] h-[35px] relative">
+          <!-- Upload Area -->
+          <div class="mb-6">
+            <div
+              class="flex h-[200px] flex-col items-center justify-center gap-5 border-2 border-dashed border-[#EBD8B2] bg-[#969696] cursor-pointer hover:bg-[#a0a0a0] transition-colors rounded-md"
+              @click="triggerFileUpload"
+              @dragover.prevent
+              @drop.prevent="handleDrop"
+            >
+              <div v-if="!uploadedImage" class="flex flex-col items-center gap-3">
+                <!-- Upload Icon -->
+                <div class="w-[50px] h-[35px] relative">
+                  <img
+                    src="/images/upload.png"
+                    alt="Upload Icon"
+                    class="w-[50px] h-[35px] object-contain"
+                  />
+                </div>
+                <div class="text-base font-medium text-[#333] text-center">
+                  點擊上傳
+                </div>
+                <div class="text-sm font-medium text-[#333] text-center">
+                  支援 JPG, PNG 格式
+                </div>
+              </div>
+              <div v-else class="w-full h-full">
+                <!-- 圖片預覽 -->
                 <img
-                  src="/images/upload.png"
-                  alt="Upload Icon"
-                  class="w-[50px] h-[35px] object-contain"
+                  :src="uploadedImagePreview"
+                  :alt="uploadedImage.name"
+                  class="w-full h-full object-contain rounded-md bg-gray-800"
                 />
               </div>
-              <div class="text-base font-medium text-[#333] text-center">
-                點擊上傳
-              </div>
-              <div class="text-sm font-medium text-[#333] text-center">
-                支援 JPG, PNG 格式
-              </div>
-            </div>
-            <div v-else class="w-full h-full">
-              <!-- 圖片預覽 -->
-              <img
-                :src="uploadedImagePreview"
-                :alt="uploadedImage.name"
-                class="w-full h-full object-contain rounded-md bg-gray-800"
-              />
             </div>
           </div>
-        </div>
 
-        <!-- Upload Instructions -->
-        <div class="mb-8">
-          <h4 class="text-sm font-bold text-white mb-3">上傳注意事項：</h4>
-          <div class="text-[13px] font-normal text-white space-y-2">
-            <div>1.請上傳單人清晰正面照，避免多人合照，以利準確辨識</div>
-            <div>2.僅支援人像照片，請勿上傳風景、動物或其他非人物圖片</div>
-            <div>3.請確保臉部五官完整可見，避免口罩、手部、頭髮等遮擋</div>
-            <div>4.避免模糊、晃動或低解析度圖片，以免影響生成品質</div>
+          <!-- Upload Instructions -->
+          <div class="mb-8">
+            <h4 class="text-sm font-bold text-white mb-3">上傳注意事項：</h4>
+            <div class="text-[13px] font-normal text-white space-y-2">
+              <div>1.請上傳單人清晰正面照，避免多人合照，以利準確辨識</div>
+              <div>2.僅支援人像照片，請勿上傳風景、動物或其他非人物圖片</div>
+              <div>3.請確保臉部五官完整可見，避免口罩、手部、頭髮等遮擋</div>
+              <div>4.避免模糊、晃動或低解析度圖片，以免影響生成品質</div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex gap-3 mb-8">
+            <button
+              class="flex-1 h-11 px-3 py-3 justify-center items-center rounded-md bg-[#EBD8B2] cursor-pointer hover:bg-[#d4c29a] transition-colors text-base font-bold text-[#333]"
+              @click="goBack"
+            >
+              重選範本
+            </button>
+            <button
+              class="flex-1 h-11 px-3 py-3 justify-center items-center rounded-md cursor-pointer transition-all duration-300 text-base font-bold"
+              :class="
+                canGenerate
+                  ? 'bg-gradient-to-r from-[#EE95FF] via-[#F192FF] via-[#B9B9FB] to-[#AFCBF7] hover:shadow-lg text-gray-800'
+                  : 'bg-[#C7C7C7] text-white'
+              "
+              @click="generateFaceSwap"
+              :disabled="!canGenerate"
+            >
+              開始生成
+            </button>
           </div>
         </div>
-
-        <!-- Action Buttons -->
-        <div class="flex gap-3 mb-8">
+        <div v-else class="text-center text-[#EBD8B2] py-8">
+          <div class="text-lg font-bold mb-4">無法進行換臉操作</div>
+          <div class="text-sm mb-6">您需要先選擇一個模板才能繼續</div>
           <button
-            class="flex-1 h-11 px-3 py-3 justify-center items-center rounded-md bg-[#EBD8B2] cursor-pointer hover:bg-[#d4c29a] transition-colors text-base font-bold text-[#333]"
+            class="px-6 py-3 bg-[#EBD8B2] text-[#333] rounded-md font-bold hover:bg-[#d4c29a] transition-colors"
             @click="goBack"
           >
-            重選範本
-          </button>
-          <button
-            class="flex-1 h-11 px-3 py-3 justify-center items-center rounded-md cursor-pointer transition-all duration-300 text-base font-bold"
-            :class="
-              canGenerate
-                ? 'bg-gradient-to-r from-[#EE95FF] via-[#F192FF] via-[#B9B9FB] to-[#AFCBF7] hover:shadow-lg text-gray-800'
-                : 'bg-[#C7C7C7] text-white'
-            "
-            @click="generateFaceSwap"
-            :disabled="!canGenerate"
-          >
-            開始生成
+            返回選擇模板
           </button>
         </div>
       </div>
@@ -261,7 +281,7 @@ const showFirstDialog = ref(false);
 const showSecondDialog = ref(false);
 
 const canGenerate = computed(() => {
-  return selectedCharacter.value && uploadedImage.value;
+  return props.selectedTemplate && selectedCharacter.value && uploadedImage.value;
 });
 
 function selectCharacter(characterId, index) {
@@ -276,8 +296,8 @@ function getTemplateCharacters() {
     return templateCharacters[templateId];
   }
   
-  // 預設返回模板2的角色（3個人）
-  return ['朱芯儀', '溫昇豪', '隋棠'];
+  // 當沒有選擇模板時返回空陣列
+  return [];
 }
 
 function getTemplateImage(templateId) {
@@ -289,7 +309,7 @@ function getTemplateImage(templateId) {
     'super': 'https://api.builder.io/api/v1/image/assets/TEMP/20cf8a9eba96e42bb731ce0ef8be47c78b4dd270?placeholderIfAbsent=true'  // 超級夜總會
   };
   
-  return imageMap[templateId] || 'https://api.builder.io/api/v1/image/assets/TEMP/dcd03673f19d2a7475c34d7c9d5287881199e237?placeholderIfAbsent=true';
+  return imageMap[templateId] || null;
 }
 
 function getTemplateName(templateId) {
@@ -301,7 +321,7 @@ function getTemplateName(templateId) {
     'super': '超級夜總會'
   };
   
-  return nameMap[templateId] || '選擇的模板';
+  return nameMap[templateId] || '';
 }
 
 function triggerFileUpload() {
