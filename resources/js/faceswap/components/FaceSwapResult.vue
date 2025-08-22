@@ -5,6 +5,7 @@
     <!-- Face Swap History Page -->
     <FaceSwapHistory 
       v-if="showHistory" 
+      :userId="props.userId || 'abc'"
       @back="showHistory = false"
     />
     
@@ -119,8 +120,8 @@
             <div class="relative">
               <img 
                 class="w-full h-60 object-cover rounded-md" 
-                src="https://api.builder.io/api/v1/image/assets/TEMP/7c6a9d35fa58d57ac3634da1c3cff5d948925fac?width=584" 
-                alt="原圖" 
+                :src="getTemplateImage(props.selectedTemplate)" 
+                :alt="`模板圖片 - ${getTemplateName(props.selectedTemplate)}`" 
               />
               <img 
                 class="absolute -left-2 -bottom-2 w-14 h-14 object-contain" 
@@ -214,6 +215,10 @@ const props = defineProps({
   userId: {
     type: String,
     default: ''
+  },
+  selectedTemplate: {
+    type: String,
+    default: ''
   }
 });
 
@@ -241,6 +246,16 @@ watch(() => props.taskId, (newTaskId) => {
   }
 }, { immediate: true })
 
+// 監聽selectedTemplate變化，處理顯示歷史的請求
+watch(() => props.selectedTemplate, (newTemplate) => {
+  if (newTemplate === 'show_history') {
+    console.log('🔄 檢測到顯示歷史請求')
+    console.log('🔍 FaceSwapResult - 當前props.userId:', props.userId)
+    console.log('🔍 FaceSwapResult - userId類型:', typeof props.userId)
+    showHistory.value = true
+  }
+}, { immediate: true })
+
 // 檢查任務狀態
 async function checkTaskStatus() {
   if (!props.taskId) {
@@ -257,15 +272,17 @@ async function checkTaskStatus() {
     console.log(`🔍 檢查任務狀態: ${props.taskId}`)
     const result = await roadshowService.checkTaskStatus(props.taskId)
     
-    if (result && result.success) {
-      taskResult.value = result.data
-      console.log('✅ 任務狀態獲取成功:', result.data)
+    if (result && (result.success || result.status === 'completed' || result.status === 'pending' || result.status === 'processing')) {
+      // 根據 API 返回的數據結構處理
+      const taskData = result.data || result.result || result;
+      taskResult.value = taskData;
+      console.log('✅ 任務狀態獲取成功:', taskData);
       
       // 根據狀態處理
-      handleTaskStatus(result.data)
+      handleTaskStatus(taskData);
     } else {
-      error.value = result?.error?.message || '檢查任務狀態失敗'
-      console.error('❌ 檢查任務狀態失敗:', result?.error)
+      error.value = result?.error?.message || '檢查任務狀態失敗';
+      console.error('❌ 檢查任務狀態失敗:', result?.error);
     }
   } catch (err) {
     error.value = '網路錯誤，請檢查連線'
@@ -344,6 +361,39 @@ onMounted(() => {
     console.log('🚀 組件掛載，開始檢查任務狀態:', props.taskId)
     checkTaskStatus()
   }
+})
+
+// 獲取模板圖片URL
+function getTemplateImage(templateId) {
+  // 根據模板 ID 返回對應的圖片
+  const imageMap = {
+    'play': 'https://api.builder.io/api/v1/image/assets/TEMP/dcd03673f19d2a7475c34d7c9d5287881199e237?placeholderIfAbsent=true',   // 綜藝玩很大
+    'wife': 'https://api.builder.io/api/v1/image/assets/TEMP/192f85df3857b6124af697783a00f8eb5ac3105a?placeholderIfAbsent=true',   // 犀利人妻
+    'love': 'https://api.builder.io/api/v1/image/assets/TEMP/fbf730fb39608cf08e5554286a854a8280832fab?placeholderIfAbsent=true',   // 命中註定我愛你
+    'super': 'https://api.builder.io/api/v1/image/assets/TEMP/20cf8a9eba96e42bb731ce0ef8be47c78b4dd270?placeholderIfAbsent=true'  // 超級夜總會
+  };
+  
+  return imageMap[templateId] || 'https://api.builder.io/api/v1/image/assets/TEMP/dcd03673f19d2a7475c34d7c9d5287881199e237?placeholderIfAbsent=true';
+}
+
+// 獲取模板名稱
+function getTemplateName(templateId) {
+  const nameMap = {
+    'play': '綜藝玩很大',
+    'wife': '犀利人妻',
+    'love': '命中註定我愛你',
+    'super': '超級夜總會'
+  };
+  
+  return nameMap[templateId] || '預設模板';
+}
+
+// 組件掛載時的調試
+onMounted(() => {
+  console.log('🚀 FaceSwapResult 組件已掛載')
+  console.log('🔍 掛載時props.userId:', props.userId)
+  console.log('🔍 掛載時props.taskId:', props.taskId)
+  console.log('🔍 掛載時props.selectedTemplate:', props.selectedTemplate)
 })
 </script>
 

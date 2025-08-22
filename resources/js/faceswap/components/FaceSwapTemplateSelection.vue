@@ -85,41 +85,78 @@
             </div>
           </div>
           <div class="mt-9 w-full">
-            <div class="flex gap-3 items-center w-full">
-              <img
-                src="https://api.builder.io/api/v1/image/assets/TEMP/dcd03673f19d2a7475c34d7c9d5287881199e237?placeholderIfAbsent=true"
-                class="object-contain shrink-0 self-stretch my-auto aspect-[1.37] w-[164px] cursor-pointer rounded-md transition-all duration-200 hover:scale-105"
+            <div class="grid grid-cols-2 gap-3">
+              <!-- 模板 10 (綜藝玩很大) -->
+              <div
+                class="cursor-pointer rounded-md transition-all duration-200 hover:scale-105"
                 :class="{
-                  'ring-2 ring-[#EBD8B2]': selectedTemplate === 'template1',
+                  'ring-2 ring-[#EBD8B2]': selectedTemplate === 'play',
                 }"
-                @click="selectTemplate('template1')"
-              />
-              <img
-                src="https://api.builder.io/api/v1/image/assets/TEMP/192f85df3857b6124af697783a00f8eb5ac3105a?placeholderIfAbsent=true"
-                class="object-contain shrink-0 self-stretch my-auto w-40 aspect-[1.33] cursor-pointer rounded-md transition-all duration-200 hover:scale-105"
+                @click="selectTemplate('play')"
+              >
+                <img
+                  :src="getTemplateImage('play')"
+                  alt="綜藝玩很大"
+                  class="w-full h-40 object-cover rounded-md"
+                />
+                <div class="mt-2 text-center text-sm text-[#EBD8B2]">
+                  綜藝玩很大
+                </div>
+              </div>
+              
+              <!-- 模板 8 (犀利人妻) -->
+              <div
+                class="cursor-pointer rounded-md transition-all duration-200 hover:scale-105"
                 :class="{
-                  'ring-2 ring-[#EBD8B2]': selectedTemplate === 'template2',
+                  'ring-2 ring-[#EBD8B2]': selectedTemplate === 'wife',
                 }"
-                @click="selectTemplate('template2')"
-              />
-            </div>
-            <div class="flex gap-3 items-center mt-3 w-full">
-              <img
-                src="https://api.builder.io/api/v1/image/assets/TEMP/fbf730fb39608cf08e5554286a854a8280832fab?placeholderIfAbsent=true"
-                class="object-contain shrink-0 self-stretch my-auto aspect-[1.37] w-[164px] cursor-pointer rounded-md transition-all duration-200 hover:scale-105"
+                @click="selectTemplate('wife')"
+              >
+                <img
+                  :src="getTemplateImage('wife')"
+                  alt="犀利人妻"
+                  class="w-full h-40 object-cover rounded-md"
+                />
+                <div class="mt-2 text-center text-sm text-[#EBD8B2]">
+                  犀利人妻
+                </div>
+              </div>
+              
+              <!-- 模板 9 (命中註定我愛你) -->
+              <div
+                class="cursor-pointer rounded-md transition-all duration-200 hover:scale-105"
                 :class="{
-                  'ring-2 ring-[#EBD8B2]': selectedTemplate === 'template3',
+                  'ring-2 ring-[#EBD8B2]': selectedTemplate === 'love',
                 }"
-                @click="selectTemplate('template3')"
-              />
-              <img
-                src="https://api.builder.io/api/v1/image/assets/TEMP/20cf8a9eba96e42bb731ce0ef8be47c78b4dd270?placeholderIfAbsent=true"
-                class="object-contain shrink-0 self-stretch my-auto w-40 aspect-[1.33] cursor-pointer rounded-md transition-all duration-200 hover:scale-105"
+                @click="selectTemplate('love')"
+              >
+                <img
+                  :src="getTemplateImage('love')"
+                  alt="命中註定我愛你"
+                  class="w-full h-40 object-cover rounded-md"
+                />
+                <div class="mt-2 text-center text-sm text-[#EBD8B2]">
+                  命中註定我愛你
+                </div>
+              </div>
+              
+              <!-- 模板 11 (超級夜總會) -->
+              <div
+                class="cursor-pointer rounded-md transition-all duration-200 hover:scale-105"
                 :class="{
-                  'ring-2 ring-[#EBD8B2]': selectedTemplate === 'template4',
+                  'ring-2 ring-[#EBD8B2]': selectedTemplate === 'super',
                 }"
-                @click="selectTemplate('template4')"
-              />
+                @click="selectTemplate('super')"
+              >
+                <img
+                  :src="getTemplateImage('super')"
+                  alt="超級夜總會"
+                  class="w-full h-40 object-cover rounded-md"
+                />
+                <div class="mt-2 text-center text-sm text-[#EBD8B2]">
+                  超級夜總會
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -130,7 +167,7 @@
             class="flex gap-5 justify-center items-center px-36 py-3.5 rounded-md min-h-11 cursor-pointer transition-all duration-300"
             :class="
               selectedTemplate
-                ? 'bg-gradient-to-r from-[#EE95FF] via-[#F192FF] via-[#B9B9FB] to-[#AFCBF7] hover:shadow-lg text-gray-800'
+                ? 'bg-gradient-to-r from-[#EE95FF] via-[#F192FF] to-[#AFCBF7] hover:shadow-lg text-gray-800'
                 : 'bg-[#EBD8B2] text-[#333333]'
             "
             @click="nextStep"
@@ -159,6 +196,7 @@ const emit = defineEmits(["next-step", "back"]);
 
 const selectedTemplate = ref("");
 const showHistoryPage = ref(false);
+const templates = ref({});
 
 // 在組件掛載時獲取模板列表
 onMounted(async () => {
@@ -167,7 +205,8 @@ onMounted(async () => {
     const result = await roadshowService.getTemplates();
     if (result && result.success) {
       console.log('✅ 模板列表獲取成功:', result.templates);
-      // 4個模板佈局保持不變：左上1、右上2、左下3、右下4
+      templates.value = result.templates;
+      // 使用 API 返回的真實模板數據
     } else {
       console.log('⚠️ API調用失敗，使用預設模板佈局');
     }
@@ -188,6 +227,17 @@ function nextStep() {
 
 function showHistory() {
   showHistoryPage.value = true;
+}
+
+function getTemplateImage(templateKey) {
+  const imageMap = {
+    'play': 'https://api.builder.io/api/v1/image/assets/TEMP/dcd03673f19d2a7475c34d7c9d5287881199e237?placeholderIfAbsent=true',   // 綜藝玩很大
+    'wife': 'https://api.builder.io/api/v1/image/assets/TEMP/192f85df3857b6124af697783a00f8eb5ac3105a?placeholderIfAbsent=true',   // 犀利人妻
+    'love': 'https://api.builder.io/api/v1/image/assets/TEMP/fbf730fb39608cf08e5554286a854a8280832fab?placeholderIfAbsent=true',   // 命中註定我愛你
+    'super': 'https://api.builder.io/api/v1/image/assets/TEMP/20cf8a9eba96e42bb731ce0ef8be47c78b4dd270?placeholderIfAbsent=true'  // 超級夜總會
+  };
+  
+  return imageMap[templateKey] || 'https://api.builder.io/api/v1/image/assets/TEMP/dcd03673f19d2a7475c34d7c9d5287881199e237?placeholderIfAbsent=true';
 }
 </script>
 

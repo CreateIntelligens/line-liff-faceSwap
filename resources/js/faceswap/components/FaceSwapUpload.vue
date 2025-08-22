@@ -58,8 +58,8 @@
       <div class="mb-8">
         <img
           class="w-full h-[273px] object-cover rounded-md"
-          src="https://api.builder.io/api/v1/image/assets/TEMP/72a4ba69c4a69506758097a8499f30a9a6ccd914?width=666"
-          alt="Selected template"
+          :src="getTemplateImage(props.selectedTemplate)"
+          :alt="getTemplateName(props.selectedTemplate)"
         />
       </div>
 
@@ -70,37 +70,17 @@
         </h3>
         <div class="flex justify-center gap-4">
           <button
+            v-for="(character, index) in getTemplateCharacters()"
+            :key="index"
             class="flex-1 h-11 px-3 py-3 justify-center items-center rounded-md cursor-pointer transition-all duration-300 text-base font-bold"
             :class="
-              selectedCharacter === 'character1'
+              selectedCharacter === `character${index + 1}`
                 ? 'bg-gradient-to-r from-[#EE95FF] via-[#F192FF] to-[#AFCBF7] shadow-lg text-gray-800'
                 : 'bg-[#EBD8B2] text-[#333] hover:bg-[#d4c29a]'
             "
-            @click="selectCharacter('character1')"
+            @click="selectCharacter(`character${index + 1}`, index)"
           >
-            朱芯儀
-          </button>
-          <button
-            class="flex-1 h-11 px-3 py-3 justify-center items-center rounded-md cursor-pointer transition-all duration-300 text-base font-bold"
-            :class="
-              selectedCharacter === 'character2'
-                ? 'bg-gradient-to-r from-[#EE95FF] via-[#F192FF] to-[#AFCBF7] shadow-lg text-gray-800'
-                : 'bg-[#EBD8B2] text-[#333] hover:bg-[#d4c29a]'
-            "
-            @click="selectCharacter('character2')"
-          >
-            溫昇豪
-          </button>
-          <button
-            class="flex-1 h-11 px-3 py-3 justify-center items-center rounded-md cursor-pointer transition-all duration-300 text-base font-bold"
-            :class="
-              selectedCharacter === 'character3'
-                ? 'bg-gradient-to-r from-[#EE95FF] via-[#F192FF] to-[#AFCBF7] shadow-lg text-gray-800'
-                : 'bg-[#EBD8B2] text-[#333] hover:bg-[#d4c29a]'
-            "
-            @click="selectCharacter('character3')"
-          >
-            隋棠
+            {{ character }}
           </button>
         </div>
       </div>
@@ -239,13 +219,21 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(["back", "generate"]);
+const emit = defineEmits(["back", "generate", "showHistory"]);
 
 // 人物選擇對應到 target_face_index
 const characterToFaceIndex = {
   'character1': 0, // 朱芯儀
   'character2': 1, // 溫昇豪  
   'character3': 2  // 隋棠
+};
+
+// 模板對應的角色選項 - 只保留需要的 4 個模板
+const templateCharacters = {
+  'play': ['吳宗憲'],                    // 模板 10 (綜藝玩很大)：1個人
+  'wife': ['朱芯儀', '溫昇豪', '隋棠'],  // 模板 8 (犀利人妻)：3個人
+  'love': ['陳喬恩', '阮經天'],          // 模板 9 (命中註定我愛你)：2個人
+  'super': ['許效舜', '苗可麗', '澎恰恰'] // 模板 11 (超級夜總會)：3個人
 };
 
 const selectedCharacter = ref("");
@@ -260,8 +248,48 @@ const canGenerate = computed(() => {
   return selectedCharacter.value && uploadedImage.value;
 });
 
-function selectCharacter(characterId) {
+function selectCharacter(characterId, index) {
   selectedCharacter.value = characterId;
+  console.log('👤 選擇角色:', characterId, '索引:', index);
+}
+
+function getTemplateCharacters() {
+  const templateId = props.selectedTemplate;
+  console.log('🔍 當前選擇的模板ID:', templateId);
+  console.log('🔍 可用的模板角色:', templateCharacters);
+  
+  if (templateId && templateCharacters[templateId]) {
+    console.log('✅ 找到對應角色:', templateCharacters[templateId]);
+    return templateCharacters[templateId];
+  }
+  
+  console.log('⚠️ 沒有找到對應角色，使用預設');
+  // 預設返回模板2的角色（3個人）
+  return ['朱芯儀', '溫昇豪', '隋棠'];
+}
+
+function getTemplateImage(templateId) {
+  // 根據模板 ID 返回對應的圖片
+  const imageMap = {
+    'play': 'https://api.builder.io/api/v1/image/assets/TEMP/dcd03673f19d2a7475c34d7c9d5287881199e237?placeholderIfAbsent=true',   // 綜藝玩很大
+    'wife': 'https://api.builder.io/api/v1/image/assets/TEMP/192f85df3857b6124af697783a00f8eb5ac3105a?placeholderIfAbsent=true',   // 犀利人妻
+    'love': 'https://api.builder.io/api/v1/image/assets/TEMP/fbf730fb39608cf08e5554286a854a8280832fab?placeholderIfAbsent=true',   // 命中註定我愛你
+    'super': 'https://api.builder.io/api/v1/image/assets/TEMP/20cf8a9eba96e42bb731ce0ef8be47c78b4dd270?placeholderIfAbsent=true'  // 超級夜總會
+  };
+  
+  return imageMap[templateId] || 'https://api.builder.io/api/v1/image/assets/TEMP/dcd03673f19d2a7475c34d7c9d5287881199e237?placeholderIfAbsent=true';
+}
+
+function getTemplateName(templateId) {
+  // 根據模板 ID 返回對應的名稱
+  const nameMap = {
+    'play': '綜藝玩很大',
+    'wife': '犀利人妻',
+    'love': '命中註定我愛你',
+    'super': '超級夜總會'
+  };
+  
+  return nameMap[templateId] || '選擇的模板';
 }
 
 function triggerFileUpload() {
@@ -318,7 +346,17 @@ async function generateFaceSwap() {
       const formData = new FormData();
       formData.append('userId', 'abc'); // 使用你設定的用戶ID
       formData.append('file', uploadedImage.value);
-      formData.append('template_id', props.selectedTemplate || 'template1'); // 使用選擇的模板ID
+      
+      // 將字符串模板ID轉換為對應的數字ID (1,2,3,4)
+      const templateIdMap = {
+        'play': '1',     // 綜藝玩很大 → 模板 1
+        'wife': '2',     // 犀利人妻 → 模板 2
+        'love': '3',     // 命中註定我愛你 → 模板 3
+        'super': '4'     // 超級夜總會 → 模板 4
+      };
+      const numericTemplateId = templateIdMap[props.selectedTemplate] || '1';
+      formData.append('template_id', numericTemplateId);
+      
       formData.append('target_face_index', characterToFaceIndex[selectedCharacter.value] || 0); // 根據選擇的人物對應到face_index
       formData.append('userInfo', `選擇的角色: ${selectedCharacter.value}`);
       
@@ -330,7 +368,9 @@ async function generateFaceSwap() {
       // 調用API生成頭像
       const result = await roadshowService.generateAvatar(formData);
       
-      if (result && result.success) {
+      console.log('📡 API 響應結果:', result);
+      
+      if (result && (result.success || result.status === 'success')) {
         console.log('✅ 頭像生成任務已創建:', result);
         // 延遲一下再發送事件，讓用戶看到彈窗
         setTimeout(() => {
@@ -340,14 +380,21 @@ async function generateFaceSwap() {
             emit("generate", {
               selectedCharacter: selectedCharacter.value,
               uploadedImage: uploadedImage.value,
-              taskId: result.result?.task_id
+              taskId: result.result?.task_id || result.result?.id,
+              selectedTemplate: props.selectedTemplate  // 添加選擇的模板ID
             });
           }, 1000);
         }, 1000);
       } else if (result && result.error) {
         // 處理特定錯誤狀態
         if (result.error.status === 403) {
-          throw new Error('權限不足，無法生成頭像');
+          // 檢查是否是達到生成限制的錯誤
+          const errorMessage = result.error.message || '';
+          if (errorMessage.includes('生成限制') || errorMessage.includes('限制')) {
+            throw new Error('您已達到每人10張圖片的生成限制，無法繼續生成新圖片');
+          } else {
+            throw new Error('權限不足，無法生成頭像');
+          }
         } else if (result.error.status === 400) {
           throw new Error('請求格式錯誤，請檢查上傳的檔案');
         } else if (result.error.status !== 200) {
@@ -363,7 +410,20 @@ async function generateFaceSwap() {
       isGenerating.value = false;
       showFirstDialog.value = false;
       showSecondDialog.value = false;
-      alert('生成失敗，請稍後再試');
+      
+      // 檢查是否是達到生成限制的錯誤
+      if (error.message.includes('生成限制')) {
+        // 顯示達到限制的錯誤訊息，並提供查看歷史的選項
+        if (confirm(`${error.message}\n\n是否要查看您的生成歷史？`)) {
+          // 這裡可以導航到歷史頁面或顯示歷史
+          console.log('用戶選擇查看歷史');
+          // 可以發送一個事件來顯示歷史
+          emit('showHistory');
+        }
+      } else {
+        // 其他錯誤使用alert
+        alert(`生成失敗：${error.message}`);
+      }
     }
   }
 }
@@ -375,7 +435,3 @@ onUnmounted(() => {
   }
 });
 </script>
-
-<style scoped>
-/* 組件樣式 - 使用 Flexbox 佈局，無需額外的定位樣式 */
-</style>

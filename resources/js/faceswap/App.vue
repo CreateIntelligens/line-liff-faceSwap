@@ -17,13 +17,18 @@
     <!-- Face Swap Upload -->
     <FaceSwapUpload
       v-if="currentStep === 'upload'"
+      :selectedTemplate="selectedTemplate"
       @back="goBack"
       @generate="handleGenerate"
+      @showHistory="handleShowHistory"
     />
 
     <!-- Face Swap Result -->
     <FaceSwapResult
       v-if="currentStep === 'result'"
+      :taskId="taskId"
+      :userId="userId"
+      :selectedTemplate="selectedTemplate"
       @back="goBack"
       @regenerate="handleRegenerate"
       @download="handleDownload"
@@ -37,10 +42,11 @@ import FaceSwapHomepage from './components/FaceSwapHomepage.vue'
 import FaceSwapTemplateSelection from './components/FaceSwapTemplateSelection.vue'
 import FaceSwapUpload from './components/FaceSwapUpload.vue'
 import FaceSwapResult from './components/FaceSwapResult.vue'
+import { roadshowService } from '../services/roadshowService.js'
 
 // 狀態
 const taskId = ref('')
-const userId = ref('') // 用戶 ID
+const userId = ref('abc') // 用戶 ID - 設置為測試值
 const currentStep = ref('faceswap-home') // 初始狀態設定為換臉首頁
 const selectedTemplate = ref('')
 const isInitialized = ref(false)
@@ -64,9 +70,14 @@ async function initializeApp() {
         const data = await roadshowService.getUserHistory(userId.value)
         console.log('歷史 avatars 數據:', data)
         
-        if (data.result && data.result.avatars && data.result.avatars.length > 0) {
+        // 使用與FaceSwapHistory相同的相容性檢查
+        const avatars = data.result?.avatars || data.data?.avatars || data.avatars || [];
+        console.log('🔍 App.vue - 解析後的avatars:', avatars);
+        console.log('🔍 App.vue - avatars長度:', avatars.length);
+        
+        if (avatars.length > 0) {
           // 取第一筆
-          taskId.value = data.result.avatars[0].task_id
+          taskId.value = avatars[0].task_id || avatars[0].id
           currentStep.value = 'result'
           console.log('找到歷史 avatar，設置 taskId:', taskId.value)
         } else {
@@ -118,8 +129,13 @@ function handleTemplateSelection(data) {
 // 處理生成請求
 function handleGenerate(data) {
   console.log('開始生成換臉:', data)
-  // 在這裡可以調用 API 或處理生成邏輯
-  // 生成完成後導航到��果頁面
+  // 保存任務ID和模板信息
+  taskId.value = data.taskId
+  // 保存選擇的模板ID（從data中獲取）
+  if (data.selectedTemplate) {
+    selectedTemplate.value = data.selectedTemplate
+  }
+  // 生成完成後導航到結果頁面
   currentStep.value = 'result'
 }
 
@@ -134,6 +150,28 @@ function handleRegenerate() {
 function handleDownload() {
   console.log('下載至官方帳號')
   // 在這裡可以調用下載 API
+}
+
+// 處理顯示歷史頁面
+function handleShowHistory() {
+  console.log('顯示歷史頁面')
+  console.log('🔍 App.vue - 當前userId:', userId.value)
+  console.log('🔍 App.vue - 當前currentStep:', currentStep.value)
+  console.log('🔍 App.vue - 當前taskId:', taskId.value)
+  
+  // 確保userId有值
+  if (!userId.value) {
+    userId.value = 'abc'
+    console.log('🔧 App.vue - 重新設置userId為:', userId.value)
+  }
+  
+  // 跳轉到結果頁面，然後顯示歷史
+  currentStep.value = 'result'
+  // 設置一個標記，讓結果頁面知道要顯示歷史
+  // 我們可以通過修改selectedTemplate來傳遞這個信息
+  selectedTemplate.value = 'show_history'
+  console.log('🔍 App.vue - 設置後currentStep:', currentStep.value)
+  console.log('🔍 App.vue - 設置後selectedTemplate:', selectedTemplate.value)
 }
 
 // 返回上一步
