@@ -1,10 +1,11 @@
 <template>
-  <!-- History Page -->
-  <FaceSwapHistory 
-    v-if="showHistoryPage" 
-    :userId="'abc'"
-    @back="showHistoryPage = false"
-  />
+      <!-- History Page -->
+    <FaceSwapHistory 
+      v-if="showHistoryPage" 
+      :userId="'abc'"
+      :userUsage="userUsage"
+      @back="showHistoryPage = false"
+    />
   
   <!-- Main Template Selection Page -->
   <div
@@ -21,13 +22,7 @@
       >
         AI換臉
       </div>
-      <div
-        class="flex justify-center items-center w-[114px] h-8 rounded-[50px] bg-[#EBD8B2]"
-      >
-        <div class="font-noto-sans-tc text-xs font-bold text-[#333]">
-          已生成：1/10
-        </div>
-      </div>
+              <UsageCounter :currentCount="userUsage" :maxLimit="10" />
     </div>
     <!-- 步驟 -->
     <div
@@ -100,9 +95,6 @@
                   alt="綜藝玩很大"
                   class="w-full h-40 object-cover rounded-md"
                 />
-                <div class="mt-2 text-center text-sm text-[#EBD8B2]">
-                  綜藝玩很大
-                </div>
               </div>
               
               <!-- 模板 8 (犀利人妻) -->
@@ -118,9 +110,6 @@
                   alt="犀利人妻"
                   class="w-full h-40 object-cover rounded-md"
                 />
-                <div class="mt-2 text-center text-sm text-[#EBD8B2]">
-                  犀利人妻
-                </div>
               </div>
               
               <!-- 模板 9 (命中註定我愛你) -->
@@ -136,9 +125,6 @@
                   alt="命中註定我愛你"
                   class="w-full h-40 object-cover rounded-md"
                 />
-                <div class="mt-2 text-center text-sm text-[#EBD8B2]">
-                  命中註定我愛你
-                </div>
               </div>
               
               <!-- 模板 11 (超級夜總會) -->
@@ -154,9 +140,6 @@
                   alt="超級夜總會"
                   class="w-full h-40 object-cover rounded-md"
                 />
-                <div class="mt-2 text-center text-sm text-[#EBD8B2]">
-                  超級夜總會
-                </div>
               </div>
             </div>
           </div>
@@ -192,6 +175,14 @@
 import { ref, onMounted } from "vue";
 import { roadshowService } from "../../services/roadshowService.js";
 import FaceSwapHistory from "./FaceSwapHistory.vue";
+import UsageCounter from "./UsageCounter.vue";
+
+const props = defineProps({
+  userUsage: {
+    type: Number,
+    default: 0
+  }
+});
 
 const emit = defineEmits(["next-step", "back"]);
 

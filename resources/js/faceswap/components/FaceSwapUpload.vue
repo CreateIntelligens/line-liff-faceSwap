@@ -7,13 +7,7 @@
       class="flex gap-5 justify-center items-center px-5 py-6 font-bold border-b border-[#EBD8B2] min-h-20"
     >
       <div class="text-xl text-[#EBD8B2]">AI換臉</div>
-      <div
-        class="flex justify-center items-center w-[114px] h-8 rounded-[50px] bg-[#EBD8B2]"
-      >
-        <div class="font-noto-sans-tc text-xs font-bold text-[#333]">
-          已生成：1/10
-        </div>
-      </div>
+      <UsageCounter :currentCount="userUsage" :maxLimit="10" />
     </div>
     <!-- 步驟 -->
     <div
@@ -211,21 +205,43 @@
 import { ref, computed } from "vue";
 import { onUnmounted } from "vue";
 import { roadshowService } from "../../services/roadshowService.js";
+import UsageCounter from "./UsageCounter.vue";
 
 const props = defineProps({
   selectedTemplate: {
     type: String,
     default: ''
+  },
+  userUsage: {
+    type: Number,
+    default: 0
   }
 });
 
 const emit = defineEmits(["back", "generate", "showHistory"]);
 
-// 人物選擇對應到 target_face_index
-const characterToFaceIndex = {
-  'character1': 0, // 朱芯儀
-  'character2': 1, // 溫昇豪  
-  'character3': 2  // 隋棠
+// 根據模板 ID 和角色選擇，返回正確的 face_index
+const getFaceIndex = (templateId, characterId) => {
+  if (templateId === 'play') {
+    // 模板1 (綜藝玩很大)：吳宗憲在中間，face_index = 1
+    // 0=左邊角色(不支援換臉), 1=中間吳宗憲(支援換臉), 2=右邊角色(不支援換臉)
+    return 1;
+  } else if (templateId === 'wife') {
+    // 模板2 (犀利人妻)：3個人都支援換臉
+    const wifeMapping = { 'character1': 0, 'character2': 1, 'character3': 2 };
+    return wifeMapping[characterId] || 0;
+  } else if (templateId === 'love') {
+    // 模板3 (命中註定我愛你)：2個人都支援換臉
+    const loveMapping = { 'character1': 0, 'character2': 1 };
+    return loveMapping[characterId] || 0;
+  } else if (templateId === 'super') {
+    // 模板4 (超級夜總會)：3個人都支援換臉
+    const superMapping = { 'character1': 0, 'character2': 1, 'character3': 2 };
+    return superMapping[characterId] || 0;
+  }
+  
+  // 預設值
+  return 0;
 };
 
 // 模板對應的角色選項 - 只保留需要的 4 個模板
@@ -255,15 +271,11 @@ function selectCharacter(characterId, index) {
 
 function getTemplateCharacters() {
   const templateId = props.selectedTemplate;
-  console.log('🔍 當前選擇的模板ID:', templateId);
-  console.log('🔍 可用的模板角色:', templateCharacters);
   
   if (templateId && templateCharacters[templateId]) {
-    console.log('✅ 找到對應角色:', templateCharacters[templateId]);
     return templateCharacters[templateId];
   }
   
-  console.log('⚠️ 沒有找到對應角色，使用預設');
   // 預設返回模板2的角色（3個人）
   return ['朱芯儀', '溫昇豪', '隋棠'];
 }
@@ -337,10 +349,13 @@ async function generateFaceSwap() {
     showFirstDialog.value = true;
     
     try {
-      console.log('🚀 開始生成頭像...');
-      console.log('📋 選擇的模板:', props.selectedTemplate);
-      console.log('👤 選擇的角色:', selectedCharacter.value);
-      console.log('🎯 target_face_index:', characterToFaceIndex[selectedCharacter.value]);
+      console.log('🚀 開始生成頭像...')
+      console.log('📋 選擇的模板:', props.selectedTemplate)
+      console.log('👤 選擇的角色:', selectedCharacter.value)
+      
+      // 使用新的 getFaceIndex 函數獲取正確的 face_index
+      const targetFaceIndex = getFaceIndex(props.selectedTemplate, selectedCharacter.value)
+      console.log('🎯 target_face_index:', targetFaceIndex)
       
       // 準備FormData - 純粹的API調用，不改變UI
       const formData = new FormData();
@@ -357,21 +372,21 @@ async function generateFaceSwap() {
       const numericTemplateId = templateIdMap[props.selectedTemplate] || '1';
       formData.append('template_id', numericTemplateId);
       
-      formData.append('target_face_index', characterToFaceIndex[selectedCharacter.value] || 0); // 根據選擇的人物對應到face_index
+      formData.append('target_face_index', targetFaceIndex); // 使用新的 getFaceIndex 函數獲取正確的 face_index
       formData.append('userInfo', `選擇的角色: ${selectedCharacter.value}`);
       
-      console.log('📤 發送API請求，FormData內容:');
+      console.log('📤 發送API請求，FormData內容:')
       for (let [key, value] of formData.entries()) {
-        console.log(`  ${key}:`, value);
+        console.log(`  ${key}:`, value)
       }
       
       // 調用API生成頭像
       const result = await roadshowService.generateAvatar(formData);
       
-      console.log('📡 API 響應結果:', result);
+      console.log('📡 API 響應結果:', result)
       
       if (result && (result.success || result.status === 'success')) {
-        console.log('✅ 頭像生成任務已創建:', result);
+        console.log('✅ 頭像生成任務已創建')
         // 延遲一下再發送事件，讓用戶看到彈窗
         setTimeout(() => {
           showFirstDialog.value = false;

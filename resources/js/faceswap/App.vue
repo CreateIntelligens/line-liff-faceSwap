@@ -10,6 +10,7 @@
     <!-- Face Swap Template Selection -->
     <FaceSwapTemplateSelection
       v-if="currentStep === 'template-selection'"
+      :userUsage="userUsage"
       @next-step="handleTemplateSelection"
       @back="goBack"
     />
@@ -18,6 +19,7 @@
     <FaceSwapUpload
       v-if="currentStep === 'upload'"
       :selectedTemplate="selectedTemplate"
+      :userUsage="userUsage"
       @back="goBack"
       @generate="handleGenerate"
       @showHistory="handleShowHistory"
@@ -29,6 +31,7 @@
       :taskId="taskId"
       :userId="userId"
       :selectedTemplate="selectedTemplate"
+      :userUsage="userUsage"
       @back="goBack"
       @regenerate="handleRegenerate"
       @download="handleDownload"
@@ -37,7 +40,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeMount } from 'vue'
+import { ref, onMounted, onBeforeMount, nextTick } from 'vue'
 import FaceSwapHomepage from './components/FaceSwapHomepage.vue'
 import FaceSwapTemplateSelection from './components/FaceSwapTemplateSelection.vue'
 import FaceSwapUpload from './components/FaceSwapUpload.vue'
@@ -50,6 +53,7 @@ const userId = ref('abc') // 用戶 ID - 設置為測試值
 const currentStep = ref('faceswap-home') // 初始狀態設定為換臉首頁
 const selectedTemplate = ref('')
 const isInitialized = ref(false)
+const userUsage = ref(0) // 用戶已生成的圖片數量
 
 // 主要初始化函數
 async function initializeApp() {
@@ -68,12 +72,21 @@ async function initializeApp() {
       try {
         console.log(`查詢用戶 ${userId.value} 的歷史 avatars`)
         const data = await roadshowService.getUserHistory(userId.value)
-        console.log('歷史 avatars 數據:', data)
         
         // 使用與FaceSwapHistory相同的相容性檢查
-        const avatars = data.result?.avatars || data.data?.avatars || data.avatars || [];
-        console.log('🔍 App.vue - 解析後的avatars:', avatars);
-        console.log('🔍 App.vue - avatars長度:', avatars.length);
+        let avatars = [];
+        
+        if (Array.isArray(data)) {
+          // 如果直接返回陣列
+          avatars = data;
+        } else if (data && typeof data === 'object') {
+          // 如果是物件格式
+          avatars = data.result?.avatars || data.data?.avatars || data.avatars || [];
+        }
+        
+        // 更新用戶使用量
+        userUsage.value = avatars.length
+        console.log('📊 用戶使用量已更新:', userUsage.value)
         
         if (avatars.length > 0) {
           // 取第一筆
@@ -81,7 +94,6 @@ async function initializeApp() {
           currentStep.value = 'result'
           console.log('找到歷史 avatar，設置 taskId:', taskId.value)
         } else {
-          console.log('沒有找到歷史 avatars，顯示臉部交換首頁')
           currentStep.value = 'faceswap-home'
         }
       } catch (e) {
@@ -101,18 +113,51 @@ async function initializeApp() {
   console.log('=== 換臉應用程序初始化完成 ===')
 }
 
+// 添加一個單獨的函數來刷新用戶使用量
+async function refreshUserUsage() {
+  try {
+    const data = await roadshowService.getUserHistory(userId.value)
+    
+    // 使用與FaceSwapHistory相同的相容性檢查
+    let avatars = [];
+    
+    if (Array.isArray(data)) {
+      // 如果直接返回陣列
+      avatars = data;
+    } else if (data && typeof data === 'object') {
+      // 如果是物件格式
+      avatars = data.result?.avatars || data.data?.avatars || data.avatars || [];
+    }
+    
+    // 更新用戶使用量
+    userUsage.value = avatars.length
+    console.log('📊 用戶使用量已刷新:', userUsage.value)
+    
+    return avatars.length
+  } catch (error) {
+    console.error('❌ 刷新用戶使用量失敗:', error)
+    return 0
+  }
+}
+
 // 在掛載前執行初始化
 onBeforeMount(async () => {
   await initializeApp()
 })
 
 // 組件掛載後的額外處理
-onMounted(() => {
+onMounted(async () => {
   console.log('Vue 組件已掛載，應用當前狀態:', {
     currentStep: currentStep.value,
     userId: userId.value,
-    taskId: taskId.value
+    taskId: taskId.value,
+    userUsage: userUsage.value
   })
+  
+  // 組件掛載後，再次刷新用戶使用量以確保數據準確
+  if (userId.value && isInitialized.value) {
+    await refreshUserUsage()
+  }
 })
 
 // 進入臉部交換工具
@@ -129,12 +174,29 @@ function handleTemplateSelection(data) {
 // 處理生成請求
 function handleGenerate(data) {
   console.log('開始生成換臉:', data)
+  console.log('📊 更新前的用戶使用量:', userUsage.value)
+  
   // 保存任務ID和模板信息
   taskId.value = data.taskId
   // 保存選擇的模板ID（從data中獲取）
   if (data.selectedTemplate) {
     selectedTemplate.value = data.selectedTemplate
   }
+  
+  // 更新用戶使用量（生成新圖片後數量+1）
+  userUsage.value += 1
+  console.log('📊 生成新圖片後，更新用戶使用量:', userUsage.value)
+  
+  // 強制觸發響應式更新
+  nextTick(() => {
+    console.log('📊 nextTick後的用戶使用量:', userUsage.value)
+  })
+  
+  // 生成完成後，也從服務器刷新一次以確保數據準確
+  setTimeout(async () => {
+    await refreshUserUsage()
+  }, 1000)
+  
   // 生成完成後導航到結果頁面
   currentStep.value = 'result'
 }

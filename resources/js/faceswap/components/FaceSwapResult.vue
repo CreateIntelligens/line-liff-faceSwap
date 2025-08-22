@@ -6,6 +6,7 @@
     <FaceSwapHistory 
       v-if="showHistory" 
       :userId="props.userId || 'abc'"
+      :userUsage="userUsage"
       @back="showHistory = false"
     />
     
@@ -16,11 +17,7 @@
         <div class="text-xl text-[#EBD8B2]">
           AI換臉
         </div>
-        <div class="flex justify-center items-center w-[114px] h-8 rounded-[50px] bg-[#EBD8B2]">
-          <div class="text-xs font-bold text-[#333]">
-            已生成：1/10
-          </div>
-        </div>
+        <UsageCounter :currentCount="userUsage" :maxLimit="10" />
       </div>
 
      <!-- 步驟 -->
@@ -204,6 +201,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import FaceSwapHistory from './FaceSwapHistory.vue'
+import UsageCounter from './UsageCounter.vue'
 import { roadshowService } from '../../services/roadshowService.js'
 
 // Define props
@@ -219,6 +217,10 @@ const props = defineProps({
   selectedTemplate: {
     type: String,
     default: ''
+  },
+  userUsage: {
+    type: Number,
+    default: 0
   }
 });
 
@@ -253,6 +255,13 @@ watch(() => props.selectedTemplate, (newTemplate) => {
     console.log('🔍 FaceSwapResult - 當前props.userId:', props.userId)
     console.log('🔍 FaceSwapResult - userId類型:', typeof props.userId)
     showHistory.value = true
+  }
+}, { immediate: true })
+
+// 監聽 userUsage 變化，用於調試
+watch(() => props.userUsage, (newUsage, oldUsage) => {
+  if (oldUsage !== newUsage) {
+    console.log('📊 FaceSwapResult 使用量變化:', `${oldUsage || 0} → ${newUsage}`)
   }
 }, { immediate: true })
 
@@ -391,9 +400,6 @@ function getTemplateName(templateId) {
 // 組件掛載時的調試
 onMounted(() => {
   console.log('🚀 FaceSwapResult 組件已掛載')
-  console.log('🔍 掛載時props.userId:', props.userId)
-  console.log('🔍 掛載時props.taskId:', props.taskId)
-  console.log('🔍 掛載時props.selectedTemplate:', props.selectedTemplate)
 })
 </script>
 

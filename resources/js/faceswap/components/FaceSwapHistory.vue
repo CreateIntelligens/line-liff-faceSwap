@@ -20,11 +20,7 @@
       </div>
       
       <!-- Usage counter -->
-      <div class="flex justify-center items-center w-[114px] h-8 rounded-[50px] bg-[#EBD8B2]">
-        <div class="font-noto-sans-tc text-xs font-bold text-[#333]">
-          已生成：1/10
-        </div>
-      </div>
+      <UsageCounter :currentCount="userUsage" :maxLimit="10" />
     </div>
 
 
@@ -88,11 +84,16 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { roadshowService } from '../../services/roadshowService.js'
+import UsageCounter from './UsageCounter.vue'
 
 const props = defineProps({
   userId: {
     type: String,
     default: ''
+  },
+  userUsage: {
+    type: Number,
+    default: 0
   }
 });
 
@@ -104,13 +105,7 @@ const error = ref(null)
 
 // 獲取用戶歷史圖片
 async function loadUserHistory() {
-  console.log('🚀 loadUserHistory 開始執行');
-  console.log('👤 當前userId:', props.userId);
-  console.log('👤 userId類型:', typeof props.userId);
-  console.log('👤 userId是否為空:', !props.userId);
-  
   if (!props.userId) {
-    console.log('⚠️ 沒有用戶ID，無法載入歷史');
     error.value = '沒有用戶ID，無法載入歷史';
     return;
   }
@@ -119,13 +114,7 @@ async function loadUserHistory() {
     isLoading.value = true;
     error.value = null;
     
-    console.log('🔍 載入用戶歷史:', props.userId);
     const result = await roadshowService.getUserHistory(props.userId);
-    
-    console.log('📡 API返回結果:', result);
-    console.log('📡 result.success:', result?.success);
-    console.log('📡 result.result:', result?.result);
-    console.log('📡 result.data:', result?.data);
     
     // 檢查API返回的數據格式
     let avatars = [];
@@ -133,7 +122,6 @@ async function loadUserHistory() {
     if (Array.isArray(result)) {
       // 直接返回陣列格式：[{...}, {...}, ...]
       avatars = result;
-      console.log('🔄 檢測到直接陣列格式，直接使用');
     } else if (result && result.success) {
       // 標準格式：{ success: true, result: { avatars: [...] } }
       avatars = result.result?.avatars || result.data?.avatars || result.avatars || [];
@@ -141,9 +129,6 @@ async function loadUserHistory() {
       // 其他物件格式
       avatars = result.result?.avatars || result.data?.avatars || result.avatars || [];
     }
-    
-    console.log('🖼️ 提取的avatars:', avatars);
-    console.log('🖼️ avatars長度:', avatars.length);
     
     if (avatars.length > 0) {
       historyData.value = avatars.map(avatar => ({
@@ -153,9 +138,8 @@ async function loadUserHistory() {
         template_id: avatar.metadata?.template_id || avatar.template_id,
         status: avatar.status
       }));
-      console.log('✅ 歷史數據載入成功:', historyData.value);
+      console.log('✅ 歷史數據載入成功，共', avatars.length, '張圖片');
     } else {
-      console.log('⚠️ API返回的avatars為空陣列');
       historyData.value = [];
     }
   } catch (err) {
@@ -230,24 +214,16 @@ function goBack() {
 
 // 監視 userId 變化
 watch(() => props.userId, (newUserId, oldUserId) => {
-  console.log('🔄 FaceSwapHistory - userId 變化:', { oldUserId, newUserId });
   if (newUserId && newUserId !== oldUserId && newUserId !== '') {
-    console.log('✅ 檢測到有效的userId，載入歷史');
     loadUserHistory();
   }
 }, { immediate: false }); // 改為 false，避免無限迴圈
 
 // 組件掛載時載入歷史
 onMounted(() => {
-  console.log('🚀 FaceSwapHistory 組件已掛載');
-  console.log('👤 組件掛載時的userId:', props.userId);
-  console.log('👤 組件掛載時的userId類型:', typeof props.userId);
-  
   if (props.userId && props.userId !== '') {
-    console.log('✅ 組件掛載時有userId，開始載入歷史');
     loadUserHistory();
   } else {
-    console.log('⚠️ 組件掛載時沒有userId，無法載入歷史');
     error.value = '沒有用戶ID，無法載入歷史';
   }
 });
