@@ -78,6 +78,13 @@
         </div>
       </div>
     </div>
+
+    <!-- History Detail Modal -->
+    <HistoryDetailModal 
+      :isVisible="showDetailModal"
+      :historyItem="selectedHistoryItem"
+      @close="closeDetailModal"
+    />
   </div>
 </template>
 
@@ -85,6 +92,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { roadshowService } from '../../services/roadshowService.js'
 import UsageCounter from './UsageCounter.vue'
+import HistoryDetailModal from './HistoryDetailModal.vue'
 
 const props = defineProps({
   userId: {
@@ -102,6 +110,10 @@ const emit = defineEmits(['back'])
 const historyData = ref([])
 const isLoading = ref(false)
 const error = ref(null)
+
+// 彈窗相關狀態
+const showDetailModal = ref(false)
+const selectedHistoryItem = ref(null)
 
 // 獲取用戶歷史圖片
 async function loadUserHistory() {
@@ -203,9 +215,15 @@ function handleImageError(event) {
 
 // 查看歷史項目詳情
 function viewHistoryItem(item) {
-  console.log('查看歷史項目:', item);
-  // 這裡可以添加查看詳情的邏輯，比如跳轉到結果頁面
-  // 或者顯示更大的圖片預覽
+  console.log('查看歷史項目:', item)
+  selectedHistoryItem.value = item
+  showDetailModal.value = true
+}
+
+// 關閉詳情彈窗
+function closeDetailModal() {
+  showDetailModal.value = false
+  selectedHistoryItem.value = null
 }
 
 function goBack() {

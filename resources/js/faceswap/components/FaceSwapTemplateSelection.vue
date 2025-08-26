@@ -34,7 +34,7 @@
         alt="Step 1"
       />
       <img
-        src="https://api.builder.io/api/v1/image/assets/TEMP/7f03c8a2d5652999b0cf2dc2c1710e475c7781ed?placeholderIfAbsent=true"
+        src="/images/horizontal.png"
         class="object-contain shrink-0 my-auto aspect-[32.26] w-[65px]"
       />
       <img
@@ -43,7 +43,7 @@
         alt="Step 2"
       />
       <img
-        src="https://api.builder.io/api/v1/image/assets/TEMP/7f03c8a2d5652999b0cf2dc2c1710e475c7781ed?placeholderIfAbsent=true"
+        src="/images/horizontal.png"
         class="object-contain shrink-0 my-auto aspect-[32.26] w-[65px]"
       />
       <img
@@ -223,13 +223,13 @@ function showHistory() {
 
 function getTemplateImage(templateKey) {
   const imageMap = {
-    'play': 'https://api.builder.io/api/v1/image/assets/TEMP/dcd03673f19d2a7475c34d7c9d5287881199e237?placeholderIfAbsent=true',   // 綜藝玩很大
-    'wife': 'https://api.builder.io/api/v1/image/assets/TEMP/192f85df3857b6124af697783a00f8eb5ac3105a?placeholderIfAbsent=true',   // 犀利人妻
-    'love': 'https://api.builder.io/api/v1/image/assets/TEMP/fbf730fb39608cf08e5554286a854a8280832fab?placeholderIfAbsent=true',   // 命中註定我愛你
-    'super': 'https://api.builder.io/api/v1/image/assets/TEMP/20cf8a9eba96e42bb731ce0ef8be47c78b4dd270?placeholderIfAbsent=true'  // 超級夜總會
+    'play': '/images/play.png',   // 綜藝玩很大
+    'wife': '/images/wife.png',   // 犀利人妻
+    'love': '/images/love.png',   // 命中註定我愛你
+    'super': '/images/super.png'  // 超級夜總會
   };
   
-  return imageMap[templateKey] || 'https://api.builder.io/api/v1/image/assets/TEMP/dcd03673f19d2a7475c34d7c9d5287881199e237?placeholderIfAbsent=true';
+  return imageMap[templateKey] || '/images/play.png';
 }
 </script>
 

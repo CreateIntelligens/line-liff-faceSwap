@@ -30,7 +30,7 @@
         alt="Step 1"
       />
       <img
-        src="https://api.builder.io/api/v1/image/assets/TEMP/7f03c8a2d5652999b0cf2dc2c1710e475c7781ed?placeholderIfAbsent=true"
+        src="/images/horizontal.png"
         class="object-contain shrink-0 my-auto aspect-[32.26] w-[65px]"
       />
       <img
@@ -39,7 +39,7 @@
         alt="Step 2"
       />
       <img
-        src="https://api.builder.io/api/v1/image/assets/TEMP/7f03c8a2d5652999b0cf2dc2c1710e475c7781ed?placeholderIfAbsent=true"
+        src="/images/horizontal.png"
         class="object-contain shrink-0 my-auto aspect-[32.26] w-[65px]"
       />
       <img
@@ -71,7 +71,7 @@
         </div>
       </div>
       <!-- Main Content -->
-      <div class="flex-1 px-6 pb-8 pt-4 border border-[#EBD8B2]">
+      <div class="flex-1 px-6 pb-8 pt-4 ">
         <!-- 載入狀態 -->
         <div v-if="isLoading" class="flex flex-col items-center justify-center h-60">
           <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#EBD8B2] mb-4"></div>
@@ -98,15 +98,15 @@
         <!-- 結果內容 -->
         <div v-else-if="taskResult" class="space-y-6">
           <!-- Header Logo and Crown -->
-          <div class="flex justify-between items-start">
+          <div class="relative">
             <img 
               class="h-5 object-contain" 
-              src="https://api.builder.io/api/v1/image/assets/TEMP/de482b87c9c17cee473acb6454371b535acb8d1b?width=599" 
+              src="/images/header.png" 
               alt="標準字" 
             />
             <img 
-              class="w-12 h-12 object-contain transform -rotate-[10.809deg]" 
-              src="https://api.builder.io/api/v1/image/assets/TEMP/2404d6238dca7a10ae577f3ba74faa4ec02d24e9?width=91" 
+              class="absolute -right-2 -top-[2] w-12 h-12 object-contain transform -rotate-[10.809deg] z-10 " 
+              src="/images/crown.png" 
               alt="皇冠" 
             />
           </div>
@@ -121,8 +121,8 @@
                 :alt="`模板圖片 - ${getTemplateName(props.selectedTemplate)}`" 
               />
               <img 
-                class="absolute -left-2 -bottom-2 w-14 h-14 object-contain" 
-                src="https://api.builder.io/api/v1/image/assets/TEMP/7b08a9934bfc575c52c100d8132b5f128780d934?width=106" 
+                class="absolute -left-2 -bottom-9 w-14 h-14 object-contain" 
+                src="/images/star.png" 
                 alt="星" 
               />
             </div>
@@ -148,7 +148,7 @@
             <div class="flex justify-center">
               <img 
                 class="h-8 object-contain" 
-                src="https://api.builder.io/api/v1/image/assets/TEMP/3f99b54e280534e7c39a8d8bae3acd04680b9c57?width=425" 
+                src="/images/logo.png" 
                 alt="0815" 
               />
             </div>
@@ -376,13 +376,13 @@ onMounted(() => {
 function getTemplateImage(templateId) {
   // 根據模板 ID 返回對應的圖片
   const imageMap = {
-    'play': 'https://api.builder.io/api/v1/image/assets/TEMP/dcd03673f19d2a7475c34d7c9d5287881199e237?placeholderIfAbsent=true',   // 綜藝玩很大
-    'wife': 'https://api.builder.io/api/v1/image/assets/TEMP/192f85df3857b6124af697783a00f8eb5ac3105a?placeholderIfAbsent=true',   // 犀利人妻
-    'love': 'https://api.builder.io/api/v1/image/assets/TEMP/fbf730fb39608cf08e5554286a854a8280832fab?placeholderIfAbsent=true',   // 命中註定我愛你
-    'super': 'https://api.builder.io/api/v1/image/assets/TEMP/20cf8a9eba96e42bb731ce0ef8be47c78b4dd270?placeholderIfAbsent=true'  // 超級夜總會
+    'play': '/images/play.png',   // 綜藝玩很大
+    'wife': '/images/wife.png',   // 犀利人妻
+    'love': '/images/love.png',   // 命中註定我愛你
+    'super': '/images/super.png'  // 超級夜總會
   };
   
-  return imageMap[templateId] || 'https://api.builder.io/api/v1/image/assets/TEMP/dcd03673f19d2a7475c34d7c9d5287881199e237?placeholderIfAbsent=true';
+  return imageMap[templateId] || '/images/play.png';
 }
 
 // 獲取模板名稱
