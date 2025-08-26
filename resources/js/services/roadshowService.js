@@ -2,8 +2,23 @@
  * Roadshow API 服務 
  */
 
-const API_BASE = 'https://stg-line-crm.fanpokka.ai/api';
-const AUTH_TOKEN = '123'; 
+// 從全局配置獲取 API 設定，如果沒有則使用默認值
+const getApiConfig = () => {
+    if (typeof window !== 'undefined' && window.endpoint) {
+        return {
+            baseURL: window.endpoint.baseURL || 'https://stg-line-crm.fanpokka.ai/api',
+            authToken: window.endpoint.authToken || '123',
+            timeout: window.endpoint.timeout || 30000
+        };
+    }
+    
+    // 默認配置
+    return {
+        baseURL: 'https://stg-line-crm.fanpokka.ai/api',
+        authToken: '123',
+        timeout: 30000
+    };
+};
 
 export const roadshowService = {
     /**
@@ -11,14 +26,17 @@ export const roadshowService = {
      */
     async getTemplates() {
         try {
-            console.log('🔍 發送請求到:', `${API_BASE}/roadshow/templates`);
-            console.log('🔐 使用認證token:', AUTH_TOKEN);
+            const config = getApiConfig();
+            const url = `${config.baseURL}/roadshow/templates`;
             
-            const response = await fetch(`${API_BASE}/roadshow/templates`, {
+            console.log('🔍 發送請求到:', url);
+            console.log('🔐 使用認證token:', config.authToken);
+            
+            const response = await fetch(url, {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
-                    'Authorization': `Bearer ${AUTH_TOKEN}`
+                    'Authorization': `Bearer ${config.authToken}`
                 }
             });
             
@@ -53,12 +71,15 @@ export const roadshowService = {
      */
     async getUserHistory(userId) {
         try {
+            const config = getApiConfig();
+            const url = `${config.baseURL}/roadshow/user/${userId}/avatars`;
+            
             console.log('🔍 嘗試獲取用戶歷史:', userId);
-            const response = await fetch(`${API_BASE}/roadshow/user/${userId}/avatars`, {
+            const response = await fetch(url, {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
-                    'Authorization': `Bearer ${AUTH_TOKEN}`
+                    'Authorization': `Bearer ${config.authToken}`
                 }
             });
             
@@ -110,8 +131,11 @@ export const roadshowService = {
      */
     async generateAvatar(formData) {
         try {
-            console.log('🚀 發送生成頭像請求到:', `${API_BASE}/roadshow`);
-            console.log('🔐 使用認證token:', AUTH_TOKEN);
+            const config = getApiConfig();
+            const url = `${config.baseURL}/roadshow`;
+            
+            console.log('🚀 發送生成頭像請求到:', url);
+            console.log('🔐 使用認證token:', config.authToken);
             
             // 檢查 FormData 內容
             console.log('📋 FormData 內容:');
@@ -119,11 +143,11 @@ export const roadshowService = {
                 console.log(`  ${key}:`, value);
             }
             
-            const response = await fetch(`${API_BASE}/roadshow`, {
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
-                    'Authorization': `Bearer ${AUTH_TOKEN}`
+                    'Authorization': `Bearer ${config.authToken}`
                 },
                 body: formData
             });
@@ -179,14 +203,17 @@ export const roadshowService = {
      */
     async checkTaskStatus(taskId) {
         try {
-            console.log('🔍 檢查任務狀態:', `${API_BASE}/roadshow/status/${taskId}`);
-            console.log('🔐 使用認證token:', AUTH_TOKEN);
+            const config = getApiConfig();
+            const url = `${config.baseURL}/roadshow/status/${taskId}`;
             
-            const response = await fetch(`${API_BASE}/roadshow/status/${taskId}`, {
+            console.log('🔍 檢查任務狀態:', url);
+            console.log('🔐 使用認證token:', config.authToken);
+            
+            const response = await fetch(url, {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
-                    'Authorization': `Bearer ${AUTH_TOKEN}`
+                    'Authorization': `Bearer ${config.authToken}`
                 }
             });
             

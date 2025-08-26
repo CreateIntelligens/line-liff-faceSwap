@@ -4,6 +4,28 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>face swap</title>
+  
+  <!-- 全局配置 - 可在打包後直接修改 -->
+  <script>
+    // ===== API 配置 =====
+    // 注意：這些配置可以在打包後的 dist 目錄中直接修改
+    window.endpoint = {
+      // API 基礎 URL - 修改這裡來改變 API 伺服器地址
+      baseURL: 'https://stg-line-crm.fanpokka.ai/api',
+      // 認證 Token
+      authToken: '123',
+      // 請求超時時間（毫秒）
+      timeout: 30000,
+      // 調試模式 - 設為 true 可以在控制台看到詳細日誌
+      debug: false
+    };
+    
+    // 輸出配置到控制台（如果啟用調試模式）
+    if (window.endpoint.debug) {
+      console.log('🔧 當前 API 配置:', window.endpoint);
+    }
+  </script>
+  
   <script type="module" src="/resources/js/app.js"></script>
   <style>
     * {
