@@ -9,11 +9,10 @@ const DEFAULT_CONFIG = {
     version: 'v1',
     timeout: 30000,
     debug: false,
-    // LIFF 配置
+    // LIFF 配置（保留以支援現有代碼）
     liff: {
         liffId: '2006948092-pExnvWML', // 預設 LIFF ID
-        basicId: '@299fvzdf', // 預設 Basic ID
-        enableLiff: true
+        basicId: '@299fvzdf' // 預設 Basic ID
     }
 };
 
@@ -34,7 +33,6 @@ const getConfig = () => {
 
 // 獲取當前配置
 export const API_CONFIG = getConfig();
-
 // HTTP 狀態碼
 export const HTTP_STATUS = {
     OK: 200,
@@ -109,3 +107,4 @@ export const configUtils = {
 
 // 導出默認配置（用於測試或其他用途）
 export { DEFAULT_CONFIG };
+

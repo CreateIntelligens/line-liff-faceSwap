@@ -23,6 +23,31 @@ class LiffService {
   async initializeLiff(options = {}) {
     console.log('=== LIFF 初始化開始 ===')
     
+    // 檢查是否要啟用 LIFF 功能
+    if (!window.endpoint?.enableLiff) {
+      console.log('🔧 LIFF 功能已關閉')
+      
+      // 使用模擬用戶 ID
+      const mockUserId = 'dev_user_' + Date.now()
+      console.log('🎭 使用模擬用戶 ID:', mockUserId)
+      
+      // 設置模擬用戶
+      this.userId = mockUserId
+      this.isInitialized = true
+      
+      if (options.userId) {
+        options.userId.value = mockUserId
+      }
+      
+      return {
+        success: true,
+        isLoggedIn: true,
+        isFriend: true,
+        userId: mockUserId,
+        message: 'LIFF 功能已關閉，使用模擬用戶'
+      }
+    }
+    
     // 優先從 window.endpoint 獲取 LIFF ID 和 Basic ID
     let liffId = window.endpoint?.liffId
     let basicId = window.endpoint?.basicId

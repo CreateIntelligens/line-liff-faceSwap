@@ -21,16 +21,27 @@
       timeout: 30000,
       // 調試模式 - 設為 true 可以在控制台看到詳細日誌
       debug: true,
-      // LIFF 配置
-      liff: {
-        liffId: '2006948092-LP61V8k2', // 請替換為實際的 LIFF ID
-        enableLiff: true
-      }
+      // ===== LIFF 配置 =====
+      // LIFF ID - 修改這裡來改變 LIFF 應用 ID
+      liffId: '2006948092-LP61V8k2',
+      // LINE Basic ID - 修改這裡來改變 LINE 官方帳號 ID
+      basicId: '@299fvzdf',
+      // 是否啟用 LIFF 功能
+      enableLiff: true
     };
     
     // 輸出配置到控制台（如果啟用調試模式）
     if (window.endpoint.debug) {
       console.log('🔧 當前 API 配置:', window.endpoint);
+      
+      // 檢查是否在開發環境
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        console.log('🌐 檢測到本地開發環境');
+        if (!window.endpoint.enableLiff) {
+          console.log('🔧 開發模式：LIFF 功能已關閉');
+          console.log('💡 現在可以測試圖片生成功能而不會觸發 LIFF 錯誤');
+        }
+      }
     }
   </script>
   
