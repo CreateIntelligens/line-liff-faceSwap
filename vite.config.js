@@ -34,7 +34,7 @@ export default defineConfig({
                 assetFileNames: (assetInfo) => {
                     // 判斷是不是圖片檔案
                     if (/\.(png|jpe?g|gif|svg|webp|ico)$/.test(assetInfo.name)) {
-                        // 圖片放到 images/mbti-project/ 目錄，檔名帶雜湊
+                        // 圖片放到 images/faceswap/ 目錄，檔名帶雜湊
                         return 'images/faceswap/[name].[hash][extname]'
                     }
                     // 其他靜態資源（CSS、字體等）放 assets/ 目錄
