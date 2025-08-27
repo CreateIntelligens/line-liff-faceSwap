@@ -215,7 +215,7 @@ function getTemplateName(templateId) {
 }
 
 // 獲取歷史圖片URL，使用新的圖片處理 API
-async function getHistoryImage(item) {
+function getHistoryImage(item) {
   if (!item) {
     console.log('❌ 沒有歷史項目數據')
     return null
@@ -245,21 +245,24 @@ async function getHistoryImage(item) {
   try {
     console.log('🔄 使用新 API 處理歷史圖片:', fullUrl)
     
-    const result = await roadshowService.processGeneratedImage(fullUrl, {
-      scale: 1.5,      // 適中的縮放比例
-      format: 'jpg',   // 使用 JPG 格式
-      quality: 85,     // 適中的品質
-      width: 600,      // 適中的寬度
-      height: 450      // 適中的高度
-    })
+    // 從全局配置獲取圖片處理 API 設置
+    const config = window.endpoint || {};
+    const apiUrl = config.imageProcessApi || 'https://stg-api.fanpokka.ai/api/static-resource';
+    const params = config.imageProcessParams || { scale: 1.5, format: 'jpg', quality: 85, width: 600, height: 450 };
     
-    if (result.success) {
-      console.log('✅ 歷史圖片處理成功:', result.data)
-      return result.data
-    } else {
-      console.warn('⚠️ 歷史圖片處理失敗，使用原始圖片:', fullUrl)
-      return fullUrl
-    }
+    // 構建查詢參數
+    const queryParams = new URLSearchParams();
+    queryParams.append('url', fullUrl);
+    if (params.scale) queryParams.append('scale', params.scale);
+    if (params.format) queryParams.append('format', params.format);
+    if (params.quality) queryParams.append('quality', params.quality);
+    if (params.width) queryParams.append('width', params.width);
+    if (params.height) queryParams.append('height', params.height);
+    
+    const processedImageUrl = `${apiUrl}?${queryParams.toString()}`;
+    console.log('✅ 歷史圖片處理 API URL:', processedImageUrl);
+    
+    return processedImageUrl;
   } catch (error) {
     console.error('❌ 處理歷史圖片時發生錯誤:', error)
     // 如果處理失敗，返回原始圖片
@@ -269,14 +272,40 @@ async function getHistoryImage(item) {
 
 // 處理模板圖片載入錯誤
 function handleTemplateImageError(event) {
-  console.warn('❌ 模板圖片載入失敗:', event.target.src)
-  event.target.src = '/images/default_template.png'
+  const imageUrl = event.target.src;
+  console.warn('❌ 模板圖片載入失敗:', imageUrl)
+  
+  // 避免無限迴圈：檢查是否已經是預設圖片或錯誤圖片
+  if (imageUrl.includes('default_template.png') || imageUrl.includes('data:image/svg+xml')) {
+    console.log('🔄 已經是預設圖片，停止重試');
+    return;
+  }
+  
+  // 設置一個簡單的 SVG 預設圖片，避免網路請求
+  const defaultSvg = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjMzMzMzMzIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7nq6DoioLlm77niYc8L3RleHQ+Cjwvc3ZnPgo=';
+  event.target.src = defaultSvg;
+  
+  // 記錄錯誤，但不重試
+  console.log('🔄 設置預設 SVG 圖片，避免無限迴圈');
 }
 
 // 處理結果圖片載入錯誤
 function handleResultImageError(event) {
-  console.warn('❌ 結果圖片載入失敗:', event.target.src)
-  event.target.src = '/images/default_history.png'
+  const imageUrl = event.target.src;
+  console.warn('❌ 結果圖片載入失敗:', imageUrl)
+  
+  // 避免無限迴圈：檢查是否已經是預設圖片或錯誤圖片
+  if (imageUrl.includes('default_history.png') || imageUrl.includes('data:image/svg+xml')) {
+    console.log('🔄 已經是預設圖片，停止重試');
+    return;
+  }
+  
+  // 設置一個簡單的 SVG 預設圖片，避免網路請求
+  const defaultSvg = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjMzMzMzMzIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7lm77niYfliqDovb3lpLHotKU8L3RleHQ+Cjwvc3ZnPgo=';
+  event.target.src = defaultSvg;
+  
+  // 記錄錯誤，但不重試
+  console.log('🔄 設置預設 SVG 圖片，避免無限迴圈');
 }
 
 // 格式化日期
