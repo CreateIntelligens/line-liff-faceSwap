@@ -29,25 +29,25 @@
       class="flex mt-8 max-w-full text-base font-bold text-center text-[#EBD8B2] whitespace-nowrap w-[202px] mx-auto"
     >
       <img
-        src="/images/step1.png"
+        :src="imageUrls.step1"
         class="w-6 h-6 object-contain"
         alt="Step 1"
       />
       <img
-        src="/images/horizontal.png"
+        :src="imageUrls.horizontal"
         class="object-contain shrink-0 my-auto aspect-[32.26] w-[65px]"
       />
       <img
-        src="/images/step2_inactive.png"
+        :src="imageUrls.step2_inactive"
         class="w-6 h-6 object-contain"
         alt="Step 2"
       />
       <img
-        src="/images/horizontal.png"
+        :src="imageUrls.horizontal"
         class="object-contain shrink-0 my-auto aspect-[32.26] w-[65px]"
       />
       <img
-        src="/images/step3_inactive.png"
+        :src="imageUrls.step3_inactive"
         class="w-6 h-6 object-contain"
         alt="Step 3"
       />
@@ -66,9 +66,11 @@
           <div
             class="flex gap-2.5 items-center justify-center font-bold text-center whitespace-nowrap"
           >
-            <div class="self-stretch my-auto text-lg text-[#333333] w-6 h-6">
+            <div
+              class="self-stretch my-auto text-lg text-[#333333] w-6 h-6"
+            >
               <img
-                src="/images/step1.png"
+                :src="imageUrls.step1"
                 class="w-6 h-6 object-contain"
                 alt="Step 1"
               />
@@ -176,6 +178,7 @@ import { ref, onMounted } from "vue";
 import { roadshowService } from "../../services/roadshowService.js";
 import FaceSwapHistory from "./FaceSwapHistory.vue";
 import UsageCounter from "./UsageCounter.vue";
+import { imageUrls } from "@/config/imageUrls";
 
 const props = defineProps({
   userUsage: {
@@ -227,13 +230,13 @@ function showHistory() {
 
 function getTemplateImage(templateKey) {
   const imageMap = {
-    'play': '/images/play.png',   // 綜藝玩很大
-    'wife': '/images/wife.png',   // 犀利人妻
-    'love': '/images/love.png',   // 命中註定我愛你
-    'super': '/images/super.png'  // 超級夜總會
+    'play': imageUrls.play,   // 綜藝玩很大
+    'wife': imageUrls.wife,   // 犀利人妻
+    'love': imageUrls.love,   // 命中註定我愛你
+    'super': imageUrls.super  // 超級夜總會
   };
   
-  return imageMap[templateKey] || '/images/play.png';
+  return imageMap[templateKey] || imageUrls.play;
 }
 </script>
 

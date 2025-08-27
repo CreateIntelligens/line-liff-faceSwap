@@ -8,7 +8,7 @@
         @click="goBack"
       >
         <img 
-          src="/images/back.png"
+          :src="imageUrls.back"
           alt="Back Arrow"
           class="w-[17px] h-[19px] object-contain"
         />
@@ -95,8 +95,9 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { roadshowService } from '../../services/roadshowService.js'
-import UsageCounter from './UsageCounter.vue'
 import HistoryDetailModal from './HistoryDetailModal.vue'
+import UsageCounter from './UsageCounter.vue'
+import { imageUrls } from '@/config/imageUrls'
 
 const props = defineProps({
   userId: {

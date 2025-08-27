@@ -14,7 +14,7 @@
       <!-- Hero Image -->
       <div class="mb-8">
         <img
-          src="/images/Group13948.png"
+          :src="imageUrls.Group13948"
           alt="Hero Image"
           class="w-[297px] h-[397px] object-contain max-sm:w-[250px] max-sm:h-[335px]"
         />
@@ -57,6 +57,8 @@
 </template>
 
 <script setup>
+import { imageUrls } from '@/config/imageUrls'
+
 const emit = defineEmits(['enter-face-swap'])
 
 function enterFaceSwap() {

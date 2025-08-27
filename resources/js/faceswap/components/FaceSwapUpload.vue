@@ -14,25 +14,25 @@
       class="flex mt-8 max-w-full text-base font-bold text-center text-[#EBD8B2] whitespace-nowrap w-[202px] mx-auto"
     >
       <img
-        src="/images/finish.png"
+        :src="imageUrls.finish"
         class="w-6 h-6 object-contain"
         alt="Step 1"
       />
       <img
-        src="/images/horizontal.png"
+        :src="imageUrls.horizontal"
         class="object-contain shrink-0 my-auto aspect-[32.26] w-[65px]"
       />
       <img
-        src="/images/step2_inprogress.png"
+        :src="imageUrls.step2_inprogress"
         class="w-6 h-6 object-contain"
         alt="Step 2"
       />
       <img
-        src="/images/horizontal.png"
+        :src="imageUrls.horizontal"
         class="object-contain shrink-0 my-auto aspect-[32.26] w-[65px]"
       />
       <img
-        src="/images/step3_inactive.png"
+        :src="imageUrls.step3_inactive"
         class="w-6 h-6 object-contain"
         alt="Step 3"
       />
@@ -92,7 +92,7 @@
         <div v-if="props.selectedTemplate">
           <div class="flex items-center gap-3 mb-6">
             <img
-              src="/images/step2_inprogress.png"
+              :src="imageUrls.step2_inprogress"
               class="w-[26px] h-[26px] object-contain"
               alt="Step 2 In Progress"
             />
@@ -113,7 +113,7 @@
                 <!-- Upload Icon -->
                 <div class="w-[50px] h-[35px] relative">
                   <img
-                    src="/images/upload.png"
+                    :src="imageUrls.upload"
                     alt="Upload Icon"
                     class="w-[50px] h-[35px] object-contain"
                   />
@@ -226,6 +226,7 @@ import { ref, computed } from "vue";
 import { onUnmounted } from "vue";
 import { roadshowService } from "../../services/roadshowService.js";
 import UsageCounter from "./UsageCounter.vue";
+import { imageUrls } from '@/config/imageUrls'
 
 const props = defineProps({
   selectedTemplate: {
@@ -305,16 +306,15 @@ function getTemplateCharacters() {
   return [];
 }
 
-function getTemplateImage(templateId) {
-  // 根據模板 ID 返回對應的圖片
+function getTemplateImage(templateKey) {
   const imageMap = {
-    'play': '/images/play.png',   // 綜藝玩很大
-    'wife': '/images/wife.png',   // 犀利人妻
-    'love': '/images/love.png',   // 命中註定我愛你
-    'super': '/images/super.png'  // 超級夜總會
+    'play': imageUrls.play,   // 綜藝玩很大
+    'wife': imageUrls.wife,   // 犀利人妻
+    'love': imageUrls.love,   // 命中註定我愛你
+    'super': imageUrls.super  // 超級夜總會
   };
   
-  return imageMap[templateId] || '/images/play.png';
+  return imageMap[templateKey] || imageUrls.play;
 }
 
 function getTemplateName(templateId) {

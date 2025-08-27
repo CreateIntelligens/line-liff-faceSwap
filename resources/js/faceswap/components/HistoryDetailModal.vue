@@ -42,13 +42,13 @@
           <!-- Header Logo and Crown -->
           <div class="relative">
             <img 
+              :src="imageUrls.header" 
               class="h-5 object-contain" 
-              src="/images/header.png" 
               alt="標準字" 
             />
             <img 
+              :src="imageUrls.crown" 
               class="absolute -right-2 -top-[2] w-12 h-12 object-contain transform -rotate-[10.809deg] z-10" 
-              src="/images/crown.png" 
               alt="皇冠" 
             />
           </div>
@@ -58,15 +58,15 @@
             <!-- Original Template Image with Star -->
             <div class="relative">
               <img 
-                class="w-full h-48 object-cover rounded-md" 
-                :src="getTemplateImage(historyDetail.template_id)" 
-                :alt="`模板圖片 - ${getTemplateName(historyDetail.template_id)}`" 
-                @error="handleTemplateImageError"
+                :src="imageUrls.star" 
+                class="absolute -left-2 -bottom-9 w-12 h-12 object-contain" 
+                alt="星" 
               />
               <img 
-                class="absolute -left-2 -bottom-9 w-12 h-12 object-contain" 
-                src="/images/star.png" 
-                alt="星" 
+                :src="getTemplateImage(historyDetail.template_id)" 
+                :alt="`模板圖片 - ${getTemplateName(historyDetail.template_id)}`" 
+                class="w-full h-48 object-cover rounded-md" 
+                @error="handleTemplateImageError"
               />
             </div>
 
@@ -89,8 +89,8 @@
             <!-- Bottom Logo -->
             <div class="flex justify-center">
               <img 
+                :src="imageUrls.logo" 
                 class="h-6 object-contain" 
-                src="/images/logo.png" 
                 alt="0815" 
               />
             </div>
@@ -116,6 +116,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { roadshowService } from '../../services/roadshowService.js'
+import { imageUrls } from '@/config/imageUrls'
 
 const props = defineProps({
   isVisible: {
@@ -179,18 +180,18 @@ function getTemplateImage(templateId) {
   // 支持字符串和數字形式的 template_id
   const imageMap = {
     // 字符串形式
-    'play': '/images/play.png',
-    'wife': '/images/wife.png',
-    'love': '/images/love.png',
-    'super': '/images/super.png',
+    'play': imageUrls.play,
+    'wife': imageUrls.wife,
+    'love': imageUrls.love,
+    'super': imageUrls.super,
     // 數字形式 (根據 FaceSwapUpload.vue 中的映射)
-    '1': '/images/play.png', // 綜藝玩很大
-    '2': '/images/wife.png', // 犀利人妻
-    '3': '/images/love.png', // 命中註定我愛你
-    '4': '/images/super.png'  // 超級夜總會
+    '1': imageUrls.play, // 綜藝玩很大
+    '2': imageUrls.wife, // 犀利人妻
+    '3': imageUrls.love, // 命中註定我愛你
+    '4': imageUrls.super  // 超級夜總會
   }
   
-  const imageUrl = imageMap[templateId] || imageMap['play']
+  const imageUrl = imageMap[templateId] || imageUrls.play
   console.log('🎨 模板圖片URL:', imageUrl)
   return imageUrl
 }

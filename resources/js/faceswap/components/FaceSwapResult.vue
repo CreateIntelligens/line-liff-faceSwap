@@ -25,25 +25,25 @@
       class="flex mt-8 max-w-full text-base font-bold text-center text-[#EBD8B2] whitespace-nowrap w-[202px] mx-auto"
     >
       <img
-        src="/images/finish.png"
+        :src="imageUrls.finish"
         class="w-6 h-6 object-contain"
         alt="Step 1"
       />
       <img
-        src="/images/horizontal.png"
+        :src="imageUrls.horizontal"
         class="object-contain shrink-0 my-auto aspect-[32.26] w-[65px]"
       />
       <img
-        src="/images/step2_inprogress.png"
+        :src="imageUrls.step2_inprogress"
         class="w-6 h-6 object-contain"
         alt="Step 2"
       />
       <img
-        src="/images/horizontal.png"
+        :src="imageUrls.horizontal"
         class="object-contain shrink-0 my-auto aspect-[32.26] w-[65px]"
       />
       <img
-        src="/images/step3_inactive.png"
+        :src="imageUrls.step3_inactive"
         class="w-6 h-6 object-contain"
         alt="Step 3"
       />
@@ -61,7 +61,7 @@
     <div class="flex justify-start items-center px-6 mb-4">
         <div class="flex items-center gap-3">
           <img 
-            src="/images/step3_inprogress.png" 
+            :src="imageUrls.step3_inprogress" 
             class="w-6 h-6 object-contain" 
             alt="Step 3"
           />
@@ -100,13 +100,13 @@
           <!-- Header Logo and Crown -->
           <div class="relative">
             <img 
+              :src="imageUrls.header" 
               class="h-5 object-contain" 
-              src="/images/header.png" 
               alt="標準字" 
             />
             <img 
+              :src="imageUrls.crown" 
               class="absolute -right-2 -top-[2] w-12 h-12 object-contain transform -rotate-[10.809deg] z-10 " 
-              src="/images/crown.png" 
               alt="皇冠" 
             />
           </div>
@@ -116,13 +116,13 @@
             <!-- Original Image with Star -->
             <div class="relative">
               <img 
-                class="w-full h-60 object-cover rounded-md" 
                 :src="getTemplateImage(props.selectedTemplate)" 
                 :alt="`模板圖片 - ${getTemplateName(props.selectedTemplate)}`" 
+                class="w-full h-48 object-cover rounded-md"
               />
               <img 
-                class="absolute -left-2 -bottom-9 w-14 h-14 object-contain" 
-                src="/images/star.png" 
+                :src="imageUrls.star" 
+                class="absolute -left-2 -bottom-9 w-12 h-12 object-contain" 
                 alt="星" 
               />
             </div>
@@ -152,8 +152,8 @@
             <!-- Bottom Logo -->
             <div class="flex justify-center">
               <img 
-                class="h-8 object-contain" 
-                src="/images/logo.png" 
+                :src="imageUrls.logo" 
+                class="h-6 object-contain" 
                 alt="0815" 
               />
             </div>
@@ -208,6 +208,7 @@ import { ref, onMounted, watch } from 'vue'
 import FaceSwapHistory from './FaceSwapHistory.vue'
 import UsageCounter from './UsageCounter.vue'
 import { roadshowService } from '../../services/roadshowService.js'
+import { imageUrls } from '@/config/imageUrls'
 
 // Define props
 const props = defineProps({
@@ -409,13 +410,13 @@ onMounted(() => {
 function getTemplateImage(templateId) {
   // 根據模板 ID 返回對應的圖片
   const imageMap = {
-    'play': '/images/play.png',   // 綜藝玩很大
-    'wife': '/images/wife.png',   // 犀利人妻
-    'love': '/images/love.png',   // 命中註定我愛你
-    'super': '/images/super.png'  // 超級夜總會
+    'play': imageUrls.play,   // 綜藝玩很大
+    'wife': imageUrls.wife,   // 犀利人妻
+    'love': imageUrls.love,   // 命中註定我愛你
+    'super': imageUrls.super  // 超級夜總會
   };
   
-  return imageMap[templateId] || '/images/play.png';
+  return imageMap[templateId] || imageUrls.play;
 }
 
 // 獲取模板名稱
