@@ -10,11 +10,12 @@
 
 ```javascript
 window.endpoint = {
-  // ... 其他配置
-  liff: {
-    liffId: 'YOUR_LIFF_ID', // 👈 替換為您的實際 LIFF ID
-    enableLiff: true
-  }
+  // API 配置
+  baseURL: 'https://your-api-server.com/api',
+  // LIFF 配置
+  liffId: 'YOUR_LIFF_ID', // 👈 替換為您的實際 LIFF ID
+  basicId: 'YOUR_BASIC_ID', // 👈 替換為您的實際 Basic ID
+  enableLiff: true
 };
 ```
 
@@ -65,8 +66,14 @@ window.endpoint = {
 
 ```javascript
 window.endpoint = {
+  // API 配置
+  baseURL: 'https://your-api-server.com/api',
+  // LIFF 配置
+  liffId: 'your-liff-id',
+  basicId: 'your-basic-id',
+  // 調試模式
   debug: true, // 👈 啟用調試模式
-  // ... 其他配置
+  timeout: 30000
 };
 ```
 

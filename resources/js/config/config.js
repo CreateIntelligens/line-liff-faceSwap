@@ -11,7 +11,8 @@ const DEFAULT_CONFIG = {
     debug: false,
     // LIFF 配置
     liff: {
-        liffId: 'YOUR_LIFF_ID', // 請替換為實際的 LIFF ID
+        liffId: '2006948092-pExnvWML', // 預設 LIFF ID
+        basicId: '@299fvzdf', // 預設 Basic ID
         enableLiff: true
     }
 };

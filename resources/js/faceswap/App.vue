@@ -65,18 +65,16 @@ async function initializeLiff() {
   try {
     console.log('🔧 開始初始化 LIFF...')
     
-    // 使用 LIFF 服務進行初始化
-    const success = await liffService.initialize()
+    // 使用完整的 LIFF 初始化流程
+    const result = await liffService.initializeLiff()
     
-    if (success) {
-      // 嘗試獲取用戶資料
-      const profile = await liffService.getUserProfile()
-      
-      if (profile) {
-        userId.value = profile.userId
+    if (result.success) {
+      if (result.isLoggedIn && result.userId) {
+        // 用戶已登入，設置用戶 ID
+        userId.value = result.userId
         console.log('✅ LIFF 用戶 ID 已設置:', userId.value)
-        console.log('👤 用戶資料:', profile)
-      } else {
+        console.log('👥 好友狀態:', result.isFriend ? '是好友' : '非好友')
+      } else if (!result.isLoggedIn) {
         // 用戶未登入，使用訪客 ID
         console.log('⚠️ 用戶未登入 LIFF，使用訪客模式')
         userId.value = 'guest_' + Date.now()
