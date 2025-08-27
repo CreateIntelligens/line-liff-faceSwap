@@ -74,7 +74,6 @@ export const roadshowService = {
             const config = getApiConfig();
             const url = `${config.baseURL}/roadshow/user/${userId}/avatars`;
             
-            console.log('🔍 嘗試獲取用戶歷史:', userId);
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -84,15 +83,13 @@ export const roadshowService = {
             });
             
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
             const data = await response.json();
-            console.log('✅ API調用成功，返回數據:', data);
             return data;
         } catch (error) {
             console.error('❌ 獲取用戶歷史失敗:', error);
-            console.log('🔄 返回測試數據作為備用');
             
             // 返回測試數據
             return {

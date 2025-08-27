@@ -11,6 +11,7 @@
     <FaceSwapTemplateSelection
       v-if="currentStep === 'template-selection'"
       :userUsage="userUsage"
+      :userId="userId"
       @next-step="handleTemplateSelection"
       @back="goBack"
     />
@@ -20,6 +21,7 @@
       v-if="currentStep === 'upload'"
       :selectedTemplate="selectedTemplate"
       :userUsage="userUsage"
+      :userId="userId"
       @back="goBack"
       @generate="handleGenerate"
       @showHistory="handleShowHistory"
@@ -46,14 +48,55 @@ import FaceSwapTemplateSelection from './components/FaceSwapTemplateSelection.vu
 import FaceSwapUpload from './components/FaceSwapUpload.vue'
 import FaceSwapResult from './components/FaceSwapResult.vue'
 import { roadshowService } from '../services/roadshowService.js'
+import { liffService } from '../services/liffService.js'
+import { API_CONFIG } from '../config/config.js'
 
 // 狀態
 const taskId = ref('')
-const userId = ref('abc') // 用戶 ID - 設置為測試值
+const userId = ref('') // 改為空字串，等待 LIFF 初始化
 const currentStep = ref('faceswap-home') // 初始狀態設定為換臉首頁
 const selectedTemplate = ref('')
 const isInitialized = ref(false)
 const userUsage = ref(0) // 用戶已生成的圖片數量
+const isLiffInitialized = ref(false)
+
+// LIFF 初始化函數
+async function initializeLiff() {
+  try {
+    console.log('🔧 開始初始化 LIFF...')
+    
+    // 使用 LIFF 服務進行初始化
+    const success = await liffService.initialize()
+    
+    if (success) {
+      // 嘗試獲取用戶資料
+      const profile = await liffService.getUserProfile()
+      
+      if (profile) {
+        userId.value = profile.userId
+        console.log('✅ LIFF 用戶 ID 已設置:', userId.value)
+        console.log('👤 用戶資料:', profile)
+      } else {
+        // 用戶未登入，使用訪客 ID
+        console.log('⚠️ 用戶未登入 LIFF，使用訪客模式')
+        userId.value = 'guest_' + Date.now()
+      }
+    } else {
+      // LIFF 初始化失敗，使用測試模式
+      console.log('⚠️ LIFF 初始化失敗，使用測試模式')
+      userId.value = 'abc'
+    }
+    
+    isLiffInitialized.value = true
+    console.log('🔧 LIFF 初始化完成，userId:', userId.value)
+  } catch (error) {
+    console.error('❌ LIFF 初始化過程發生錯誤:', error)
+    // 錯誤時使用測試值
+    userId.value = 'abc'
+    isLiffInitialized.value = true
+    console.log('🔧 使用後備 userId:', userId.value)
+  }
+}
 
 // 主要初始化函數
 async function initializeApp() {
@@ -126,8 +169,6 @@ async function refreshUserUsage() {
     
     // 更新用戶使用量
     userUsage.value = avatars.length
-    console.log('📊 用戶使用量已刷新:', userUsage.value)
-    
     return avatars.length
   } catch (error) {
     console.error('❌ 刷新用戶使用量失敗:', error)
@@ -137,7 +178,8 @@ async function refreshUserUsage() {
 
 // 在掛載前執行初始化
 onBeforeMount(async () => {
-  await initializeApp()
+  await initializeLiff() // 先初始化 LIFF
+  await initializeApp() // 再初始化應用程序
 })
 
 // 組件掛載後的額外處理
@@ -168,9 +210,6 @@ function handleTemplateSelection(data) {
 
 // 處理生成請求
 function handleGenerate(data) {
-  console.log('開始生成換臉:', data)
-  console.log('📊 更新前的用戶使用量:', userUsage.value)
-  
   // 保存任務ID和模板信息
   taskId.value = data.taskId
   // 保存選擇的模板ID（從data中獲取）
@@ -180,12 +219,6 @@ function handleGenerate(data) {
   
   // 更新用戶使用量（生成新圖片後數量+1）
   userUsage.value += 1
-  console.log('📊 生成新圖片後，更新用戶使用量:', userUsage.value)
-  
-  // 強制觸發響應式更新
-  nextTick(() => {
-    console.log('📊 nextTick後的用戶使用量:', userUsage.value)
-  })
   
   // 生成完成後，也從服務器刷新一次以確保數據準確
   setTimeout(async () => {
@@ -198,28 +231,23 @@ function handleGenerate(data) {
 
 // 處理重新生成
 function handleRegenerate() {
-  console.log('重新生成換臉')
   // 返回到模板選擇步驟重新開始
   currentStep.value = 'template-selection'
 }
 
 // 處理下載到官方帳號
 function handleDownload() {
-  console.log('下載至官方帳號')
   // 在這裡可以調用下載 API
 }
 
 // 處理顯示歷史頁面
-function handleShowHistory() {
-  console.log('顯示歷史頁面')
-  console.log('🔍 App.vue - 當前userId:', userId.value)
-  console.log('🔍 App.vue - 當前currentStep:', currentStep.value)
-  console.log('🔍 App.vue - 當前taskId:', taskId.value)
-  
+async function handleShowHistory() {
   // 確保userId有值
   if (!userId.value) {
-    userId.value = 'abc'
-    console.log('🔧 App.vue - 重新設置userId為:', userId.value)
+    await initializeLiff()
+    if (!userId.value) {
+      userId.value = 'abc'
+    }
   }
   
   // 跳轉到結果頁面，然後顯示歷史
@@ -227,8 +255,6 @@ function handleShowHistory() {
   // 設置一個標記，讓結果頁面知道要顯示歷史
   // 我們可以通過修改selectedTemplate來傳遞這個信息
   selectedTemplate.value = 'show_history'
-  console.log('🔍 App.vue - 設置後currentStep:', currentStep.value)
-  console.log('🔍 App.vue - 設置後selectedTemplate:', selectedTemplate.value)
 }
 
 // 返回上一步

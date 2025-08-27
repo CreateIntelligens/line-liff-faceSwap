@@ -2,7 +2,7 @@
       <!-- History Page -->
     <FaceSwapHistory 
       v-if="showHistoryPage" 
-      :userId="'abc'"
+      :userId="props.userId"
       :userUsage="userUsage"
       @back="showHistoryPage = false"
     />
@@ -181,6 +181,10 @@ const props = defineProps({
   userUsage: {
     type: Number,
     default: 0
+  },
+  userId: {
+    type: String,
+    default: ''
   }
 });
 

@@ -8,7 +8,12 @@ const DEFAULT_CONFIG = {
     baseURL: 'http://localhost:8000',
     version: 'v1',
     timeout: 30000,
-    debug: false
+    debug: false,
+    // LIFF 配置
+    liff: {
+        liffId: 'YOUR_LIFF_ID', // 請替換為實際的 LIFF ID
+        enableLiff: true
+    }
 };
 
 // 從 window.endpoint 讀取配置，如果沒有則使用默認值

@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>face swap</title>
   
+  <!-- LIFF SDK -->
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  
   <!-- 全局配置 - 可在打包後直接修改 -->
   <script>
     // ===== API 配置 =====
@@ -17,7 +20,12 @@
       // 請求超時時間（毫秒）
       timeout: 30000,
       // 調試模式 - 設為 true 可以在控制台看到詳細日誌
-      debug: false
+      debug: true,
+      // LIFF 配置
+      liff: {
+        liffId: '2006948092-LP61V8k2', // 請替換為實際的 LIFF ID
+        enableLiff: true
+      }
     };
     
     // 輸出配置到控制台（如果啟用調試模式）

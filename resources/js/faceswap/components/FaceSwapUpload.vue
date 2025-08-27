@@ -235,6 +235,10 @@ const props = defineProps({
   userUsage: {
     type: Number,
     default: 0
+  },
+  userId: {
+    type: String,
+    default: ''
   }
 });
 
@@ -369,17 +373,12 @@ async function generateFaceSwap() {
     showFirstDialog.value = true;
     
     try {
-      console.log('🚀 開始生成頭像...')
-      console.log('📋 選擇的模板:', props.selectedTemplate)
-      console.log('👤 選擇的角色:', selectedCharacter.value)
-      
       // 使用新的 getFaceIndex 函數獲取正確的 face_index
       const targetFaceIndex = getFaceIndex(props.selectedTemplate, selectedCharacter.value)
-      console.log('🎯 target_face_index:', targetFaceIndex)
       
       // 準備FormData - 純粹的API調用，不改變UI
       const formData = new FormData();
-      formData.append('userId', 'abc'); // 使用你設定的用戶ID
+              formData.append('userId', props.userId || 'abc'); // 使用傳入的用戶ID或後備值
       formData.append('file', uploadedImage.value);
       
       // 將字符串模板ID轉換為對應的數字ID (1,2,3,4)
@@ -395,18 +394,10 @@ async function generateFaceSwap() {
       formData.append('target_face_index', targetFaceIndex); // 使用新的 getFaceIndex 函數獲取正確的 face_index
       formData.append('userInfo', `選擇的角色: ${selectedCharacter.value}`);
       
-      console.log('📤 發送API請求，FormData內容:')
-      for (let [key, value] of formData.entries()) {
-        console.log(`  ${key}:`, value)
-      }
-      
       // 調用API生成頭像
       const result = await roadshowService.generateAvatar(formData);
       
-      console.log('📡 API 響應結果:', result)
-      
       if (result && (result.success || result.status === 'success')) {
-        console.log('✅ 頭像生成任務已創建')
         // 延遲一下再發送事件，讓用戶看到彈窗
         setTimeout(() => {
           showFirstDialog.value = false;
@@ -446,19 +437,17 @@ async function generateFaceSwap() {
       showFirstDialog.value = false;
       showSecondDialog.value = false;
       
-      // 檢查是否是達到生成限制的錯誤
-      if (error.message.includes('生成限制')) {
-        // 顯示達到限制的錯誤訊息，並提供查看歷史的選項
-        if (confirm(`${error.message}\n\n是否要查看您的生成歷史？`)) {
-          // 這裡可以導航到歷史頁面或顯示歷史
-          console.log('用戶選擇查看歷史');
-          // 可以發送一個事件來顯示歷史
-          emit('showHistory');
+              // 檢查是否是達到生成限制的錯誤
+        if (error.message.includes('生成限制')) {
+          // 顯示達到限制的錯誤訊息，並提供查看歷史的選項
+          if (confirm(`${error.message}\n\n是否要查看您的生成歷史？`)) {
+            // 可以發送一個事件來顯示歷史
+            emit('showHistory');
+          }
+        } else {
+          // 其他錯誤使用alert
+          alert(`生成失敗：${error.message}`);
         }
-      } else {
-        // 其他錯誤使用alert
-        alert(`生成失敗：${error.message}`);
-      }
     }
   }
 }

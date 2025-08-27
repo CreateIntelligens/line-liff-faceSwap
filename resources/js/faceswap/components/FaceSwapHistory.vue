@@ -150,7 +150,6 @@ async function loadUserHistory() {
         template_id: avatar.metadata?.template_id || avatar.template_id,
         status: avatar.status
       }));
-      console.log('✅ 歷史數據載入成功，共', avatars.length, '張圖片');
     } else {
       historyData.value = [];
     }

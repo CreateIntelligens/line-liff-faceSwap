@@ -243,7 +243,6 @@ const loadingSubMessage = ref('請稍候')
 // 監聽taskId變化
 watch(() => props.taskId, (newTaskId) => {
   if (newTaskId) {
-    console.log('🔄 檢測到新的taskId:', newTaskId)
     checkTaskStatus()
   }
 }, { immediate: true })
@@ -251,18 +250,14 @@ watch(() => props.taskId, (newTaskId) => {
 // 監聽selectedTemplate變化，處理顯示歷史的請求
 watch(() => props.selectedTemplate, (newTemplate) => {
   if (newTemplate === 'show_history') {
-    console.log('🔄 檢測到顯示歷史請求')
-    console.log('🔍 FaceSwapResult - 當前props.userId:', props.userId)
-    console.log('🔍 FaceSwapResult - userId類型:', typeof props.userId)
+    // 設置顯示歷史
     showHistory.value = true
   }
 }, { immediate: true })
 
-// 監聽 userUsage 變化，用於調試
+// 監聽 userUsage 變化
 watch(() => props.userUsage, (newUsage, oldUsage) => {
-  if (oldUsage !== newUsage) {
-    console.log('📊 FaceSwapResult 使用量變化:', `${oldUsage || 0} → ${newUsage}`)
-  }
+  // 用戶使用量變化時的處理邏輯
 }, { immediate: true })
 
 // 檢查任務狀態
@@ -278,14 +273,12 @@ async function checkTaskStatus() {
     loadingMessage.value = '檢查任務狀態...'
     loadingSubMessage.value = '請稍候'
     
-    console.log(`🔍 檢查任務狀態: ${props.taskId}`)
     const result = await roadshowService.checkTaskStatus(props.taskId)
     
     if (result && (result.success || result.status === 'completed' || result.status === 'pending' || result.status === 'processing')) {
       // 根據 API 返回的數據結構處理
       const taskData = result.data || result.result || result;
       taskResult.value = taskData;
-      console.log('✅ 任務狀態獲取成功:', taskData);
       
       // 根據狀態處理
       handleTaskStatus(taskData);
