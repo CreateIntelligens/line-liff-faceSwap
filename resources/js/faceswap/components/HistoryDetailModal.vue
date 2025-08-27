@@ -214,8 +214,8 @@ function getTemplateName(templateId) {
   return nameMap[templateId] || '預設模板'
 }
 
-// 獲取歷史圖片URL
-function getHistoryImage(item) {
+// 獲取歷史圖片URL，使用新的圖片處理 API
+async function getHistoryImage(item) {
   if (!item) {
     console.log('❌ 沒有歷史項目數據')
     return null
@@ -233,14 +233,38 @@ function getHistoryImage(item) {
   
   console.log('🖼️ 找到圖片URL:', imageUrl)
   
+  let fullUrl = imageUrl;
+  
   // 如果圖片URL是相對路徑，添加API基礎URL
   if (imageUrl.startsWith('/')) {
-    const fullUrl = `https://stg-line-crm.fanpokka.ai${imageUrl}`
+    fullUrl = `https://stg-line-crm.fanpokka.ai${imageUrl}`
     console.log('🖼️ 完整圖片URL:', fullUrl)
-    return fullUrl
   }
   
-  return imageUrl
+  // 使用新的圖片處理 API 來優化歷史圖片
+  try {
+    console.log('🔄 使用新 API 處理歷史圖片:', fullUrl)
+    
+    const result = await roadshowService.processGeneratedImage(fullUrl, {
+      scale: 1.5,      // 適中的縮放比例
+      format: 'jpg',   // 使用 JPG 格式
+      quality: 85,     // 適中的品質
+      width: 600,      // 適中的寬度
+      height: 450      // 適中的高度
+    })
+    
+    if (result.success) {
+      console.log('✅ 歷史圖片處理成功:', result.data)
+      return result.data
+    } else {
+      console.warn('⚠️ 歷史圖片處理失敗，使用原始圖片:', fullUrl)
+      return fullUrl
+    }
+  } catch (error) {
+    console.error('❌ 處理歷史圖片時發生錯誤:', error)
+    // 如果處理失敗，返回原始圖片
+    return fullUrl
+  }
 }
 
 // 處理模板圖片載入錯誤

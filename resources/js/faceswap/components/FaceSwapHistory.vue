@@ -66,11 +66,15 @@
         >
           <div class="flex w-full flex-col items-start gap-3">
             <img 
+              v-if="getHistoryImage(item)"
               :src="getHistoryImage(item)" 
               :alt="`生成圖片 ${index + 1}`" 
               class="h-24 w-full object-cover rounded"
               @error="handleImageError"
             />
+            <div v-else class="h-24 w-full bg-[#444444] rounded flex items-center justify-center">
+              <span class="text-[#999999] text-xs">無圖片</span>
+            </div>
             <div class="text-white font-normal text-xs">
               {{ formatDate(item.created_at || item.date || item.timestamp) }}
             </div>
@@ -165,18 +169,43 @@ async function loadUserHistory() {
 
 
 
-// 獲取歷史圖片URL
+// 獲取歷史圖片URL，使用新的圖片處理 API
 function getHistoryImage(item) {
   if (!item || !item.image) {
-    return '/images/default_history.png'; // 預設圖片
+    return null; // 沒有圖片時返回 null
   }
+  
+  let imageUrl = item.image;
   
   // 如果圖片URL是相對路徑，添加API基礎URL
-  if (item.image.startsWith('/')) {
-    return `https://stg-line-crm.fanpokka.ai${item.image}`;
+  if (imageUrl.startsWith('/')) {
+    imageUrl = `https://stg-line-crm.fanpokka.ai${imageUrl}`;
   }
   
-  return item.image;
+  // 使用新的圖片處理 API 來處理歷史圖片
+  try {
+    const config = window.endpoint || {};
+    const apiUrl = config.imageProcessApi || 'https://stg-api.fanpokka.ai/api/static-resource';
+    const params = config.imageProcessParams || { scale: 1.5, format: 'jpg', quality: 85, width: 600, height: 450 };
+    
+    // 構建查詢參數
+    const queryParams = new URLSearchParams();
+    queryParams.append('url', imageUrl);
+    if (params.scale) queryParams.append('scale', params.scale);
+    if (params.format) queryParams.append('format', params.format);
+    if (params.quality) queryParams.append('quality', params.quality);
+    if (params.width) queryParams.append('width', params.width);
+    if (params.height) queryParams.append('height', params.height);
+    
+    const processedImageUrl = `${apiUrl}?${queryParams.toString()}`;
+    console.log('🔄 歷史圖片使用處理 API:', processedImageUrl);
+    
+    return processedImageUrl;
+  } catch (error) {
+    console.error('❌ 處理歷史圖片時發生錯誤:', error);
+    // 如果處理失敗，返回原始圖片
+    return imageUrl;
+  }
 }
 
 // 格式化日期
@@ -207,9 +236,21 @@ function formatDate(dateString) {
 
 // 處理圖片載入錯誤
 function handleImageError(event) {
-  console.warn('圖片載入失敗:', event.target.src);
-  // 設置預設圖片
-  event.target.src = '/images/default_history.png';
+  const imageUrl = event.target.src;
+  console.warn('❌ 圖片載入失敗:', imageUrl);
+  
+  // 避免無限迴圈：檢查是否已經是預設圖片或錯誤圖片
+  if (imageUrl.includes('default_history.png') || imageUrl.includes('data:image/svg+xml')) {
+    console.log('🔄 已經是預設圖片，停止重試');
+    return;
+  }
+  
+  // 設置一個簡單的 SVG 預設圖片，避免網路請求
+  const defaultSvg = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjMzMzMzMzIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7lm77niYfliqDovb3lpLHotKU8L3RleHQ+Cjwvc3ZnPgo=';
+  event.target.src = defaultSvg;
+  
+  // 記錄錯誤，但不重試
+  console.log('🔄 設置預設 SVG 圖片，避免無限迴圈');
 }
 
 // 查看歷史項目詳情

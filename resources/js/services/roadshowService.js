@@ -245,5 +245,112 @@ export const roadshowService = {
                 }
             };
         }
+    },
+
+    /**
+     * 獲取圖片資源
+     * 將生成出來的圖片用參數的方式帶入
+     */
+    async getImageResource(imageUrl, options = {}) {
+        try {
+            // 使用正確的 API 端點
+            const url = 'https://stg-api.fanpokka.ai/api/static-resource';
+            
+            // 構建查詢參數
+            const queryParams = new URLSearchParams();
+            queryParams.append('url', imageUrl);
+            
+            // 添加可選參數
+            if (options.scale) queryParams.append('scale', options.scale);
+            if (options.format) queryParams.append('format', options.format);
+            if (options.quality) queryParams.append('quality', options.quality);
+            if (options.width) queryParams.append('width', options.width);
+            if (options.height) queryParams.append('height', options.height);
+            
+            const fullUrl = `${url}?${queryParams.toString()}`;
+            
+            console.log('🖼️ 發送圖片資源請求到:', fullUrl);
+            
+            const response = await fetch(fullUrl, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'image/*,application/json'
+                }
+            });
+            
+            console.log('📡 響應狀態:', response.status, response.statusText);
+            console.log('📡 響應頭:', Object.fromEntries(response.headers.entries()));
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            // 檢查響應類型
+            const contentType = response.headers.get('content-type');
+            
+            if (contentType && contentType.startsWith('image/')) {
+                // 如果是圖片，返回 blob URL
+                const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                console.log('✅ 圖片資源獲取成功，blob URL:', blobUrl);
+                return {
+                    success: true,
+                    data: blobUrl,
+                    type: 'image',
+                    blob: blob,
+                    originalUrl: imageUrl
+                };
+            } else {
+                // 如果是 JSON 或其他格式
+                const data = await response.json();
+                console.log('✅ 圖片資源獲取成功:', data);
+                return {
+                    success: true,
+                    data: data,
+                    type: 'json',
+                    originalUrl: imageUrl
+                };
+            }
+        } catch (error) {
+            console.error('❌ 獲取圖片資源失敗:', error);
+            return {
+                success: false,
+                error: {
+                    message: error.message,
+                    status: error.status || 0,
+                    originalUrl: imageUrl
+                }
+            };
+        }
+    },
+
+    /**
+     * 處理生成後的圖片資源
+     * 將生成出來的圖片用參數的方式帶入到新的 API
+     */
+    async processGeneratedImage(generatedImageUrl, processingOptions = {}) {
+        try {
+            console.log('🔄 處理生成的圖片:', generatedImageUrl);
+            
+            // 調用圖片資源 API
+            const result = await this.getImageResource(generatedImageUrl, processingOptions);
+            
+            if (result.success) {
+                console.log('✅ 圖片處理成功:', result);
+                return result;
+            } else {
+                console.error('❌ 圖片處理失敗:', result.error);
+                throw new Error(result.error.message);
+            }
+        } catch (error) {
+            console.error('❌ 處理生成圖片失敗:', error);
+            return {
+                success: false,
+                error: {
+                    message: error.message,
+                    originalUrl: generatedImageUrl
+                }
+            };
+        }
     }
 };

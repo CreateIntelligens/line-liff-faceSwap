@@ -129,13 +129,18 @@
 
             <!-- Result Image -->
             <div v-if="generatedImages.length > 0">
-              <img 
-                v-for="(image, index) in generatedImages" 
-                :key="index"
-                class="w-full h-60 object-cover rounded-md mb-4" 
-                :src="image" 
-                :alt="`生成結果 ${index + 1}`" 
-              />
+              <div v-for="(image, index) in generatedImages" :key="index" class="mb-4">
+                <img 
+                  class="w-full h-60 object-cover rounded-md" 
+                  :src="image" 
+                  :alt="`生成結果 ${index + 1}`"
+                  @error="handleImageError"
+                  @load="handleImageLoad"
+                />
+                <div v-if="imageLoadErrors[image]" class="text-center text-red-400 text-sm mt-2">
+                  ⚠️ 圖片載入失敗，請檢查網路連線
+                </div>
+              </div>
             </div>
             <div v-else class="w-full h-60 bg-gray-700 rounded-md flex items-center justify-center">
               <div class="text-[#EBD8B2] text-center">
@@ -235,6 +240,7 @@ const isLoading = ref(false)
 const error = ref(null)
 const taskResult = ref(null)
 const generatedImages = ref([])
+const imageLoadErrors = ref({})
 
 // 載入狀態訊息
 const loadingMessage = ref('檢查任務狀態...')
@@ -295,7 +301,7 @@ async function checkTaskStatus() {
 }
 
 // 處理任務狀態
-function handleTaskStatus(data) {
+async function handleTaskStatus(data) {
   const status = data.status
   console.log(`📊 任務狀態: ${status}`)
   
@@ -317,10 +323,44 @@ function handleTaskStatus(data) {
     case 'completed':
       loadingMessage.value = '生成完成！'
       loadingSubMessage.value = ''
-      // 處理生成的圖片
+      // 使用新的 API 處理生成的圖片，將生成出來的圖片用參數的方式帶入
       if (data.images && data.images.length > 0) {
-        generatedImages.value = data.images
-        console.log('🖼️ 生成的圖片:', data.images)
+        console.log('🖼️ 原始生成的圖片:', data.images)
+        
+        // 使用新的 API 處理每張生成的圖片
+        const processedImages = []
+        for (const imageUrl of data.images) {
+          try {
+            // 從全局配置獲取圖片處理 API 設置
+            const config = window.endpoint || {};
+            const apiUrl = config.imageProcessApi || 'https://stg-api.fanpokka.ai/api/static-resource';
+            const params = config.imageProcessParams || { scale: 2, format: 'jpg', quality: 90, width: 800, height: 600 };
+            
+            // 構建查詢參數
+            const queryParams = new URLSearchParams();
+            queryParams.append('url', imageUrl);
+            if (params.scale) queryParams.append('scale', params.scale);
+            if (params.format) queryParams.append('format', params.format);
+            if (params.quality) queryParams.append('quality', params.quality);
+            if (params.width) queryParams.append('width', params.width);
+            if (params.height) queryParams.append('height', params.height);
+            
+            const processedImageUrl = `${apiUrl}?${queryParams.toString()}`;
+            
+            console.log('🔄 使用圖片處理 API:', processedImageUrl);
+            console.log('⚙️ 使用配置參數:', params);
+            processedImages.push(processedImageUrl);
+            
+          } catch (error) {
+            console.error('❌ 處理圖片時發生錯誤:', error);
+            // 如果處理失敗，使用原始圖片
+            processedImages.push(imageUrl);
+          }
+        }
+        
+        // 更新生成的圖片為處理後的圖片
+        generatedImages.value = processedImages
+        console.log('🖼️ 處理後的圖片:', processedImages)
       }
       break
       
@@ -388,6 +428,24 @@ function getTemplateName(templateId) {
   };
   
   return nameMap[templateId] || '預設模板';
+}
+
+
+
+// 處理圖片載入錯誤
+function handleImageError(event) {
+  const imageUrl = event.target.src;
+  console.error('❌ 圖片載入失敗:', imageUrl);
+  imageLoadErrors.value[imageUrl] = true;
+}
+
+// 處理圖片載入成功
+function handleImageLoad(event) {
+  const imageUrl = event.target.src;
+  console.log('✅ 圖片載入成功:', imageUrl);
+  if (imageLoadErrors.value[imageUrl]) {
+    delete imageLoadErrors.value[imageUrl];
+  }
 }
 
 // 組件掛載時的調試

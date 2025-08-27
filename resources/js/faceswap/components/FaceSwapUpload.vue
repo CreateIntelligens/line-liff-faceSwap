@@ -284,6 +284,7 @@ const isGenerating = ref(false);
 const showFirstDialog = ref(false);
 const showSecondDialog = ref(false);
 
+
 const canGenerate = computed(() => {
   return props.selectedTemplate && selectedCharacter.value && uploadedImage.value;
 });
@@ -352,6 +353,8 @@ function handleDrop(event) {
     }
   }
 }
+
+
 
 function goBack() {
   // 清理預覽URL以避免內存洩漏
