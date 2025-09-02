@@ -87,6 +87,7 @@
     <HistoryDetailModal 
       :isVisible="showDetailModal"
       :historyItem="selectedHistoryItem"
+      :userUsage="props.userUsage"
       @close="closeDetailModal"
     />
   </div>

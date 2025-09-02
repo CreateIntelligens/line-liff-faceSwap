@@ -95,7 +95,7 @@
                 <img
                   :src="getTemplateImage('play')"
                   alt="綜藝玩很大"
-                  class="w-full h-40 object-cover rounded-md"
+                  class="w-full object-cover rounded-md"
                 />
               </div>
               
@@ -110,7 +110,7 @@
                 <img
                   :src="getTemplateImage('wife')"
                   alt="犀利人妻"
-                  class="w-full h-40 object-cover rounded-md"
+                  class="w-full object-cover rounded-md"
                 />
               </div>
               
@@ -125,7 +125,7 @@
                 <img
                   :src="getTemplateImage('love')"
                   alt="命中註定我愛你"
-                  class="w-full h-40 object-cover rounded-md"
+                  class="w-full object-cover rounded-md"
                 />
               </div>
               
@@ -140,7 +140,7 @@
                 <img
                   :src="getTemplateImage('super')"
                   alt="超級夜總會"
-                  class="w-full h-40 object-cover rounded-md"
+                  class="w-full object-cover rounded-md"
                 />
               </div>
             </div>

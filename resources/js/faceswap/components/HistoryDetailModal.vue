@@ -2,42 +2,65 @@
   <!-- Modal Overlay -->
   <div 
     v-if="isVisible" 
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
     @click="closeModal"
   >
     <!-- Modal Content -->
     <div 
-      class="bg-[#333333] rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto"
+      class="bg-[#333333] w-full h-full overflow-y-auto flex flex-col"
       @click.stop
     >
+      <!-- Header -->
+      <div class="flex justify-between items-center px-5 py-5 border-b border-[#EBD8B2]">
+        <!-- Back arrow -->
+        <button 
+          class="w-[17px] h-[19px] cursor-pointer hover:opacity-80 transition-opacity"
+          @click="closeModal"
+        >
+          <img 
+            :src="imageUrls.back"
+            alt="Back Arrow"
+            class="w-[17px] h-[19px] object-contain"
+          />
+        </button>
+        
+        <!-- Title -->
+        <div class="font-noto-sans-tc text-xl font-bold text-[#EBD8B2]">
+          生成詳情
+        </div>
+        
+        <!-- Usage counter -->
+        <UsageCounter :currentCount="props.userUsage" :maxLimit="10" />
+      </div>
 
       <!-- Modal Body -->
-      <div class="px-6 py-4">
-        <!-- 載入狀態 -->
-        <div v-if="isLoading" class="flex flex-col items-center justify-center py-8">
-          <div class="animate-spin rounded-full h-12 w-12 mb-4"></div>
-          <div class="text-[#EBD8B2] text-center">
-            <div class="text-lg font-bold mb-2">載入中...</div>
-            <div class="text-sm">正在獲取生成詳情</div>
+      <div class="flex-1 px-8 pb-8 pt-8 bg-[#E8E8E8]">
+        <div class="bg-[#333333] p-6">
+          <!-- 載入狀態 -->
+          <div v-if="isLoading" class="flex flex-col items-center justify-center h-60">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#EBD8B2] mb-4"></div>
+            <div class="text-[#EBD8B2] text-center">
+              <div class="text-lg font-bold mb-2">載入中...</div>
+              <div class="text-sm">正在獲取生成詳情</div>
+            </div>
           </div>
-        </div>
 
-        <!-- 錯誤狀態 -->
-        <div v-else-if="error" class="flex flex-col items-center justify-center py-8">
-          <div class="text-red-400 text-center">
-            <div class="text-lg font-bold mb-2">載入失敗</div>
-            <div class="text-sm mb-4">{{ error }}</div>
-            <button 
-              @click="loadHistoryDetail"
-              class="px-4 py-2 bg-[#EBD8B2] text-[#333] rounded-md hover:bg-[#d4c29a] transition-colors"
-            >
-              重試
-            </button>
+          <!-- 錯誤狀態 -->
+          <div v-else-if="error" class="flex flex-col items-center justify-center h-60">
+            <div class="text-red-400 text-center">
+              <div class="text-lg font-bold mb-2">載入失敗</div>
+              <div class="text-sm mb-4">{{ error }}</div>
+              <button 
+                @click="loadHistoryDetail"
+                class="px-4 py-2 bg-[#EBD8B2] text-[#333] rounded-md hover:bg-[#d4c29a] transition-colors"
+              >
+                重試
+              </button>
+            </div>
           </div>
-        </div>
 
-        <!-- 詳情內容 -->
-        <div v-else-if="historyDetail" class="space-y-6">
+          <!-- 詳情內容 -->
+          <div v-else-if="historyDetail" class="space-y-6">
 
           <!-- Header Logo and Crown -->
           <div class="relative">
@@ -55,34 +78,40 @@
 
           <!-- Images Section -->
           <div class="space-y-6">
-            <!-- Original Template Image with Star -->
+            <!-- Original Image with Star -->
             <div class="relative">
+              <img 
+                :src="getTemplateImage(historyDetail.template_id)" 
+                :alt="`模板圖片 - ${getTemplateName(historyDetail.template_id)}`" 
+                class="w-full object-cover rounded-md"
+                @error="handleTemplateImageError"
+              />
               <img 
                 :src="imageUrls.star" 
                 class="absolute -left-2 -bottom-9 w-12 h-12 object-contain" 
                 alt="星" 
               />
-              <img 
-                :src="getTemplateImage(historyDetail.template_id)" 
-                :alt="`模板圖片 - ${getTemplateName(historyDetail.template_id)}`" 
-                class="w-full h-48 object-cover rounded-md" 
-                @error="handleTemplateImageError"
-              />
             </div>
 
-            <!-- Generated Result Image -->
-            <div v-if="getHistoryImage(historyDetail)" class="relative">
-              <img 
-                class="w-full h-48 object-cover rounded-md" 
-                :src="getHistoryImage(historyDetail)" 
-                alt="生成結果" 
-                @error="handleResultImageError"
-              />
+            <!-- Result Image -->
+            <div v-if="getHistoryImage(historyDetail)">
+              <div class="mb-4">
+                <img 
+                  class="w-full object-cover rounded-md" 
+                  :src="getHistoryImage(historyDetail)" 
+                  alt="生成結果"
+                  @error="handleResultImageError"
+                  @load="handleImageLoad"
+                />
+                <div v-if="imageLoadErrors[getHistoryImage(historyDetail)]" class="text-center text-red-400 text-sm mt-2">
+                  ⚠️ 圖片載入失敗，請檢查網路連線
+                </div>
+              </div>
             </div>
-            <div v-else class="w-full h-48 bg-gray-700 rounded-md flex items-center justify-center">
+            <div v-else class="w-full h-60 bg-gray-700 rounded-md flex items-center justify-center">
               <div class="text-[#EBD8B2] text-center">
-                <div class="text-sm">無生成結果</div>
-                <div class="text-xs text-gray-400 mt-1">圖片URL: {{ historyDetail.image || '無' }}</div>
+                <div class="text-lg font-bold mb-2">生成中...</div>
+                <div class="text-sm">請稍候，正在處理您的圖片</div>
               </div>
             </div>
 
@@ -97,17 +126,39 @@
           </div>
 
 
+          </div>
         </div>
       </div>
 
-      <!-- Modal Footer -->
-      <div class="px-6 py-4">
-        <button 
-          @click="closeModal"
-          class="w-full px-4 py-2 bg-[#EBD8B2] text-[#333] rounded-md hover:bg-[#d4c29a] transition-colors font-bold"
-        >
-          關閉
-        </button>
+      <!-- Action Buttons -->
+      <div class="bg-[#333333] px-12 py-8">
+        <div class="flex gap-3 mb-8">
+          <!-- Regenerate Button -->
+          <button 
+            class="flex-1 h-11 flex justify-center items-center rounded-md bg-[#EBD8B2] cursor-pointer hover:bg-[#d4c29a] transition-colors"
+            @click="regenerate"
+          >
+            <div class="font-noto-sans-tc text-base font-bold text-[#333]">
+              重新生成
+            </div>
+          </button>
+          
+          <!-- Download Button -->
+          <button 
+            class="flex-1 h-11 flex justify-center items-center rounded-md cursor-pointer transition-all duration-300"
+            :class="
+              historyDetail && historyDetail.status === 'completed'
+                ? 'bg-gradient-to-r from-[#EE95FF] via-[#B9B9FB] to-[#AFCBF7] hover:shadow-lg'
+                : 'bg-[#C7C7C7] cursor-not-allowed'
+            "
+            @click="downloadToOfficial"
+            :disabled="!historyDetail || historyDetail.status !== 'completed'"
+          >
+            <div class="font-noto-sans-tc text-base font-bold text-[#333]">
+              下載至官方帳號
+            </div>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -117,6 +168,7 @@
 import { ref, watch } from 'vue'
 import { roadshowService } from '../../services/roadshowService.js'
 import { imageUrls } from '@/config/imageUrls'
+import UsageCounter from './UsageCounter.vue'
 
 const props = defineProps({
   isVisible: {
@@ -126,14 +178,19 @@ const props = defineProps({
   historyItem: {
     type: Object,
     default: null
+  },
+  userUsage: {
+    type: Number,
+    default: 0
   }
 })
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'regenerate', 'download'])
 
 const isLoading = ref(false)
 const error = ref(null)
 const historyDetail = ref(null)
+const imageLoadErrors = ref({})
 
 // 監聽彈窗顯示狀態
 watch(() => props.isVisible, (newValue) => {
@@ -290,10 +347,31 @@ function handleTemplateImageError(event) {
   console.log('🔄 設置預設 SVG 圖片，避免無限迴圈');
 }
 
+// 處理圖片載入成功
+function handleImageLoad(event) {
+  const imageUrl = event.target.src;
+  // 移除錯誤標記
+  if (imageLoadErrors.value[imageUrl]) {
+    delete imageLoadErrors.value[imageUrl];
+  }
+}
+
+// 處理圖片載入錯誤
+function handleImageError(event) {
+  const imageUrl = event.target.src;
+  console.warn('❌ 圖片載入失敗:', imageUrl);
+  
+  // 記錄錯誤
+  imageLoadErrors.value[imageUrl] = true;
+}
+
 // 處理結果圖片載入錯誤
 function handleResultImageError(event) {
   const imageUrl = event.target.src;
   console.warn('❌ 結果圖片載入失敗:', imageUrl)
+  
+  // 記錄錯誤
+  imageLoadErrors.value[imageUrl] = true;
   
   // 避免無限迴圈：檢查是否已經是預設圖片或錯誤圖片
   if (imageUrl.includes('default_history.png') || imageUrl.includes('data:image/svg+xml')) {
@@ -344,6 +422,22 @@ function getStatusText(status) {
   }
   
   return statusMap[status] || status || '未知'
+}
+
+// 重新生成
+function regenerate() {
+  console.log('🔄 重新生成歷史項目')
+  emit('regenerate', historyDetail.value)
+}
+
+// 下載至官方帳號
+function downloadToOfficial() {
+  if (historyDetail.value && historyDetail.value.status === 'completed') {
+    console.log('📥 下載歷史項目至官方帳號')
+    emit('download', historyDetail.value)
+  } else {
+    console.warn('⚠️ 歷史項目尚未完成，無法下載')
+  }
 }
 
 // 關閉彈窗

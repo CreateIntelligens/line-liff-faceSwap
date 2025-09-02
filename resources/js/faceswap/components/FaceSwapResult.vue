@@ -13,7 +13,7 @@
     <!-- Main Result Page -->
     <div v-if="!showHistory" class="flex-1 flex flex-col">
       <!-- Header -->
-      <div class="flex gap-5 justify-center items-center px-5 py-6 w-full font-bold border-b border-[#EBD8B2] min-h-20">
+      <div class="flex gap-5 justify-center items-center px-12 py-6 w-full font-bold border-b border-[#EBD8B2] min-h-20">
         <div class="text-xl text-[#EBD8B2]">
           AI換臉
         </div>
@@ -58,7 +58,7 @@
     </div>
 
       
-    <div class="flex justify-start items-center px-6 mb-4">
+    <div class="flex justify-start items-center px-12 mb-4">
         <div class="flex items-center gap-3">
           <img 
             :src="imageUrls.step3_inprogress" 
@@ -71,98 +71,101 @@
         </div>
       </div>
       <!-- Main Content -->
-      <div class="flex-1 px-6 pb-8 pt-4 ">
-        <!-- 載入狀態 -->
-        <div v-if="isLoading" class="flex flex-col items-center justify-center h-60">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#EBD8B2] mb-4"></div>
-          <div class="text-[#EBD8B2] text-center">
-            <div class="text-lg font-bold mb-2">{{ loadingMessage }}</div>
-            <div class="text-sm">{{ loadingSubMessage }}</div>
+      <div class="flex-1 px-8 pb-8 pt-8 bg-[#E8E8E8]">
+          <div class="bg-[#333333] p-6">
+          <!-- 載入狀態 -->
+          <div v-if="isLoading" class="flex flex-col items-center justify-center h-60">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#EBD8B2] mb-4"></div>
+            <div class="text-[#EBD8B2] text-center">
+              <div class="text-lg font-bold mb-2">{{ loadingMessage }}</div>
+              <div class="text-sm">{{ loadingSubMessage }}</div>
+            </div>
           </div>
-        </div>
-        
-        <!-- 錯誤狀態 -->
-        <div v-else-if="error" class="flex flex-col items-center justify-center h-60">
-          <div class="text-red-400 text-center">
-            <div class="text-lg font-bold mb-2">生成失敗</div>
-            <div class="text-sm mb-4">{{ error }}</div>
-            <button 
-              @click="retryCheckStatus"
-              class="px-4 py-2 bg-[#EBD8B2] text-[#333] rounded-md hover:bg-[#d4c29a] transition-colors"
-            >
-              重試
-            </button>
+          
+          <!-- 錯誤狀態 -->
+          <div v-else-if="error" class="flex flex-col items-center justify-center h-60">
+            <div class="text-red-400 text-center">
+              <div class="text-lg font-bold mb-2">生成失敗</div>
+              <div class="text-sm mb-4">{{ error }}</div>
+              <button 
+                @click="retryCheckStatus"
+                class="px-4 py-2 bg-[#EBD8B2] text-[#333] rounded-md hover:bg-[#d4c29a] transition-colors"
+              >
+                重試
+              </button>
+            </div>
           </div>
-        </div>
-        
-        <!-- 結果內容 -->
-        <div v-else-if="taskResult" class="space-y-6">
-          <!-- Header Logo and Crown -->
-          <div class="relative">
-            <img 
-              :src="imageUrls.header" 
-              class="h-5 object-contain" 
-              alt="標準字" 
-            />
-            <img 
-              :src="imageUrls.crown" 
-              class="absolute -right-2 -top-[2] w-12 h-12 object-contain transform -rotate-[10.809deg] z-10 " 
-              alt="皇冠" 
-            />
-          </div>
-
-          <!-- Images Section -->
-          <div class="space-y-6">
-            <!-- Original Image with Star -->
+          
+          <!-- 結果內容 -->
+          <div v-else-if="taskResult" class="space-y-6">
+            <!-- Header Logo and Crown -->
             <div class="relative">
               <img 
-                :src="getTemplateImage(props.selectedTemplate)" 
-                :alt="`模板圖片 - ${getTemplateName(props.selectedTemplate)}`" 
-                class="w-full h-48 object-cover rounded-md"
+                :src="imageUrls.header" 
+                class="h-5 object-contain" 
+                alt="標準字" 
               />
               <img 
-                :src="imageUrls.star" 
-                class="absolute -left-2 -bottom-9 w-12 h-12 object-contain" 
-                alt="星" 
+                :src="imageUrls.crown" 
+                class="absolute -right-2 -top-[2] w-12 h-12 object-contain transform -rotate-[10.809deg] z-10 " 
+                alt="皇冠" 
               />
             </div>
 
-            <!-- Result Image -->
-            <div v-if="generatedImages.length > 0">
-              <div v-for="(image, index) in generatedImages" :key="index" class="mb-4">
+            <!-- Images Section -->
+            <div class="space-y-6">
+              <!-- Original Image with Star -->
+              <div class="relative">
                 <img 
-                  class="w-full h-60 object-cover rounded-md" 
-                  :src="image" 
-                  :alt="`生成結果 ${index + 1}`"
-                  @error="handleImageError"
-                  @load="handleImageLoad"
+                  :src="getTemplateImage(props.selectedTemplate)" 
+                  :alt="`模板圖片 - ${getTemplateName(props.selectedTemplate)}`" 
+                  class="w-full object-cover rounded-md"
                 />
-                <div v-if="imageLoadErrors[image]" class="text-center text-red-400 text-sm mt-2">
-                  ⚠️ 圖片載入失敗，請檢查網路連線
+                <img 
+                  :src="imageUrls.star" 
+                  class="absolute -left-2 -bottom-9 w-12 h-12 object-contain" 
+                  alt="星" 
+                />
+              </div>
+
+              <!-- Result Image -->
+              <div v-if="generatedImages.length > 0">
+                <div v-for="(image, index) in generatedImages" :key="index" class="mb-4">
+                  <img 
+                    class="w-full object-cover rounded-md" 
+                    :src="image" 
+                    :alt="`生成結果 ${index + 1}`"
+                    @error="handleImageError"
+                    @load="handleImageLoad"
+                  />
+                  <div v-if="imageLoadErrors[image]" class="text-center text-red-400 text-sm mt-2">
+                    ⚠️ 圖片載入失敗，請檢查網路連線
+                  </div>
                 </div>
               </div>
-            </div>
-            <div v-else class="w-full h-60 bg-gray-700 rounded-md flex items-center justify-center">
-              <div class="text-[#EBD8B2] text-center">
-                <div class="text-lg font-bold mb-2">生成中...</div>
-                <div class="text-sm">請稍候，正在處理您的圖片</div>
+              <div v-else class="w-full h-60 bg-gray-700 rounded-md flex items-center justify-center">
+                <div class="text-[#EBD8B2] text-center">
+                  <div class="text-lg font-bold mb-2">生成中...</div>
+                  <div class="text-sm">請稍候，正在處理您的圖片</div>
+                </div>
+              </div>
+
+              <!-- Bottom Logo -->
+              <div class="flex justify-center">
+                <img 
+                  :src="imageUrls.logo" 
+                  class="h-6 object-contain" 
+                  alt="0815" 
+                />
               </div>
             </div>
-
-            <!-- Bottom Logo -->
-            <div class="flex justify-center">
-              <img 
-                :src="imageUrls.logo" 
-                class="h-6 object-contain" 
-                alt="0815" 
-              />
-            </div>
           </div>
-        </div>
+          </div>
+ 
       </div>
 
       <!-- Action Buttons -->
-      <div class="bg-[#333333] px-6 py-8">
+      <div class="bg-[#333333] px-12 py-8">
         <div class="flex gap-3 mb-8">
           <!-- Regenerate Button -->
           <button 
