@@ -65,7 +65,3 @@ function enterFaceSwap() {
   emit('enter-face-swap')
 }
 </script>
-
-<style scoped>
-/* 組件樣式 - 使用 Flexbox 佈局，無需額外的定位樣式 */
-</style>
