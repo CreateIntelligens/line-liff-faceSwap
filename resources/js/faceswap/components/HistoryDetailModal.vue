@@ -719,7 +719,7 @@ async function uploadImage(blob) {
   formData.append('file', blob, 'history-detail.png') // 使用 PNG 格式
   formData.append('uid', 'abc') // 使用預設用戶 ID
   
-  const response = await fetch('https://feature-line-crm.aitago.tw/api/file_upload', {
+  const response = await fetch(`${window.endpoint.baseURL}/roadshow/files` , {
     method: 'POST',
     headers: {
       'X-Requested-With': 'XMLHttpRequest'
@@ -733,7 +733,7 @@ async function uploadImage(blob) {
   }
   
   const data = await response.json()
-  return data.url || data.path || data.data?.url
+  return data.result.path || data.path || data.data?.url
 }
 
 // 透過 LIFF 發送圖片
@@ -758,12 +758,17 @@ async function sendViaLiff(imageUrl) {
     type: 'image',
     originalContentUrl: imageUrl,
     previewImageUrl: imageUrl
-  }])
+  }]).then(() => {
+    //
+  })
+  .catch((err) => {
+    throw new Error(`發送圖片失敗: ${err.message || err.toString()}`)
+  });
   
   // 發送成功後關閉 LIFF
-  setTimeout(() => {
-    liff.closeWindow()
-  }, 2000)
+  // setTimeout(() => {
+  //   liff.closeWindow()
+  // }, 2000)
 }
 
 // 顯示訊息提示
