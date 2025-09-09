@@ -8,6 +8,7 @@
       :userId="props.userId || 'abc'"
       :userUsage="userUsage"
       @back="showHistory = false"
+      @regenerate="handleHistoryRegenerate"
     />
     
     <!-- Main Result Page -->
@@ -97,17 +98,17 @@
           </div>
           
           <!-- 結果內容 -->
-          <div v-else-if="taskResult" ref="resultArea" class="space-y-6">
+          <div v-else-if="taskResult" ref="resultArea" class="space-y-6 relative">
             <!-- Header Logo and Crown -->
-            <div class="relative">
+            <div class="relative flex justify-center">
               <img 
                 :src="imageUrls.header" 
-                class="h-5 object-contain" 
+                class="h-6 object-contain mx-auto" 
                 alt="標準字" 
               />
               <img 
                 :src="imageUrls.crown" 
-                class="absolute -right-2 -top-[2] w-12 h-12 object-contain transform -rotate-[10.809deg] z-10 " 
+                class="absolute -right-0 top-5 w-12 h-12 object-contain transform -rotate-[14.809deg] z-50" 
                 alt="皇冠" 
               />
             </div>
@@ -123,7 +124,7 @@
                 />
                 <img 
                   :src="imageUrls.star" 
-                  class="absolute -left-2 -bottom-9 w-12 h-12 object-contain" 
+                  class="absolute -left-2 -bottom-10 w-12 h-12 object-contain" 
                   alt="星" 
                 />
               </div>
@@ -154,7 +155,7 @@
               <div class="flex justify-center">
                 <img 
                   :src="imageUrls.logo" 
-                  class="h-6 object-contain" 
+                  class="h-7 object-contain mx-auto" 
                   alt="0815" 
                 />
               </div>
@@ -218,7 +219,7 @@ import FaceSwapHistory from './FaceSwapHistory.vue'
 import UsageCounter from './UsageCounter.vue'
 import { roadshowService } from '../../services/roadshowService.js'
 import { imageUrls } from '@/config/imageUrls'
-import html2canvas from 'html2canvas'
+import { useScreenshot } from '../../composables/useScreenshot.js'
 
 // Define props
 const props = defineProps({
@@ -260,6 +261,9 @@ const loadingSubMessage = ref('請稍候')
 // 截圖相關狀態
 const resultArea = ref(null)
 const isDownloading = ref(false)
+
+// 使用截圖 composable
+const { captureScreenshot, compressImage, downloadToLocal, uploadImage, sendViaLiff, showMessage } = useScreenshot()
 
 // 監聽taskId變化
 watch(() => props.taskId, (newTaskId) => {
@@ -402,6 +406,15 @@ function regenerate() {
   emit('regenerate')
 }
 
+// Handle regenerate from history
+function handleHistoryRegenerate() {
+  console.log('🔄 從歷史頁面重新生成')
+  // 關閉歷史頁面
+  showHistory.value = false
+  // 發送重新生成事件到父組件
+  emit('regenerate')
+}
+
 // Handle download to official account button click
 async function downloadToOfficial() {
   if (!taskResult.value || taskResult.value.status !== 'completed') {
@@ -424,7 +437,7 @@ async function downloadToOfficial() {
     loadingSubMessage.value = '請稍候'
     
     // 1. 截圖
-    const canvas = await captureScreenshot()
+    const canvas = await captureScreenshot(resultArea.value)
     console.log('✅ 截圖完成')
     
     // 2. 轉換為 Blob
@@ -435,14 +448,14 @@ async function downloadToOfficial() {
     // 本地測試：先下載到本機確認圖片
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       console.log('🧪 本地測試模式：下載截圖到本機')
-      downloadToLocal(blob)
+      downloadToLocal(blob, 'faceswap-result')
       showMessage('截圖已下載到本機，請檢查圖片品質', 'success')
       return
     }
     
     // 3. 上傳到伺服器
     loadingMessage.value = '正在上傳圖片...'
-    const imageUrl = await uploadImage(blob)
+    const imageUrl = await uploadImage(blob, props.userId || 'abc', 'faceswap-result')
     console.log('✅ 圖片上傳完成:', imageUrl)
     
     // 5. 透過 LIFF 發送
@@ -462,341 +475,6 @@ async function downloadToOfficial() {
   }
 }
 
-// 本地測試：下載截圖到本機
-function downloadToLocal(blob) {
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `faceswap-result-${Date.now()}.png` // 使用 PNG 格式
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
-  console.log('📥 截圖已下載到本機')
-}
-
-// 截圖功能
-async function captureScreenshot() {
-  if (!resultArea.value) {
-    throw new Error('找不到截圖區域')
-  }
-  
-  // 預載入並轉換跨域圖片
-  const originalSrcs = await preloadAndConvertImages()
-  
-  // 使用後端範例的簡單配置
-  const originalCanvas = await html2canvas(resultArea.value, {
-    backgroundColor: '#333333',
-    scale: 1,
-    logging: false
-  })
-  
-  // 恢復原始圖片 src
-  restoreOriginalImages(originalSrcs)
-  
-  // 創建新的 Canvas 並添加邊距
-  const padding = 20
-  const newCanvas = document.createElement('canvas')
-  const ctx = newCanvas.getContext('2d')
-  
-  // 設定新 Canvas 的尺寸（原尺寸 + 邊距）
-  newCanvas.width = originalCanvas.width + (padding * 2)
-  newCanvas.height = originalCanvas.height + (padding * 2)
-  
-  // 填充背景色
-  ctx.fillStyle = '#333333'
-  ctx.fillRect(0, 0, newCanvas.width, newCanvas.height)
-  
-  // 將原始 Canvas 繪製到新 Canvas 上，留出邊距
-  ctx.drawImage(originalCanvas, padding, padding)
-  
-  return newCanvas
-}
-
-// 預載入並轉換跨域圖片為 base64
-async function preloadAndConvertImages() {
-  const images = resultArea.value.querySelectorAll('img')
-  const originalSrcs = new Map() // 儲存原始 src
-  
-  const convertPromises = Array.from(images).map(async (img) => {
-    // 儲存原始 src
-    originalSrcs.set(img, img.src)
-    
-    // 如果是跨域圖片，嘗試轉換為 base64
-    if (img.src.includes('stg-api.fanpokka.ai') || img.src.includes('voice.5gao.ai')) {
-      try {
-        console.log('🔄 正在轉換跨域圖片:', img.src)
-        const base64 = await convertImageToBase64(img.src)
-        img.src = base64
-        console.log('✅ 跨域圖片已轉換為 base64')
-      } catch (error) {
-        console.warn('⚠️ 無法轉換跨域圖片，將使用佔位符:', error)
-        // 使用佔位符
-        const width = img.naturalWidth || img.width || 300
-        const height = img.naturalHeight || img.height || 200
-        img.src = createPlaceholderImage(width, height)
-      }
-    } else {
-      // 確保本地圖片已載入
-      if (!img.complete) {
-        await new Promise((resolve) => {
-          img.onload = resolve
-          img.onerror = resolve
-          setTimeout(resolve, 3000) // 3秒超時
-        })
-      }
-    }
-  })
-  
-  await Promise.all(convertPromises)
-  console.log('🖼️ 圖片預處理完成')
-  
-  return originalSrcs
-}
-
-// 恢復原始圖片 src
-function restoreOriginalImages(originalSrcs) {
-  originalSrcs.forEach((originalSrc, img) => {
-    img.src = originalSrc
-  })
-  console.log('🔄 已恢復原始圖片 src')
-}
-
-// 將圖片轉換為 base64
-async function convertImageToBase64(imageUrl) {
-  return new Promise((resolve, reject) => {
-    // 使用 Image 方法，設置 crossOrigin
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas')
-        const ctx = canvas.getContext('2d')
-        
-        canvas.width = img.naturalWidth || img.width
-        canvas.height = img.naturalHeight || img.height
-        
-        ctx.drawImage(img, 0, 0)
-        
-        const base64 = canvas.toDataURL('image/jpeg', 0.9)
-        resolve(base64)
-      } catch (error) {
-        console.warn('Canvas 轉換失敗，嘗試 fetch 方法:', error)
-        // 如果 Canvas 方法失敗，嘗試 fetch
-        fetchImageAsBase64(imageUrl).then(resolve).catch(reject)
-      }
-    }
-    
-    img.onerror = () => {
-      console.warn('Image 載入失敗，嘗試 fetch 方法')
-      // 如果 Image 方法失敗，嘗試 fetch
-      fetchImageAsBase64(imageUrl).then(resolve).catch(reject)
-    }
-    
-    // 設置超時
-    setTimeout(() => {
-      reject(new Error('圖片載入超時'))
-    }, 10000)
-    
-    img.src = imageUrl
-  })
-}
-
-// 使用 fetch 獲取圖片並轉換為 base64
-async function fetchImageAsBase64(imageUrl) {
-  try {
-    const response = await fetch(imageUrl, {
-      mode: 'cors',
-      credentials: 'omit'
-    })
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
-    }
-    
-    const blob = await response.blob()
-    
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result)
-      reader.onerror = () => reject(new Error('FileReader 錯誤'))
-      reader.readAsDataURL(blob)
-    })
-  } catch (error) {
-    throw new Error(`Fetch 失敗: ${error.message}`)
-  }
-}
-
-// 創建佔位符圖片
-function createPlaceholderImage(width = 300, height = 200) {
-  const canvas = document.createElement('canvas')
-  const ctx = canvas.getContext('2d')
-  
-  canvas.width = width
-  canvas.height = height
-  
-  // 繪製背景
-  ctx.fillStyle = '#333333'
-  ctx.fillRect(0, 0, width, height)
-  
-  // 繪製邊框
-  ctx.strokeStyle = '#EBD8B2'
-  ctx.lineWidth = 3
-  ctx.strokeRect(15, 15, width - 30, height - 30)
-  
-  // 繪製內部背景
-  ctx.fillStyle = '#2a2a2a'
-  ctx.fillRect(20, 20, width - 40, height - 40)
-  
-  // 繪製圖標（簡單的相機圖標）
-  const iconSize = Math.min(width, height) * 0.15
-  const iconX = width / 2 - iconSize / 2
-  const iconY = height / 2 - iconSize / 2 - 10
-  
-  ctx.strokeStyle = '#EBD8B2'
-  ctx.lineWidth = 2
-  ctx.strokeRect(iconX, iconY, iconSize, iconSize * 0.7)
-  ctx.strokeRect(iconX + iconSize * 0.1, iconY - iconSize * 0.1, iconSize * 0.8, iconSize * 0.2)
-  
-  // 繪製文字
-  ctx.fillStyle = '#EBD8B2'
-  ctx.font = `${Math.max(12, width / 20)}px Arial`
-  ctx.textAlign = 'center'
-  ctx.fillText('AI 生成圖片', width / 2, height / 2 + 20)
-  
-  return canvas.toDataURL('image/jpeg', 0.9)
-}
-
-// 圖片壓縮功能 - 使用後端範例的簡單方法
-async function compressImage(canvas) {
-  return new Promise((resolve, reject) => {
-    // 使用後端範例的方法：直接轉換為 PNG
-    canvas.toBlob((blob) => {
-      if (blob) {
-        console.log('✅ Canvas 轉換為 Blob 成功，大小:', blob.size)
-        resolve(blob)
-      } else {
-        reject(new Error('無法生成圖片 blob'))
-      }
-    }, 'image/png') // 使用 PNG 格式，如後端範例
-  })
-}
-
-// 將 dataURL 轉換為 Blob
-function dataURLToBlob(dataURL) {
-  const arr = dataURL.split(',')
-  const mime = arr[0].match(/:(.*?);/)[1]
-  const bstr = atob(arr[1])
-  let n = bstr.length
-  const u8arr = new Uint8Array(n)
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n)
-  }
-  return new Blob([u8arr], { type: mime })
-}
-
-// Blob 轉 Base64
-async function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      const base64 = reader.result.split(',')[1] // 移除 data:image/jpeg;base64, 前綴
-      resolve(base64)
-    }
-    reader.onerror = reject
-    reader.readAsDataURL(blob)
-  })
-}
-
-// 上傳圖片到伺服器 - 使用後端範例的 FormData 方法
-async function uploadImage(blob) {
-  const formData = new FormData()
-  formData.append('file', blob, 'faceswap-result.png') // 使用 PNG 格式
-  formData.append('uid', props.userId || 'abc') // 使用用戶 ID
-  
-  const response = await fetch(`${window.endpoint.baseURL}/roadshow/files`, {
-    method: 'POST',
-    headers: {
-      'X-Requested-With': 'XMLHttpRequest'
-    },
-    body: formData
-  })
-  
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    throw new Error(errorData.message || `上傳失敗: ${response.status}`)
-  }
-  
-  const data = await response.json()
-  return data.result.path || data.path || data.data?.url
-}
-
-// 透過 LIFF 發送圖片
-async function sendViaLiff(imageUrl) {
-  // 檢查 LIFF 是否可用
-  if (typeof liff === 'undefined') {
-    throw new Error('LIFF 不可用，無法發送圖片')
-  }
-  
-  // 檢查是否在 LINE 應用內
-  if (!liff.isInClient()) {
-    throw new Error('請在 LINE 應用內使用此功能')
-  }
-  
-  // 檢查是否已登入
-  if (!liff.isLoggedIn()) {
-    throw new Error('請先登入 LINE')
-  }
-  
-  // 發送圖片
-  await liff.sendMessages([{
-    type: 'image',
-    originalContentUrl: imageUrl,
-    previewImageUrl: imageUrl
-  }]).then(() => {
-    //
-  })
-  .catch((err) => {
-    throw new Error(`發送圖片失敗: ${err.message || err.toString()}`)
-  });
-  
-  // 發送成功後關閉 LIFF
-  // setTimeout(() => {
-  //   liff.closeWindow()
-  // }, 2000)
-}
-
-// 顯示訊息提示
-function showMessage(message, type = 'info') {
-  // 創建提示元素
-  const messageEl = document.createElement('div')
-  messageEl.className = `fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 rounded-md text-white text-sm font-medium transition-all duration-300`
-  
-  // 根據類型設置樣式
-  switch (type) {
-    case 'success':
-      messageEl.className += ' bg-green-500'
-      break
-    case 'error':
-      messageEl.className += ' bg-red-500'
-      break
-    case 'info':
-    default:
-      messageEl.className += ' bg-blue-500'
-      break
-  }
-  
-  messageEl.textContent = message
-  document.body.appendChild(messageEl)
-  
-  // 3秒後移除提示
-  setTimeout(() => {
-    if (messageEl.parentNode) {
-      messageEl.parentNode.removeChild(messageEl)
-    }
-  }, 3000)
-}
 
 // 組件掛載時檢查狀態
 onMounted(() => {

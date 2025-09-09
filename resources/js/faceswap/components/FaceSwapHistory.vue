@@ -89,6 +89,7 @@
       :historyItem="selectedHistoryItem"
       :userUsage="props.userUsage"
       @close="closeDetailModal"
+      @regenerate="handleRegenerate"
     />
   </div>
 </template>
@@ -111,7 +112,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['back'])
+const emit = defineEmits(['back', 'regenerate'])
 
 const historyData = ref([])
 const isLoading = ref(false)
@@ -270,6 +271,15 @@ function closeDetailModal() {
 
 function goBack() {
   emit('back')
+}
+
+// 處理重新生成
+function handleRegenerate(historyItem) {
+  console.log('🔄 從歷史詳情重新生成:', historyItem)
+  // 關閉詳情彈窗
+  closeDetailModal()
+  // 發送重新生成事件到父組件
+  emit('regenerate')
 }
 
 // 監視 userId 變化
