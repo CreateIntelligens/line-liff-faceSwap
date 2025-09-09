@@ -189,6 +189,10 @@ const props = defineProps({
   userUsage: {
     type: Number,
     default: 0
+  },
+  userId: {
+    type: String,
+    default: ''
   }
 })
 
@@ -478,7 +482,7 @@ async function downloadToOfficial() {
     }
     
     // 3. 上傳到伺服器
-    const imageUrl = await uploadImage(blob, 'abc', 'history-detail')
+    const imageUrl = await uploadImage(blob, props.userId || 'abc', 'history-detail')
     console.log('✅ 圖片上傳完成:', imageUrl)
     
     // 4. 透過 LIFF 發送

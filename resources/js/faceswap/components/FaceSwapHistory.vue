@@ -88,6 +88,7 @@
       :isVisible="showDetailModal"
       :historyItem="selectedHistoryItem"
       :userUsage="props.userUsage"
+      :userId="props.userId"
       @close="closeDetailModal"
       @regenerate="handleRegenerate"
     />
