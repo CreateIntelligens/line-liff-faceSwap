@@ -73,7 +73,18 @@
       </div>
       <!-- Main Content -->
       <div class="flex-1 px-8 pb-8 pt-8 bg-[#E8E8E8]">
-          <div class="bg-[#333333] p-6">
+          <div class="bg-[#333333] p-6 relative" ref="captureArea">
+            <!-- Left Edge Decoration -->
+            <div 
+              class="absolute left-0 top-44 w-[7px] h-[183px] flex-shrink-0"
+              style="background: linear-gradient(180deg, #12E5DA 0%, #14E1D6 5.29%, #2FD4D3 11.84%, #3DD0D3 17.92%, #8CCBDA 23.69%, #A5ABC8 28.59%, #BFA2C2 32.33%, #D39BB3 37.03%, #D99BA9 41.51%, #DD9F95 46.52%, #DDA587 50.79%, #DBAC7B 55.81%, #D4B581 60.93%, #CDB78F 66.05%, #B9B6B5 73.09%, #A1B0D5 79.33%, #83A3E6 86.54%, #749CEB 92.31%, #5E90EE 100%);"
+            ></div>
+            
+            <!-- Right Edge Decoration -->
+            <div 
+              class="absolute right-0 top-10 w-[7px] h-[183px] flex-shrink-0"
+              style="background: linear-gradient(180deg, #C1F09C 0%, #B7F3A8 6.56%, #ACF5B5 12.19%, #9EF4D0 20.74%, #A4E5E0 29.06%, #9ED7D3 33.58%, #B0CEEA 37.98%, #BCBDED 41.83%, #CBA4EB 48.08%, #DE97CD 55.29%, #EB9FA2 61.06%, #F2A77B 65.85%, #F9AC55 70.67%, #FCA63B 77.88%, #FC9540 83.65%, #FC7B52 89.9%, #FA6263 93.27%, #F64377 100%);"
+            ></div>
           <!-- 載入狀態 -->
           <div v-if="isLoading" class="flex flex-col items-center justify-center h-60">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#EBD8B2] mb-4"></div>
@@ -117,14 +128,14 @@
             <div class="space-y-6">
               <!-- Original Image with Star -->
               <div class="relative">
-                <img 
+                <!-- <img 
                   :src="getTemplateImage(props.selectedTemplate)" 
                   :alt="`模板圖片 - ${getTemplateName(props.selectedTemplate)}`" 
                   class="w-full object-cover rounded-md"
-                />
+                /> -->
                 <img 
                   :src="imageUrls.star" 
-                  class="absolute -left-2 -bottom-10 w-12 h-12 object-contain" 
+                  class="absolute -left-4 -bottom-72 w-12 h-12 object-contain" 
                   alt="星" 
                 />
               </div>
@@ -151,14 +162,17 @@
                 </div>
               </div>
 
-              <!-- Bottom Logo -->
-              <div class="flex justify-center">
-                <img 
-                  :src="imageUrls.logo" 
-                  class="h-7 object-contain mx-auto" 
-                  alt="0815" 
-                />
-              </div>
+               <!-- Bottom Logo and Credit -->
+               <div class="flex flex-col items-center">
+                 <img 
+                   :src="imageUrls.logo" 
+                   class="h-7 object-contain" 
+                   alt="0815" 
+                 />
+                 <div class="text-center mt-1 text-[#EBD8B2] text-xs font-normal font-noto-sans-tc">
+                   此 AI 服務由創造智能支持，讓你一秒變主角
+                 </div>
+               </div>
             </div>
           </div>
           </div>
@@ -260,6 +274,7 @@ const loadingSubMessage = ref('請稍候')
 
 // 截圖相關狀態
 const resultArea = ref(null)
+const captureArea = ref(null)
 const isDownloading = ref(false)
 
 // 使用截圖 composable
@@ -437,7 +452,7 @@ async function downloadToOfficial() {
     loadingSubMessage.value = '請稍候'
     
     // 1. 截圖
-    const canvas = await captureScreenshot(resultArea.value)
+    const canvas = await captureScreenshot(captureArea.value)
     console.log('✅ 截圖完成')
     
     // 2. 轉換為 Blob
