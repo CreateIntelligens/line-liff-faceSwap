@@ -21,13 +21,18 @@
     <!-- Main Result Page -->
     <div v-if="!showHistory" class="flex-1 flex flex-col">
       <!-- Header -->
-      <div class="flex gap-5 justify-center items-center px-12 py-6 w-full font-bold border-b border-[#EBD8B2] min-h-20">
-        <img
-          :src="imageUrls.header1"
-          class="h-16 object-contain"
-          alt="AI換臉"
-        />
-        <UsageCounter :currentCount="userUsage" :maxLimit="10" />
+      <div class="flex gap-5 justify-center items-center self-stretch px-5 py-6 w-full font-bold whitespace-nowrap gradient-border-bottom min-h-20">
+        <div
+          class="self-stretch my-auto"
+          data-name="AI換臉"
+        >
+          <img
+            :src="imageUrls.header1"
+            class="h-16 object-contain"
+            alt="AI換臉"
+          />
+        </div>
+        <UsageCounter :currentCount="userUsage" />
       </div>
 
      <!-- 步驟 -->
@@ -55,7 +60,7 @@
         alt="分隔線"
       />
       <img
-        :src="imageUrls.step3_inactive"
+        :src="imageUrls.step3_inprogress"
         class="w-6 h-6 object-contain"
         alt="Step 3"
       />
@@ -77,7 +82,7 @@
             class="w-6 h-6 object-contain" 
             alt="Step 3"
           />
-          <div class="text-base font-bold text-[#EBD8B2]">
+          <div class="text-base font-bold cp-font step-gradient-text">
             生成結果
           </div>
         </div>
@@ -195,32 +200,32 @@
         <div class="flex gap-3 mb-8">
           <!-- Regenerate Button -->
           <button 
-            class="flex-1 h-11 flex justify-center items-center rounded-md bg-[#EBD8B2] cursor-pointer hover:bg-[#d4c29a] transition-colors"
+            class="flex-1 h-11 flex justify-center items-center rounded-md cursor-pointer transition-colors text-base font-bold cp-font text-[#0E0E0E]"
+            style="background-color: #FFF3AB;"
             @click="regenerate"
           >
-            <div class="font-noto-sans-tc text-base font-bold text-[#333]">
-              重新生成
-            </div>
+            重新生成
           </button>
           
           <!-- Download Button -->
           <button 
-            class="flex-1 h-11 flex justify-center items-center rounded-md cursor-pointer transition-all duration-300"
+            class="flex-1 h-11 flex justify-center items-center rounded-md cursor-pointer transition-all duration-300 text-base font-bold hover:shadow-lg"
+            style="background: linear-gradient(to bottom, #FFC1DE 0%, #FD79B5 100%);"
             :class="
               taskResult && taskResult.status === 'completed' && !isDownloading
-                ? 'bg-gradient-to-r from-[#EE95FF] via-[#F192FF] via-[#B9B9FB] to-[#AFCBF7] hover:shadow-lg'
-                : 'bg-[#C7C7C7] cursor-not-allowed'
+                ? ''
+                : 'opacity-50 cursor-not-allowed'
             "
             @click="downloadToOfficial"
             :disabled="!taskResult || taskResult.status !== 'completed' || isDownloading"
           >
             <div v-if="isDownloading" class="flex items-center gap-2">
-              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-[#333]"></div>
-              <div class="font-noto-sans-tc text-base font-bold text-[#333]">
+              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-[#0E0E0E]"></div>
+              <div class="cp-font text-[#0E0E0E]">
                 處理中...
               </div>
             </div>
-            <div v-else class="font-noto-sans-tc text-base font-bold text-[#333]">
+            <div v-else class="cp-font text-[#0E0E0E]">
               下載至官方帳號
             </div>
           </button>

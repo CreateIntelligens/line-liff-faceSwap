@@ -1,6 +1,19 @@
 <template>
+  <!-- History Detail Page -->
+  <HistoryDetailModal 
+    v-if="showDetailModal"
+    :isVisible="showDetailModal"
+    :historyItem="selectedHistoryItem"
+    :userUsage="props.userUsage"
+    :userId="props.userId"
+    @close="closeDetailModal"
+    @regenerate="handleRegenerate"
+  />
+
+  <!-- History List Page -->
   <div 
-    class="min-h-screen flex flex-col"
+    v-else
+    class="relative mx-auto my-0 w-[375px] max-md:w-full max-md:max-w-screen-md max-sm:w-full min-h-screen flex flex-col overflow-y-auto"
     :style="{ 
       minHeight: '100dvh',
       backgroundImage: `url(${imageUrls.background1})`, 
@@ -10,26 +23,28 @@
     }"
   >
     <!-- Header -->
-    <div class="flex justify-between items-center px-5 py-5 border-b border-[#EBD8B2]">
-      <!-- Back arrow -->
-      <button 
-        class="w-[17px] h-[19px] cursor-pointer hover:opacity-80 transition-opacity"
-        @click="goBack"
-      >
-        <img 
-          :src="imageUrls.back"
-          alt="Back Arrow"
-          class="w-[17px] h-[19px] object-contain"
-        />
-      </button>
-      
-      <!-- Title -->
-      <div class="text-xl font-bold step-gradient-text">
-        圖片生成紀錄
+    <div class="flex justify-between items-center px-5 py-5 gradient-border-bottom">
+      <!-- Left side: Back button and Title -->
+      <div class="flex items-center gap-3">
+        <button 
+          class="cursor-pointer hover:opacity-80 transition-opacity"
+          @click="goBack"
+        >
+          <img 
+            :src="imageUrls.back"
+            alt="Back Arrow"
+            class="w-[26px] h-[26px] object-contain"
+          />
+        </button>
+        
+        <!-- Title -->
+        <div class="text-xl font-bold cp-font text-[#FFFFFF]">
+          圖片生成紀錄
+        </div>
       </div>
       
       <!-- Usage counter -->
-      <UsageCounter :currentCount="userUsage" :maxLimit="10" />
+      <UsageCounter :currentCount="userUsage" />
     </div>
 
 
@@ -59,9 +74,9 @@
 
       <!-- Empty state -->
       <div v-else-if="!historyData || historyData.length === 0" class="flex flex-col items-center justify-center py-12">
-        <div class="text-[#EBD8B2] text-center">
-          <div class="text-lg font-bold mb-2">尚無生成紀錄</div>
-          <div class="text-sm">您還沒有生成過任何圖片</div>
+        <div class="text-center">
+          <div class="text-lg font-bold mb-2 cp-font step-gradient-text">尚無生成紀錄</div>
+          <div class="text-sm cp-font step-gradient-text">您還沒有生成過任何圖片</div>
         </div>
       </div>
 
@@ -91,16 +106,6 @@
         </div>
       </div>
     </div>
-
-    <!-- History Detail Modal -->
-    <HistoryDetailModal 
-      :isVisible="showDetailModal"
-      :historyItem="selectedHistoryItem"
-      :userUsage="props.userUsage"
-      :userId="props.userId"
-      @close="closeDetailModal"
-      @regenerate="handleRegenerate"
-    />
   </div>
 </template>
 

@@ -22,6 +22,7 @@ import header1Img from '../../images/header1.png'
 import logoImg from '../../images/logo.png'
 import starImg from '../../images/star.png'
 import uploadImg from '../../images/upload.png'
+import generateIconImg from '../../images/GenerateIcon.png'
 import hpbackgroundImg from '../../images/hpbackground.png'
 import background1Img from '../../images/background1.png'
 
@@ -55,6 +56,7 @@ export const imageUrls = {
   logo: logoImg,
   star: starImg,
   upload: uploadImg,
+  generateIcon: generateIconImg,
   hpbackground: hpbackgroundImg,
   background1: background1Img,
 };

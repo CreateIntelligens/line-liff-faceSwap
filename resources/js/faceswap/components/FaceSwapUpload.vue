@@ -11,14 +11,19 @@
   >
     <!-- Header -->
     <div
-      class="flex gap-5 justify-center items-center px-5 py-6 font-bold border-b border-[#EBD8B2] min-h-20"
+      class="flex gap-5 justify-center items-center self-stretch px-5 py-6 w-full font-bold whitespace-nowrap gradient-border-bottom min-h-20"
     >
-      <img
-        :src="imageUrls.header1"
-        class="h-16 object-contain"
-        alt="AI換臉"
-      />
-      <UsageCounter :currentCount="userUsage" :maxLimit="10" />
+      <div
+        class="self-stretch my-auto"
+        data-name="AI換臉"
+      >
+        <img
+          :src="imageUrls.header1"
+          class="h-16 object-contain"
+          alt="AI換臉"
+        />
+      </div>
+      <UsageCounter :currentCount="userUsage" />
     </div>
     <!-- 步驟 -->
     <div
@@ -95,7 +100,7 @@
           <!-- Upload Area -->
           <div class="mb-6">
             <div
-              class="flex h-[200px] flex-col items-center justify-center gap-5 border-2 border-dashed border-[#EBD8B2] bg-[#969696] cursor-pointer hover:bg-[#a0a0a0] transition-colors rounded-md"
+              class="flex h-[200px] flex-col items-center justify-center gap-5 gradient-border-dashed cursor-pointer transition-colors rounded-md"
               @click="triggerFileUpload"
               @dragover.prevent
               @drop.prevent="handleDrop"
@@ -109,10 +114,10 @@
                     class="w-[50px] h-[35px] object-contain"
                   />
                 </div>
-                <div class="text-base font-medium text-[#333] text-center">
+                <div class="text-base font-medium cp-font step-gradient-text text-center">
                   點擊上傳
                 </div>
-                <div class="text-sm font-medium text-[#333] text-center">
+                <div class="text-sm font-medium cp-font step-gradient-text text-center">
                   支援 JPG, PNG 格式
                 </div>
               </div>
@@ -141,22 +146,27 @@
           <!-- Action Buttons -->
           <div class="flex gap-3 mb-8">
             <button
-              class="flex-1 h-11 px-3 py-3 justify-center items-center rounded-md bg-[#EBD8B2] cursor-pointer hover:bg-[#d4c29a] transition-colors text-base font-bold text-[#333]"
+              class="flex-1 h-11 px-3 py-3 flex justify-center items-center rounded-md cursor-pointer transition-colors text-base font-bold cp-font text-[#0E0E0E]"
+              style="background-color: #FFF3AB;"
               @click="goBack"
             >
               重選範本
             </button>
             <button
-              class="flex-1 h-11 px-3 py-3 justify-center items-center rounded-md cursor-pointer transition-all duration-300 text-base font-bold"
-              :class="
-                canGenerate
-                  ? 'bg-gradient-to-r from-[#EE95FF] via-[#F192FF] via-[#B9B9FB] to-[#AFCBF7] hover:shadow-lg text-gray-800'
-                  : 'bg-[#C7C7C7] text-white'
-              "
+              class="flex-1 h-11 px-3 py-3 flex justify-center items-center rounded-md cursor-pointer transition-all duration-300 text-base font-bold hover:shadow-lg"
+              style="background: linear-gradient(to bottom, #FFC1DE 0%, #FD79B5 100%);"
+              :class="canGenerate ? '' : 'opacity-50 cursor-not-allowed'"
               @click="generateFaceSwap"
               :disabled="!canGenerate"
             >
-              開始生成
+              <div class="flex items-center gap-2">
+                <img
+                  :src="imageUrls.generateIcon"
+                  class="w-5 h-5 object-contain"
+                  alt="生成圖標"
+                />
+                <span class="cp-font text-[#0E0E0E]">開始生成</span>
+              </div>
             </button>
           </div>
         </div>
@@ -218,6 +228,7 @@ import { onUnmounted } from "vue";
 import { roadshowService } from "../../services/roadshowService.js";
 import UsageCounter from "./UsageCounter.vue";
 import { imageUrls } from '@/config/imageUrls'
+import { appConfig } from '@/config/appConfig'
 
 const props = defineProps({
   selectedTemplate: {
@@ -416,7 +427,7 @@ async function generateFaceSwap() {
           // 檢查是否是達到生成限制的錯誤
           const errorMessage = result.error.message || '';
           if (errorMessage.includes('生成限制') || errorMessage.includes('限制')) {
-            throw new Error('您已達到每人10張圖片的生成限制，無法繼續生成新圖片');
+            throw new Error(`您已達到每人${appConfig.maxUsageLimit}張圖片的生成限制，無法繼續生成新圖片`);
           } else {
             throw new Error('權限不足，無法生成頭像');
           }

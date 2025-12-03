@@ -1,36 +1,38 @@
 <template>
-  <!-- Modal Overlay -->
   <div 
     v-if="isVisible" 
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 max-sm:items-start max-sm:justify-start"
-    @click="closeModal"
+    class="relative mx-auto my-0 w-[375px] max-md:w-full max-md:max-w-screen-md max-sm:w-full flex flex-col overflow-y-auto"
+    :style="{ 
+      minHeight: '100dvh',
+      backgroundImage: `url(${imageUrls.background1})`, 
+      backgroundSize: '100% 100%', 
+      backgroundPosition: 'center center', 
+      backgroundRepeat: 'no-repeat'
+    }"
   >
-    <!-- Modal Content -->
-    <div 
-      class="bg-[#333333] w-[375px] h-[774px] max-md:w-full max-md:max-w-screen-md max-sm:w-full max-sm:h-full max-sm:min-h-screen overflow-y-auto flex flex-col"
-      @click.stop
-    >
       <!-- Header -->
-      <div class="flex justify-between items-center px-5 py-5 border-b border-[#EBD8B2]">
-        <!-- Back arrow -->
-        <button 
-          class="w-[17px] h-[19px] cursor-pointer hover:opacity-80 transition-opacity"
-          @click="closeModal"
-        >
-          <img 
-            :src="imageUrls.back"
-            alt="Back Arrow"
-            class="w-[17px] h-[19px] object-contain"
-          />
-        </button>
-        
-        <!-- Title -->
-        <div class="font-noto-sans-tc text-xl font-bold text-[#EBD8B2]">
-          生成詳情
+      <div class="flex justify-between items-center px-5 py-5 gradient-border-bottom">
+        <!-- Left side: Back button and Title -->
+        <div class="flex items-center gap-3">
+          <button 
+            class="cursor-pointer hover:opacity-80 transition-opacity"
+            @click="closeModal"
+          >
+            <img 
+              :src="imageUrls.back"
+              alt="Back Arrow"
+              class="w-[26px] h-[26px] object-contain"
+            />
+          </button>
+          
+          <!-- Title -->
+          <div class="text-xl font-bold cp-font text-[#FFFFFF]">
+            生成詳情
+          </div>
         </div>
         
         <!-- Usage counter -->
-        <UsageCounter :currentCount="props.userUsage" :maxLimit="10" />
+        <UsageCounter :currentCount="props.userUsage" />
       </div>
 
       <!-- Modal Body -->
@@ -149,39 +151,38 @@
         <div class="flex gap-3 mb-8">
           <!-- Regenerate Button -->
           <button 
-            class="flex-1 h-11 flex justify-center items-center rounded-md bg-[#EBD8B2] cursor-pointer hover:bg-[#d4c29a] transition-colors"
+            class="flex-1 h-11 flex justify-center items-center rounded-md cursor-pointer transition-colors text-base font-bold cp-font text-[#0E0E0E]"
+            style="background-color: #FFF3AB;"
             @click="regenerate"
           >
-            <div class="font-noto-sans-tc text-base font-bold text-[#333]">
-              重新生成
-            </div>
+            重新生成
           </button>
           
           <!-- Download Button -->
           <button 
-            class="flex-1 h-11 flex justify-center items-center rounded-md cursor-pointer transition-all duration-300"
+            class="flex-1 h-11 flex justify-center items-center rounded-md cursor-pointer transition-all duration-300 text-base font-bold hover:shadow-lg"
+            style="background: linear-gradient(to bottom, #FFC1DE 0%, #FD79B5 100%);"
             :class="
               historyDetail && historyDetail.status === 'completed' && !isDownloading
-                ? 'bg-gradient-to-r from-[#EE95FF] via-[#B9B9FB] to-[#AFCBF7] hover:shadow-lg'
-                : 'bg-[#C7C7C7] cursor-not-allowed'
+                ? ''
+                : 'opacity-50 cursor-not-allowed'
             "
             @click="downloadToOfficial"
             :disabled="!historyDetail || historyDetail.status !== 'completed' || isDownloading"
           >
             <div v-if="isDownloading" class="flex items-center gap-2">
-              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-[#333]"></div>
-              <div class="font-noto-sans-tc text-base font-bold text-[#333]">
+              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-[#0E0E0E]"></div>
+              <div class="cp-font text-[#0E0E0E]">
                 處理中...
               </div>
             </div>
-            <div v-else class="font-noto-sans-tc text-base font-bold text-[#333]">
+            <div v-else class="cp-font text-[#0E0E0E]">
               下載至官方帳號
             </div>
           </button>
         </div>
       </div>
     </div>
-  </div>
 </template>
 
 <script setup>

@@ -21,7 +21,7 @@
     }"
   >
     <div
-      class="flex gap-5 justify-center items-center self-stretch px-5 py-6 w-full font-bold whitespace-nowrap border-b border-[#EBD8B2] min-h-20"
+      class="flex gap-5 justify-center items-center self-stretch px-5 py-6 w-full font-bold whitespace-nowrap gradient-border-bottom min-h-20"
     >
       <div
         class="self-stretch my-auto"
@@ -33,7 +33,7 @@
           alt="AI換臉"
         />
       </div>
-              <UsageCounter :currentCount="userUsage" :maxLimit="10" />
+              <UsageCounter :currentCount="userUsage" />
     </div>
     <!-- 步驟 -->
     <div
@@ -73,7 +73,7 @@
       <div class="step-gradient-text" data-name="Step 2">Step 2</div>
       <div class="step-gradient-text" data-name="Step 3">Step 3</div>
     </div>
-    <div class="mt-14 w-full max-w-[338px] mx-auto flex-1 pb-8">
+    <div class="mt-6 w-full max-w-[338px] mx-auto flex-1 pb-8">
       <div class="flex flex-col w-full">
         <div class="flex flex-col w-full">
           <div
@@ -89,7 +89,7 @@
               />
             </div>
             <div
-              class="self-stretch my-auto text-base text-[#EBD8B2]"
+              class="self-stretch my-auto text-base step-gradient-text"
               data-name="請選擇以下IP圖片範本（請點擊圖片）"
             >
               請選擇以下IP圖片範本（請點擊圖片）
@@ -99,9 +99,9 @@
             <div class="grid grid-cols-2 gap-3">
               <!-- 模板 1 -->
               <div
-                class="cursor-pointer rounded-md transition-all duration-200 hover:scale-105"
+                class="cursor-pointer rounded-md transition-all duration-200 hover:scale-105 relative"
                 :class="{
-                  'ring-2 ring-[#EBD8B2]': selectedTemplate === 'a1art1',
+                  'gradient-ring': selectedTemplate === 'a1art1',
                 }"
                 @click="selectTemplate('a1art1')"
               >
@@ -114,9 +114,9 @@
               
               <!-- 模板 2 -->
               <div
-                class="cursor-pointer rounded-md transition-all duration-200 hover:scale-105"
+                class="cursor-pointer rounded-md transition-all duration-200 hover:scale-105 relative"
                 :class="{
-                  'ring-2 ring-[#EBD8B2]': selectedTemplate === 'a1art2',
+                  'gradient-ring': selectedTemplate === 'a1art2',
                 }"
                 @click="selectTemplate('a1art2')"
               >
@@ -129,9 +129,9 @@
               
               <!-- 模板 3 -->
               <div
-                class="cursor-pointer rounded-md transition-all duration-200 hover:scale-105"
+                class="cursor-pointer rounded-md transition-all duration-200 hover:scale-105 relative"
                 :class="{
-                  'ring-2 ring-[#EBD8B2]': selectedTemplate === 'a1art3',
+                  'gradient-ring': selectedTemplate === 'a1art3',
                 }"
                 @click="selectTemplate('a1art3')"
               >
@@ -144,9 +144,9 @@
               
               <!-- 模板 4 -->
               <div
-                class="cursor-pointer rounded-md transition-all duration-200 hover:scale-105"
+                class="cursor-pointer rounded-md transition-all duration-200 hover:scale-105 relative"
                 :class="{
-                  'ring-2 ring-[#EBD8B2]': selectedTemplate === 'a1art4',
+                  'gradient-ring': selectedTemplate === 'a1art4',
                 }"
                 @click="selectTemplate('a1art4')"
               >
@@ -160,23 +160,20 @@
           </div>
         </div>
         <div
-          class="self-end mt-16 w-full text-base font-bold text-white whitespace-nowrap rounded-md max-w-[336px]"
+          class="self-end mt-16 w-full text-base font-bold whitespace-nowrap rounded-md max-w-[336px]"
         >
           <div
-            class="flex gap-5 justify-center items-center px-36 py-3.5 rounded-md min-h-11 cursor-pointer transition-all duration-300"
-            :class="
-              selectedTemplate
-                ? 'bg-gradient-to-r from-[#EE95FF] via-[#F192FF] to-[#AFCBF7] hover:shadow-lg text-gray-800'
-                : 'bg-[#EBD8B2] text-[#333333]'
-            "
+            class="flex gap-5 justify-center items-center px-36 py-3.5 rounded-md min-h-11 cursor-pointer transition-all duration-300 hover:shadow-lg"
+            style="background: linear-gradient(to bottom, #FFC1DE 0%, #FD79B5 100%);"
+            :class="selectedTemplate ? '' : 'opacity-50 cursor-not-allowed'"
             @click="nextStep"
           >
-            <div class="self-stretch my-auto" data-name="下一步">下一步</div>
+            <div class="self-stretch my-auto cp-font text-[#0E0E0E]" data-name="下一步">下一步</div>
           </div>
         </div>
       </div>
       <div
-        class="mt-9 text-base font-bold text-center text-[#EBD8B2] cursor-pointer hover:text-[#d4c29a] transition-colors"
+        class="mt-9 text-base font-bold text-center step-gradient-text cursor-pointer transition-colors"
         data-name="圖片生成紀錄"
         @click="showHistory"
       >

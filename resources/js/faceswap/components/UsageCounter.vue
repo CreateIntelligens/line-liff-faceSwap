@@ -1,6 +1,6 @@
 <template>
-  <div class="flex justify-center items-center w-[114px] h-8 rounded-[50px] bg-[#EBD8B2]">
-    <div class="font-noto-sans-tc text-xs font-bold text-[#333]">
+  <div class="flex justify-center items-center w-[114px] h-8 rounded-[50px]" style="background: linear-gradient(to bottom, #FD7BB9 0%, #FEAEC7 23%, #FFB3CD 77%, #FC7BBB 100%);">
+    <div class="cp-font text-xs font-bold text-[#0E0E0E]">
       已生成：{{ currentCount }}/{{ maxLimit }}
     </div>
   </div>
@@ -8,6 +8,7 @@
 
 <script setup>
 import { watch } from 'vue'
+import { appConfig } from '@/config/appConfig'
 
 const props = defineProps({
   currentCount: {
@@ -16,7 +17,7 @@ const props = defineProps({
   },
   maxLimit: {
     type: Number,
-    default: 10
+    default: appConfig.maxUsageLimit
   }
 })
 
