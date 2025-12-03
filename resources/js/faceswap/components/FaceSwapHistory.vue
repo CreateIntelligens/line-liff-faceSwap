@@ -1,5 +1,14 @@
 <template>
-  <div class="min-h-screen bg-[#333333] flex flex-col">
+  <div 
+    class="min-h-screen flex flex-col"
+    :style="{ 
+      minHeight: '100dvh',
+      backgroundImage: `url(${imageUrls.background1})`, 
+      backgroundSize: '100% 100%', 
+      backgroundPosition: 'center center', 
+      backgroundRepeat: 'no-repeat'
+    }"
+  >
     <!-- Header -->
     <div class="flex justify-between items-center px-5 py-5 border-b border-[#EBD8B2]">
       <!-- Back arrow -->
@@ -15,7 +24,7 @@
       </button>
       
       <!-- Title -->
-      <div class="font-noto-sans-tc text-xl font-bold text-[#EBD8B2]">
+      <div class="text-xl font-bold step-gradient-text">
         圖片生成紀錄
       </div>
       

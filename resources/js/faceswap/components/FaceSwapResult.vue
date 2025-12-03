@@ -1,6 +1,13 @@
 <template>
   <div
-    class="relative mx-auto my-0 bg-[#333333] h-[774px] w-[375px] max-md:w-full max-md:max-w-screen-md max-sm:w-full max-sm:h-auto max-sm:min-h-[774px]"
+    class="relative mx-auto my-0 w-[375px] max-md:w-full max-md:max-w-screen-md max-sm:w-full"
+    :style="{ 
+      minHeight: '100dvh',
+      backgroundImage: `url(${imageUrls.background1})`, 
+      backgroundSize: '100% 100%', 
+      backgroundPosition: 'center center', 
+      backgroundRepeat: 'no-repeat'
+    }"
   >
     <!-- Face Swap History Page -->
     <FaceSwapHistory 
@@ -15,15 +22,17 @@
     <div v-if="!showHistory" class="flex-1 flex flex-col">
       <!-- Header -->
       <div class="flex gap-5 justify-center items-center px-12 py-6 w-full font-bold border-b border-[#EBD8B2] min-h-20">
-        <div class="text-xl text-[#EBD8B2]">
-          AI換臉
-        </div>
+        <img
+          :src="imageUrls.header1"
+          class="h-16 object-contain"
+          alt="AI換臉"
+        />
         <UsageCounter :currentCount="userUsage" :maxLimit="10" />
       </div>
 
      <!-- 步驟 -->
      <div
-      class="flex mt-8 max-w-full text-base font-bold text-center text-[#EBD8B2] whitespace-nowrap w-[202px] mx-auto"
+      class="flex items-center mt-8 max-w-full text-base font-bold text-center text-[#EBD8B2] whitespace-nowrap w-[202px] mx-auto"
     >
       <img
         :src="imageUrls.finish"
@@ -32,7 +41,8 @@
       />
       <img
         :src="imageUrls.horizontal"
-        class="object-contain shrink-0 my-auto aspect-[32.26] w-[65px]"
+        class="shrink-0 w-[65px] h-6 object-cover translate-y-2.5"
+        alt="分隔線"
       />
       <img
         :src="imageUrls.step2_inprogress"
@@ -41,7 +51,8 @@
       />
       <img
         :src="imageUrls.horizontal"
-        class="object-contain shrink-0 my-auto aspect-[32.26] w-[65px]"
+        class="shrink-0 w-[65px] h-6 object-cover translate-y-2.5"
+        alt="分隔線"
       />
       <img
         :src="imageUrls.step3_inactive"
@@ -51,11 +62,11 @@
     </div>
     <!-- 步驟文字 -->
     <div
-      class="flex gap-5 justify-between max-w-full text-sm text-center text-[#EBD8B2] w-[218px] mx-auto mb-8"
+      class="flex gap-5 justify-between max-w-full text-sm text-center w-[218px] mx-auto mb-8"
     >
-      <div data-name="Step 1">Step 1</div>
-      <div data-name="Step 2">Step 2</div>
-      <div data-name="Step 3">Step 3</div>
+      <div class="step-gradient-text" data-name="Step 1">Step 1</div>
+      <div class="step-gradient-text" data-name="Step 2">Step 2</div>
+      <div class="step-gradient-text" data-name="Step 3">Step 3</div>
     </div>
 
       
@@ -217,7 +228,7 @@
 
         <!-- Generation History Title -->
         <div 
-          class="font-noto-sans-tc text-base font-bold text-[#EBD8B2] text-center cursor-pointer hover:text-[#d4c29a] transition-colors"
+          class="text-base font-bold step-gradient-text text-center cursor-pointer transition-colors"
           @click="showHistory = true"
         >
           圖片生成紀錄
@@ -503,13 +514,17 @@ onMounted(() => {
 function getTemplateImage(templateId) {
   // 根據模板 ID 返回對應的圖片
   const imageMap = {
-    'play': imageUrls.play,   // 綜藝玩很大
-    'wife': imageUrls.wife,   // 犀利人妻
-    'love': imageUrls.love,   // 命中註定我愛你
-    'super': imageUrls.super  // 超級夜總會
+    'a1art1': imageUrls.a1art1,
+    'a1art2': imageUrls.a1art2,
+    'a1art3': imageUrls.a1art3,
+    'a1art4': imageUrls.a1art4,
+    'play': imageUrls.play,   // 舊模板（向後兼容）
+    'wife': imageUrls.wife,
+    'love': imageUrls.love,
+    'super': imageUrls.super
   };
   
-  return imageMap[templateId] || imageUrls.play;
+  return imageMap[templateId] || imageUrls.a1art1;
 }
 
 // 獲取模板名稱

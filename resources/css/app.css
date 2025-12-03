@@ -14,4 +14,30 @@
   .font-noto-sans-tc {
     font-family: 'Noto Sans TC', -apple-system, Roboto, Helvetica, sans-serif;
   }
+
+  /* 全站預設使用 CP Font 做為主要字體 */
+  body {
+    font-family: 'CP Font', 'Noto Sans TC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+}
+@font-face {
+  font-family: 'CP Font';
+  src: url('/fonts/CP-Font.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.cp-font {
+  font-family: 'CP Font', 'Noto Sans TC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* 步驟文字漸層樣式 */
+.step-gradient-text {
+  font-family: 'CP Font', 'Noto Sans TC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: linear-gradient(to right, #FD7BB9 0%, #FEAEC7 23%, #FFB3CD 77%, #FC7BBB 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
 }

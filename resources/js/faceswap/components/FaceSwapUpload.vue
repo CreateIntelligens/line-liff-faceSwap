@@ -1,17 +1,28 @@
 <template>
   <div
-    class="relative mx-auto my-0 bg-[#333333] h-[774px] w-[375px] max-md:w-full max-md:max-w-screen-md max-sm:w-full max-sm:h-auto max-sm:min-h-[774px]"
+    class="relative mx-auto my-0 w-[375px] max-md:w-full max-md:max-w-screen-md max-sm:w-full"
+    :style="{ 
+      minHeight: '100dvh',
+      backgroundImage: `url(${imageUrls.background1})`, 
+      backgroundSize: '100% 100%', 
+      backgroundPosition: 'center center', 
+      backgroundRepeat: 'no-repeat'
+    }"
   >
     <!-- Header -->
     <div
       class="flex gap-5 justify-center items-center px-5 py-6 font-bold border-b border-[#EBD8B2] min-h-20"
     >
-      <div class="text-xl text-[#EBD8B2]">AI換臉</div>
+      <img
+        :src="imageUrls.header1"
+        class="h-16 object-contain"
+        alt="AI換臉"
+      />
       <UsageCounter :currentCount="userUsage" :maxLimit="10" />
     </div>
     <!-- 步驟 -->
     <div
-      class="flex mt-8 max-w-full text-base font-bold text-center text-[#EBD8B2] whitespace-nowrap w-[202px] mx-auto"
+      class="flex items-center mt-8 max-w-full text-base font-bold text-center text-[#EBD8B2] whitespace-nowrap w-[202px] mx-auto"
     >
       <img
         :src="imageUrls.finish"
@@ -20,7 +31,8 @@
       />
       <img
         :src="imageUrls.horizontal"
-        class="object-contain shrink-0 my-auto aspect-[32.26] w-[65px]"
+        class="shrink-0 w-[65px] h-6 object-cover translate-y-2.5"
+        alt="分隔線"
       />
       <img
         :src="imageUrls.step2_inprogress"
@@ -29,7 +41,8 @@
       />
       <img
         :src="imageUrls.horizontal"
-        class="object-contain shrink-0 my-auto aspect-[32.26] w-[65px]"
+        class="shrink-0 w-[65px] h-6 object-cover translate-y-2.5"
+        alt="分隔線"
       />
       <img
         :src="imageUrls.step3_inactive"
@@ -39,11 +52,11 @@
     </div>
     <!-- 步驟文字 -->
     <div
-      class="flex gap-5 justify-between max-w-full text-sm text-center text-[#EBD8B2] w-[218px] mx-auto mb-8"
+      class="flex gap-5 justify-between max-w-full text-sm text-center w-[218px] mx-auto mb-8"
     >
-      <div data-name="Step 1">Step 1</div>
-      <div data-name="Step 2">Step 2</div>
-      <div data-name="Step 3">Step 3</div>
+      <div class="step-gradient-text" data-name="Step 1">Step 1</div>
+      <div class="step-gradient-text" data-name="Step 2">Step 2</div>
+      <div class="step-gradient-text" data-name="Step 3">Step 3</div>
     </div>
 
     <!-- Main Content Container -->
@@ -65,28 +78,6 @@
         </div>
       </div>
 
-      <!-- Character Selection -->
-      <div v-if="props.selectedTemplate" class="mb-8">
-        <h3 class="text-base font-bold text-center text-[#EBD8B2] mb-4">
-          請選擇要換臉的人物
-        </h3>
-        <div class="flex justify-center gap-4">
-          <button
-            v-for="(character, index) in getTemplateCharacters()"
-            :key="index"
-            class="flex-1 h-11 px-3 py-3 justify-center items-center rounded-md cursor-pointer transition-all duration-300 text-base font-bold"
-            :class="
-              selectedCharacter === `character${index + 1}`
-                ? 'bg-gradient-to-r from-[#EE95FF] via-[#F192FF] to-[#AFCBF7] shadow-lg text-gray-800'
-                : 'bg-[#EBD8B2] text-[#333] hover:bg-[#d4c29a]'
-            "
-            @click="selectCharacter(`character${index + 1}`, index)"
-          >
-            {{ character }}
-          </button>
-        </div>
-      </div>
-
       <!-- Upload Section -->
       <div class="flex-1">
         <div v-if="props.selectedTemplate">
@@ -96,7 +87,7 @@
               class="w-[26px] h-[26px] object-contain"
               alt="Step 2 In Progress"
             />
-            <h3 class="text-base font-bold text-[#EBD8B2]">
+            <h3 class="text-base font-bold step-gradient-text">
               請上傳一張正面清晰的原始圖片
             </h3>
           </div>
@@ -287,7 +278,7 @@ const showSecondDialog = ref(false);
 
 
 const canGenerate = computed(() => {
-  return props.selectedTemplate && selectedCharacter.value && uploadedImage.value;
+  return props.selectedTemplate && uploadedImage.value;
 });
 
 function selectCharacter(characterId, index) {
@@ -308,13 +299,17 @@ function getTemplateCharacters() {
 
 function getTemplateImage(templateKey) {
   const imageMap = {
-    'play': imageUrls.play,   // 綜藝玩很大
-    'wife': imageUrls.wife,   // 犀利人妻
-    'love': imageUrls.love,   // 命中註定我愛你
-    'super': imageUrls.super  // 超級夜總會
+    'a1art1': imageUrls.a1art1,
+    'a1art2': imageUrls.a1art2,
+    'a1art3': imageUrls.a1art3,
+    'a1art4': imageUrls.a1art4,
+    'play': imageUrls.play,   // 舊模板（向後兼容）
+    'wife': imageUrls.wife,
+    'love': imageUrls.love,
+    'super': imageUrls.super
   };
   
-  return imageMap[templateKey] || imageUrls.play;
+  return imageMap[templateKey] || imageUrls.a1art1;
 }
 
 function getTemplateName(templateId) {
@@ -376,26 +371,28 @@ async function generateFaceSwap() {
     showFirstDialog.value = true;
     
     try {
-      // 使用新的 getFaceIndex 函數獲取正確的 face_index
-      const targetFaceIndex = getFaceIndex(props.selectedTemplate, selectedCharacter.value)
-      
       // 準備FormData - 純粹的API調用，不改變UI
       const formData = new FormData();
-              formData.append('userId', props.userId || 'abc'); // 使用傳入的用戶ID或後備值
+      formData.append('userId', props.userId || 'abc'); // 使用傳入的用戶ID或後備值
       formData.append('file', uploadedImage.value);
       
       // 將字符串模板ID轉換為對應的數字ID (1,2,3,4)
       const templateIdMap = {
-        'play': '1',     // 綜藝玩很大 → 模板 1
-        'wife': '2',     // 犀利人妻 → 模板 2
-        'love': '3',     // 命中註定我愛你 → 模板 3
-        'super': '4'     // 超級夜總會 → 模板 4
+        'a1art1': '1',   // 模板 1
+        'a1art2': '2',   // 模板 2
+        'a1art3': '3',   // 模板 3
+        'a1art4': '4',   // 模板 4
+        'play': '1',     // 舊模板（向後兼容）
+        'wife': '2',
+        'love': '3',
+        'super': '4'
       };
       const numericTemplateId = templateIdMap[props.selectedTemplate] || '1';
       formData.append('template_id', numericTemplateId);
       
-      formData.append('target_face_index', targetFaceIndex); // 使用新的 getFaceIndex 函數獲取正確的 face_index
-      formData.append('userInfo', `選擇的角色: ${selectedCharacter.value}`);
+      // 使用預設的 face_index (0)
+      formData.append('target_face_index', 0);
+      formData.append('userInfo', `選擇的模板: ${props.selectedTemplate}`);
       
       // 調用API生成頭像
       const result = await roadshowService.generateAvatar(formData);
@@ -407,7 +404,6 @@ async function generateFaceSwap() {
           showSecondDialog.value = true;
           setTimeout(() => {
             emit("generate", {
-              selectedCharacter: selectedCharacter.value,
               uploadedImage: uploadedImage.value,
               taskId: result.result?.task_id || result.result?.id,
               selectedTemplate: props.selectedTemplate  // 添加選擇的模板ID

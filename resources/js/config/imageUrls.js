@@ -10,13 +10,20 @@ import playImg from '../../images/play.png'
 import wifeImg from '../../images/wife.png'
 import loveImg from '../../images/love.png'
 import superImg from '../../images/super.png'
+import a1art1Img from '../../images/a1art1.png'
+import a1art2Img from '../../images/a1art2.png'
+import a1art3Img from '../../images/a1art3.png'
+import a1art4Img from '../../images/a1art4.png'
 import backImg from '../../images/back.png'
 import crownImg from '../../images/crown.png'
 import group13948Img from '../../images/Group13948.png'
 import headerImg from '../../images/header.png'
+import header1Img from '../../images/header1.png'
 import logoImg from '../../images/logo.png'
 import starImg from '../../images/star.png'
 import uploadImg from '../../images/upload.png'
+import hpbackgroundImg from '../../images/hpbackground.png'
+import background1Img from '../../images/background1.png'
 
 // 使用 Vite 的動態導入來獲取圖片 URL，建置時會自動處理雜湊
 export const imageUrls = {
@@ -34,15 +41,22 @@ export const imageUrls = {
   wife: wifeImg,
   love: loveImg,
   super: superImg,
+  a1art1: a1art1Img,
+  a1art2: a1art2Img,
+  a1art3: a1art3Img,
+  a1art4: a1art4Img,
   
   // 其他圖片
   back: backImg,
   crown: crownImg,
   Group13948: group13948Img,
   header: headerImg,
+  header1: header1Img,
   logo: logoImg,
   star: starImg,
   upload: uploadImg,
+  hpbackground: hpbackgroundImg,
+  background1: background1Img,
 };
 
 // 根據模板 ID 獲取圖片

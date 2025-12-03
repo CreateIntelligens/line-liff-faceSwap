@@ -10,23 +10,34 @@
   <!-- Main Template Selection Page -->
   <div
     v-if="!showHistoryPage"
-    class="relative mx-auto my-0 bg-[#333333] h-[774px] w-[375px] max-md:w-full max-md:max-w-screen-md max-sm:w-full max-sm:h-auto max-sm:min-h-[774px]"
+    class="relative mx-auto my-0 w-[375px] max-md:w-full max-md:max-w-screen-md max-sm:w-full flex flex-col overflow-y-auto"
     data-name="換臉_橫式範本"
+    :style="{ 
+      minHeight: '100dvh',
+      backgroundImage: `url(${imageUrls.background1})`, 
+      backgroundSize: '100% 100%', 
+      backgroundPosition: 'center center', 
+      backgroundRepeat: 'no-repeat'
+    }"
   >
     <div
       class="flex gap-5 justify-center items-center self-stretch px-5 py-6 w-full font-bold whitespace-nowrap border-b border-[#EBD8B2] min-h-20"
     >
       <div
-        class="self-stretch my-auto text-xl text-[#EBD8B2]"
+        class="self-stretch my-auto"
         data-name="AI換臉"
       >
-        AI換臉
+        <img
+          :src="imageUrls.header1"
+          class="h-16 object-contain"
+          alt="AI換臉"
+        />
       </div>
               <UsageCounter :currentCount="userUsage" :maxLimit="10" />
     </div>
     <!-- 步驟 -->
     <div
-      class="flex mt-8 max-w-full text-base font-bold text-center text-[#EBD8B2] whitespace-nowrap w-[202px] mx-auto"
+      class="flex items-center mt-8 max-w-full text-base font-bold text-center text-[#EBD8B2] whitespace-nowrap w-[202px] mx-auto"
     >
       <img
         :src="imageUrls.step1"
@@ -35,7 +46,8 @@
       />
       <img
         :src="imageUrls.horizontal"
-        class="object-contain shrink-0 my-auto aspect-[32.26] w-[65px]"
+        class="shrink-0 w-[65px] h-6 object-cover translate-y-2.5"
+        alt="分隔線"
       />
       <img
         :src="imageUrls.step2_inactive"
@@ -44,7 +56,8 @@
       />
       <img
         :src="imageUrls.horizontal"
-        class="object-contain shrink-0 my-auto aspect-[32.26] w-[65px]"
+        class="shrink-0 w-[65px] h-6 object-cover translate-y-2.5"
+        alt="分隔線"
       />
       <img
         :src="imageUrls.step3_inactive"
@@ -54,13 +67,13 @@
     </div>
     <!-- 步驟文字 -->
     <div
-      class="flex gap-5 justify-between max-w-full text-sm text-center text-[#EBD8B2] w-[218px] mx-auto"
+      class="flex gap-5 justify-between max-w-full text-sm text-center w-[218px] mx-auto"
     >
-      <div data-name="Step 1">Step 1</div>
-      <div data-name="Step 2">Step 2</div>
-      <div data-name="Step 3">Step 3</div>
+      <div class="step-gradient-text" data-name="Step 1">Step 1</div>
+      <div class="step-gradient-text" data-name="Step 2">Step 2</div>
+      <div class="step-gradient-text" data-name="Step 3">Step 3</div>
     </div>
-    <div class="mt-14 w-full max-w-[338px] mx-auto">
+    <div class="mt-14 w-full max-w-[338px] mx-auto flex-1 pb-8">
       <div class="flex flex-col w-full">
         <div class="flex flex-col w-full">
           <div
@@ -84,62 +97,62 @@
           </div>
           <div class="mt-9 w-full">
             <div class="grid grid-cols-2 gap-3">
-              <!-- 模板 10 (綜藝玩很大) -->
+              <!-- 模板 1 -->
               <div
                 class="cursor-pointer rounded-md transition-all duration-200 hover:scale-105"
                 :class="{
-                  'ring-2 ring-[#EBD8B2]': selectedTemplate === 'play',
+                  'ring-2 ring-[#EBD8B2]': selectedTemplate === 'a1art1',
                 }"
-                @click="selectTemplate('play')"
+                @click="selectTemplate('a1art1')"
               >
                 <img
-                  :src="getTemplateImage('play')"
-                  alt="綜藝玩很大"
+                  :src="imageUrls.a1art1"
+                  alt="模板 1"
                   class="w-full object-cover rounded-md"
                 />
               </div>
               
-              <!-- 模板 8 (犀利人妻) -->
+              <!-- 模板 2 -->
               <div
                 class="cursor-pointer rounded-md transition-all duration-200 hover:scale-105"
                 :class="{
-                  'ring-2 ring-[#EBD8B2]': selectedTemplate === 'wife',
+                  'ring-2 ring-[#EBD8B2]': selectedTemplate === 'a1art2',
                 }"
-                @click="selectTemplate('wife')"
+                @click="selectTemplate('a1art2')"
               >
                 <img
-                  :src="getTemplateImage('wife')"
-                  alt="犀利人妻"
+                  :src="imageUrls.a1art2"
+                  alt="模板 2"
                   class="w-full object-cover rounded-md"
                 />
               </div>
               
-              <!-- 模板 9 (命中註定我愛你) -->
+              <!-- 模板 3 -->
               <div
                 class="cursor-pointer rounded-md transition-all duration-200 hover:scale-105"
                 :class="{
-                  'ring-2 ring-[#EBD8B2]': selectedTemplate === 'love',
+                  'ring-2 ring-[#EBD8B2]': selectedTemplate === 'a1art3',
                 }"
-                @click="selectTemplate('love')"
+                @click="selectTemplate('a1art3')"
               >
                 <img
-                  :src="getTemplateImage('love')"
-                  alt="命中註定我愛你"
+                  :src="imageUrls.a1art3"
+                  alt="模板 3"
                   class="w-full object-cover rounded-md"
                 />
               </div>
               
-              <!-- 模板 11 (超級夜總會) -->
+              <!-- 模板 4 -->
               <div
                 class="cursor-pointer rounded-md transition-all duration-200 hover:scale-105"
                 :class="{
-                  'ring-2 ring-[#EBD8B2]': selectedTemplate === 'super',
+                  'ring-2 ring-[#EBD8B2]': selectedTemplate === 'a1art4',
                 }"
-                @click="selectTemplate('super')"
+                @click="selectTemplate('a1art4')"
               >
                 <img
-                  :src="getTemplateImage('super')"
-                  alt="超級夜總會"
+                  :src="imageUrls.a1art4"
+                  alt="模板 4"
                   class="w-full object-cover rounded-md"
                 />
               </div>
@@ -230,13 +243,17 @@ function showHistory() {
 
 function getTemplateImage(templateKey) {
   const imageMap = {
-    'play': imageUrls.play,   // 綜藝玩很大
-    'wife': imageUrls.wife,   // 犀利人妻
-    'love': imageUrls.love,   // 命中註定我愛你
-    'super': imageUrls.super  // 超級夜總會
+    'a1art1': imageUrls.a1art1,
+    'a1art2': imageUrls.a1art2,
+    'a1art3': imageUrls.a1art3,
+    'a1art4': imageUrls.a1art4,
+    'play': imageUrls.play,   // 舊模板（向後兼容）
+    'wife': imageUrls.wife,
+    'love': imageUrls.love,
+    'super': imageUrls.super
   };
   
-  return imageMap[templateKey] || imageUrls.play;
+  return imageMap[templateKey] || imageUrls.a1art1;
 }
 </script>
 
