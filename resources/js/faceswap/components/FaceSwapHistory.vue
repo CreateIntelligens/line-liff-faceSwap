@@ -51,8 +51,8 @@
     <div class="flex-1 px-6 py-8">
       <!-- Loading state -->
       <div v-if="isLoading" class="flex flex-col items-center justify-center py-12">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#EBD8B2] mb-4"></div>
-        <div class="text-[#EBD8B2] text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FFC1DE] mb-4"></div>
+        <div class="text-[#FFC1DE] text-center">
           <div class="text-lg font-bold mb-2">載入中...</div>
           <div class="text-sm">正在獲取您的生成紀錄</div>
         </div>
@@ -65,7 +65,7 @@
           <div class="text-sm mb-4">{{ error }}</div>
           <button 
             @click="loadUserHistory"
-            class="px-4 py-2 bg-[#EBD8B2] text-[#333] rounded-md hover:bg-[#d4c29a] transition-colors"
+            class="px-4 py-2 bg-[#FC7BBB] text-[#333] rounded-md hover:opacity-80 transition-colors"
           >
             重試
           </button>

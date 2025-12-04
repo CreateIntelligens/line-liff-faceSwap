@@ -36,23 +36,11 @@
       </div>
 
       <!-- Modal Body -->
-      <div class="flex-1 px-8 pb-8 pt-8 bg-[#E8E8E8]">
-        <div class="bg-[#333333] p-6 relative" ref="captureArea">
-          <!-- Left Edge Decoration -->
-          <div 
-            class="absolute left-0 top-44 w-[7px] h-[183px] flex-shrink-0"
-            style="background: linear-gradient(180deg, #12E5DA 0%, #14E1D6 5.29%, #2FD4D3 11.84%, #3DD0D3 17.92%, #8CCBDA 23.69%, #A5ABC8 28.59%, #BFA2C2 32.33%, #D39BB3 37.03%, #D99BA9 41.51%, #DD9F95 46.52%, #DDA587 50.79%, #DBAC7B 55.81%, #D4B581 60.93%, #CDB78F 66.05%, #B9B6B5 73.09%, #A1B0D5 79.33%, #83A3E6 86.54%, #749CEB 92.31%, #5E90EE 100%);"
-          ></div>
-          
-          <!-- Right Edge Decoration -->
-          <div 
-            class="absolute right-0 top-10 w-[7px] h-[183px] flex-shrink-0"
-            style="background: linear-gradient(180deg, #C1F09C 0%, #B7F3A8 6.56%, #ACF5B5 12.19%, #9EF4D0 20.74%, #A4E5E0 29.06%, #9ED7D3 33.58%, #B0CEEA 37.98%, #BCBDED 41.83%, #CBA4EB 48.08%, #DE97CD 55.29%, #EB9FA2 61.06%, #F2A77B 65.85%, #F9AC55 70.67%, #FCA63B 77.88%, #FC9540 83.65%, #FC7B52 89.9%, #FA6263 93.27%, #F64377 100%);"
-          ></div>
+      <div class="flex-1 flex items-center justify-center">
           <!-- 載入狀態 -->
           <div v-if="isLoading" class="flex flex-col items-center justify-center h-60">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#EBD8B2] mb-4"></div>
-            <div class="text-[#EBD8B2] text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FFC1DE] mb-4"></div>
+            <div class="text-[#FFC1DE] text-center">
               <div class="text-lg font-bold mb-2">載入中...</div>
               <div class="text-sm">正在獲取生成詳情</div>
             </div>
@@ -73,44 +61,12 @@
           </div>
 
           <!-- 詳情內容 -->
-          <div v-else-if="historyDetail" ref="detailArea" class="space-y-6">
-
-          <!-- Header Logo and Crown -->
-          <div class="relative flex justify-center">
-            <img 
-              :src="imageUrls.header" 
-              class="h-6 object-contain mx-auto" 
-              alt="標準字" 
-            />
-            <img 
-              :src="imageUrls.crown" 
-              class="absolute -right-0 top-5 w-12 h-12 object-contain transform -rotate-[14.809deg] z-50" 
-              alt="皇冠" 
-            />
-          </div>
-
-          <!-- Images Section -->
-          <div class="space-y-6">
-            <!-- Original Image with Star -->
-            <div class="relative">
-              <!-- <img 
-                :src="getTemplateImage(historyDetail.template_id)" 
-                :alt="`模板圖片 - ${getTemplateName(historyDetail.template_id)}`" 
-                class="w-full object-cover rounded-md"
-                @error="handleTemplateImageError"
-              /> -->
-              <img 
-                :src="imageUrls.star" 
-                class="absolute -left-4 -bottom-72 w-12 h-12 object-contain" 
-                alt="星" 
-              />
-            </div>
-
+          <div v-else-if="historyDetail" class="w-full px-4 py-8">
             <!-- Result Image -->
-            <div v-if="getHistoryImage(historyDetail)">
+            <template v-if="getHistoryImage(historyDetail)">
               <div class="mb-4">
                 <img 
-                  class="w-full object-cover rounded-md" 
+                  class="w-full object-contain rounded-md" 
                   :src="getHistoryImage(historyDetail)" 
                   alt="生成結果"
                   @error="handleResultImageError"
@@ -120,34 +76,19 @@
                   ⚠️ 圖片載入失敗，請檢查網路連線
                 </div>
               </div>
-            </div>
+            </template>
             <div v-else class="w-full h-60 bg-gray-700 rounded-md flex items-center justify-center">
-              <div class="text-[#EBD8B2] text-center">
-                <div class="text-lg font-bold mb-2">生成中...</div>
-                <div class="text-sm">請稍候，正在處理您的圖片</div>
+              <div class="text-[#FFC1DE] text-center">
+                <div class="text-lg font-bold mb-2">無法載入圖片</div>
+                <div class="text-xs mt-2">歷史項目: {{ historyDetail?.id || '無ID' }}</div>
+                <div class="text-xs">圖片字段: {{ historyDetail?.image || historyDetail?.image_url || historyDetail?.result_image || '無' }}</div>
               </div>
             </div>
-
-             <!-- Bottom Logo and Credit -->
-             <div class="flex flex-col items-center">
-               <img 
-                 :src="imageUrls.logo" 
-                 class="h-7 object-contain" 
-                 alt="0815" 
-               />
-               <div class="text-center mt-1 text-[#EBD8B2] text-xs font-normal font-noto-sans-tc">
-                 此 AI 服務由創造智能支持，讓你一秒變主角
-               </div>
-             </div>
           </div>
-
-
-          </div>
-        </div>
       </div>
 
       <!-- Action Buttons -->
-      <div class="bg-[#333333] px-12 py-8">
+      <div class="px-12 py-8">
         <div class="flex gap-3 mb-8">
           <!-- Regenerate Button -->
           <button 
@@ -186,11 +127,10 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { roadshowService } from '../../services/roadshowService.js'
 import { imageUrls } from '@/config/imageUrls'
 import UsageCounter from './UsageCounter.vue'
-import { useScreenshot } from '../../composables/useScreenshot.js'
 
 const props = defineProps({
   isVisible: {
@@ -219,17 +159,134 @@ const historyDetail = ref(null)
 const imageLoadErrors = ref({})
 
 // 截圖相關狀態
-const detailArea = ref(null)
-const captureArea = ref(null)
 const isDownloading = ref(false)
 
 // 使用截圖 composable
-const { captureScreenshot, compressImage, downloadToLocal, uploadImage, sendViaLiff, showMessage } = useScreenshot()
+// 顯示訊息函數
+function showMessage(message, type = 'info') {
+  if (type === 'success') {
+    alert(message)
+  } else if (type === 'error') {
+    alert(message)
+  } else {
+    console.log(message)
+  }
+}
 
-// 監聽彈窗顯示狀態
+// 使用 Canvas 下載圖片（後備方案）
+async function downloadImageViaCanvas(imageUrl, filename) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    
+    // 嘗試設置 crossOrigin，但如果失敗則不設置（允許同源或已設置 CORS 的圖片）
+    try {
+      img.crossOrigin = 'anonymous'
+    } catch (e) {
+      console.warn('⚠️ 無法設置 crossOrigin:', e)
+    }
+    
+    img.onload = function() {
+      try {
+        console.log('✅ 圖片載入成功，開始轉換為 Canvas')
+        const canvas = document.createElement('canvas')
+        canvas.width = img.width
+        canvas.height = img.height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0)
+        console.log('✅ Canvas 繪製完成，尺寸:', canvas.width, 'x', canvas.height)
+        
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            console.error('❌ Canvas 轉換為 Blob 失敗')
+            reject(new Error('Canvas 轉換失敗'))
+            return
+          }
+          
+          console.log('✅ Blob 創建成功，大小:', blob.size, 'bytes')
+          const blobUrl = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = blobUrl
+          link.download = filename
+          link.style.display = 'none'
+          document.body.appendChild(link)
+          link.click()
+          console.log('✅ 下載連結已觸發')
+          
+          setTimeout(() => {
+            document.body.removeChild(link)
+            window.URL.revokeObjectURL(blobUrl)
+          }, 100)
+          
+          resolve()
+        }, 'image/jpeg', 0.95)
+      } catch (error) {
+        console.error('❌ Canvas 處理錯誤:', error)
+        reject(error)
+      }
+    }
+    
+    img.onerror = function(event) {
+      console.error('❌ 圖片載入失敗:', event)
+      console.error('❌ 圖片 URL:', imageUrl)
+      reject(new Error('圖片載入失敗，可能是 CORS 問題'))
+    }
+    
+    console.log('🖼️ 開始載入圖片:', imageUrl)
+    img.src = imageUrl
+  })
+}
+
+// 透過 LIFF 發送圖片
+async function sendViaLiff(imageUrl) {
+  try {
+    if (typeof liff === 'undefined') {
+      throw new Error('LIFF SDK 未載入，請確保在 LINE 環境中使用')
+    }
+    
+    if (!liff.isInClient()) {
+      throw new Error('不在 LINE 應用內，無法發送訊息。請在 LINE 應用中開啟此頁面。')
+    }
+    
+    if (!liff.isLoggedIn()) {
+      throw new Error('用戶未登入，無法發送訊息。請先登入 LINE 帳號。')
+    }
+    
+    await liff.sendMessages([
+      {
+        type: 'image',
+        originalContentUrl: imageUrl,
+        previewImageUrl: imageUrl
+      }
+    ])
+  } catch (error) {
+    console.error('❌ 發送訊息失敗:', error)
+    if (error.message) {
+      throw error
+    } else {
+      throw new Error(`發送失敗: ${error.toString()}`)
+    }
+  }
+}
+
+// 監聽彈窗顯示狀態和歷史項目變化
 watch(() => props.isVisible, (newValue) => {
   if (newValue && props.historyItem) {
-    console.log('🔄 HistoryDetailModal - 接收到歷史項目:', props.historyItem)
+    console.log('🔄 HistoryDetailModal - 彈窗顯示，接收到歷史項目:', props.historyItem)
+    loadHistoryDetail()
+  }
+}, { immediate: true })
+
+watch(() => props.historyItem, (newItem) => {
+  if (props.isVisible && newItem) {
+    console.log('🔄 HistoryDetailModal - 歷史項目更新:', newItem)
+    loadHistoryDetail()
+  }
+}, { immediate: true })
+
+// 組件掛載時，如果已經有數據則載入
+onMounted(() => {
+  if (props.isVisible && props.historyItem) {
+    console.log('🚀 HistoryDetailModal - 組件掛載，載入歷史詳情')
     loadHistoryDetail()
   }
 })
@@ -238,6 +295,7 @@ watch(() => props.isVisible, (newValue) => {
 async function loadHistoryDetail() {
   if (!props.historyItem) {
     error.value = '沒有歷史項目數據'
+    console.error('❌ 沒有歷史項目數據')
     return
   }
 
@@ -246,12 +304,19 @@ async function loadHistoryDetail() {
     error.value = null
     
     console.log('📥 開始載入歷史詳情:', props.historyItem)
+    console.log('📋 歷史項目完整數據:', JSON.stringify(props.historyItem, null, 2))
     
     // 直接使用傳入的歷史項目數據
     historyDetail.value = {
-      ...props.historyItem,
-      // 確保圖片URL正確
-      image: getHistoryImage(props.historyItem)
+      ...props.historyItem
+    }
+    
+    // 檢查圖片 URL
+    const imageUrl = getHistoryImage(historyDetail.value)
+    console.log('🖼️ 獲取到的圖片 URL:', imageUrl)
+    
+    if (!imageUrl) {
+      console.warn('⚠️ 無法獲取圖片 URL，歷史項目數據:', historyDetail.value)
     }
     
     console.log('✅ 歷史詳情載入完成:', historyDetail.value)
@@ -264,43 +329,31 @@ async function loadHistoryDetail() {
   }
 }
 
-// 獲取模板圖片URL
 function getTemplateImage(templateId) {
-  console.log('🎨 獲取模板圖片，templateId:', templateId)
-  
-  // 支持字符串和數字形式的 template_id
   const imageMap = {
-    // 字符串形式
-    'play': imageUrls.play,
-    'wife': imageUrls.wife,
-    'love': imageUrls.love,
-    'super': imageUrls.super,
-    // 數字形式 (根據 FaceSwapUpload.vue 中的映射)
-    '1': imageUrls.play, // 綜藝玩很大
-    '2': imageUrls.wife, // 犀利人妻
-    '3': imageUrls.love, // 命中註定我愛你
-    '4': imageUrls.super  // 超級夜總會
+    'a1art1': imageUrls.a1art1,
+    'a1art2': imageUrls.a1art2,
+    'a1art3': imageUrls.a1art3,
+    'a1art4': imageUrls.a1art4,
+    '0': imageUrls.a1art1,
+    '1': imageUrls.a1art2,
+    '2': imageUrls.a1art3,
+    '3': imageUrls.a1art4
   }
   
-  const imageUrl = imageMap[templateId] || imageUrls.play
-  console.log('🎨 模板圖片URL:', imageUrl)
-  return imageUrl
+  return imageMap[templateId] || imageUrls.a1art1
 }
 
-// 獲取模板名稱
 function getTemplateName(templateId) {
-  // 支持字符串和數字形式的 template_id
   const nameMap = {
-    // 字符串形式
-    'play': '綜藝玩很大',
-    'wife': '犀利人妻',
-    'love': '命中註定我愛你',
-    'super': '超級夜總會',
-    // 數字形式 (根據 FaceSwapUpload.vue 中的映射)
-    '1': '綜藝玩很大',
-    '2': '犀利人妻',
-    '3': '命中註定我愛你',
-    '4': '超級夜總會'
+    'a1art1': '動漫展-90年代漫畫顛',
+    'a1art2': '動漫展-90年代漫畫顛',
+    'a1art3': '動漫展-90年代漫畫顛',
+    'a1art4': '動漫展-90年代漫畫顛',
+    '0': '動漫展-90年代漫畫顛',
+    '1': '動漫展-90年代漫畫顛',
+    '2': '動漫展-90年代漫畫顛',
+    '3': '動漫展-90年代漫畫顛'
   }
   
   return nameMap[templateId] || '預設模板'
@@ -477,32 +530,99 @@ async function downloadToOfficial() {
     return
   }
 
+  // 獲取圖片 URL（顯示用的處理後 URL）
+  const displayImageUrl = getHistoryImage(historyDetail.value)
+  if (!displayImageUrl) {
+    console.warn('⚠️ 沒有圖片，無法下載')
+    showMessage('沒有圖片，無法下載', 'error')
+    return
+  }
+
+  // 在本地測試時，使用原始圖片 URL（避免 CORS 問題）
+  // 原始圖片 URL 來自 historyDetail.value.image
+  const originalImageUrl = historyDetail.value?.image || displayImageUrl
+  const downloadImageUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+    ? originalImageUrl 
+    : displayImageUrl
+
   try {
     isDownloading.value = true
     console.log('📥 開始下載歷史項目至官方帳號流程')
     
-    // 1. 截圖
-    const canvas = await captureScreenshot(captureArea.value)
-    console.log('✅ 截圖完成')
-    
-    // 2. 轉換為 Blob
-    const blob = await compressImage(canvas)
-    console.log('✅ 圖片處理完成')
-    
     // 本地測試：先下載到本機確認圖片
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      console.log('🧪 本地測試模式：下載截圖到本機')
-      downloadToLocal(blob, 'history-detail')
-      showMessage('截圖已下載到本機，請檢查圖片品質', 'success')
+      console.log('🧪 本地測試模式：下載圖片到本機')
+      console.log('📸 顯示用圖片 URL:', displayImageUrl)
+      console.log('📸 下載用原始圖片 URL:', downloadImageUrl)
+      
+      try {
+        // 方法1: 使用 XMLHttpRequest 下載圖片（更可靠，支持跨域）
+        const blob = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest()
+          xhr.open('GET', downloadImageUrl, true)
+          xhr.responseType = 'blob'
+          
+          xhr.onload = function() {
+            if (xhr.status === 200) {
+              resolve(xhr.response)
+            } else {
+              reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`))
+            }
+          }
+          
+          xhr.onerror = function() {
+            reject(new Error('網路錯誤，無法下載圖片'))
+          }
+          
+          xhr.onabort = function() {
+            reject(new Error('下載被取消'))
+          }
+          
+          xhr.send()
+        })
+        
+        // 創建 blob URL 並下載
+        const blobUrl = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = blobUrl
+        link.download = `history-detail-${Date.now()}.jpg`
+        link.style.display = 'none'
+        document.body.appendChild(link)
+        link.click()
+        
+        // 延遲清理，確保下載開始
+        setTimeout(() => {
+          document.body.removeChild(link)
+          window.URL.revokeObjectURL(blobUrl)
+        }, 100)
+        
+        console.log('✅ 圖片已下載到本機')
+        showMessage('圖片已下載到本機', 'success')
+      } catch (downloadError) {
+        console.error('❌ 下載圖片失敗:', downloadError)
+        console.error('❌ 錯誤詳情:', {
+          message: downloadError.message,
+          stack: downloadError.stack,
+          downloadImageUrl: downloadImageUrl,
+          displayImageUrl: displayImageUrl
+        })
+        
+        // 如果 XMLHttpRequest 也失敗，嘗試使用 canvas 方式
+        try {
+          await downloadImageViaCanvas(downloadImageUrl, 'history-detail.jpg')
+          showMessage('圖片已下載到本機', 'success')
+        } catch (canvasError) {
+          console.error('❌ Canvas 下載也失敗:', canvasError)
+          // 最後的後備方案：直接打開連結
+          window.open(downloadImageUrl, '_blank')
+          showMessage('下載失敗，已在新視窗打開圖片連結', 'error')
+        }
+      }
       return
     }
     
-    // 3. 上傳到伺服器
-    const imageUrl = await uploadImage(blob, props.userId || 'abc', 'history-detail')
-    console.log('✅ 圖片上傳完成:', imageUrl)
-    
-    // 4. 透過 LIFF 發送
-    await sendViaLiff(imageUrl)
+    // 生產環境：透過 LIFF 發送（使用顯示用的處理後 URL）
+    await sendViaLiff(displayImageUrl)
     console.log('✅ 發送完成')
     
     showMessage('圖片已成功發送到官方帳號！', 'success')

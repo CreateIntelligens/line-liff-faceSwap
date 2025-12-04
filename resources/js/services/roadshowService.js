@@ -27,10 +27,7 @@ export const roadshowService = {
     async getTemplates() {
         try {
             const config = getApiConfig();
-            const url = `${config.baseURL}/roadshow/templates`;
-            
-            console.log('🔍 發送請求到:', url);
-            console.log('🔐 使用認證token:', config.authToken);
+            const url = `${config.baseURL}/fancy_frontier/templates`;
             
             const response = await fetch(url, {
                 method: 'GET',
@@ -40,21 +37,14 @@ export const roadshowService = {
                 }
             });
             
-            console.log('📡 響應狀態:', response.status, response.statusText);
-            console.log('📡 響應頭:', Object.fromEntries(response.headers.entries()));
-            
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
-            // 先讀取響應文本，看看實際返回了什麼
             const responseText = await response.text();
-            console.log('📡 響應內容前200字符:', responseText.substring(0, 200));
             
-            // 檢查是否為HTML響應
             if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
                 console.error('❌ API返回HTML頁面，不是JSON數據');
-                console.error('❌ 完整響應:', responseText);
                 throw new Error('API返回HTML頁面，可能需要額外認證或端點錯誤');
             }
             
@@ -72,7 +62,7 @@ export const roadshowService = {
     async getUserHistory(userId) {
         try {
             const config = getApiConfig();
-            const url = `${config.baseURL}/roadshow/user/${userId}/avatars`;
+            const url = `${config.baseURL}/fancy_frontier/user/${userId}/avatars`;
             
             const response = await fetch(url, {
                 method: 'GET',
@@ -129,16 +119,7 @@ export const roadshowService = {
     async generateAvatar(formData) {
         try {
             const config = getApiConfig();
-            const url = `${config.baseURL}/roadshow`;
-            
-            console.log('🚀 發送生成頭像請求到:', url);
-            console.log('🔐 使用認證token:', config.authToken);
-            
-            // 檢查 FormData 內容
-            console.log('📋 FormData 內容:');
-            for (let [key, value] of formData.entries()) {
-                console.log(`  ${key}:`, value);
-            }
+            const url = `${config.baseURL}/fancy_frontier`;
             
             const response = await fetch(url, {
                 method: 'POST',
@@ -149,27 +130,26 @@ export const roadshowService = {
                 body: formData
             });
             
-            console.log('📡 響應狀態:', response.status, response.statusText);
-            console.log('📡 響應頭:', Object.fromEntries(response.headers.entries()));
-            
             if (!response.ok) {
-                // 嘗試讀取錯誤響應
                 let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
                 let errorData = null;
                 
                 try {
                     const errorText = await response.text();
-                    console.log('📡 錯誤響應內容:', errorText);
                     if (errorText) {
                         try {
                             errorData = JSON.parse(errorText);
-                            errorMessage = errorData.message || errorData.result?.message || errorMessage;
+                            errorMessage = errorData.message || 
+                                         errorData.detail || 
+                                         errorData.error || 
+                                         errorData.result?.message || 
+                                         (typeof errorData === 'string' ? errorData : errorMessage);
                         } catch (parseError) {
                             errorMessage += ` - ${errorText}`;
                         }
                     }
                 } catch (e) {
-                    console.log('📡 無法讀取錯誤響應內容');
+                    // 無法讀取錯誤響應
                 }
                 
                 // 創建結構化的錯誤對象
@@ -180,7 +160,18 @@ export const roadshowService = {
             }
             
             const data = await response.json();
-            console.log('✅ 生成頭像成功:', data);
+            
+            if (data.status === 'success' && data.result && data.result.task_id) {
+                return {
+                    success: true,
+                    status: 'success',
+                    result: {
+                        task_id: data.result.task_id,
+                        id: data.result.task_id // 向後兼容
+                    }
+                };
+            }
+            
             return data;
         } catch (error) {
             console.error('❌ 生成頭像失敗:', error);
@@ -201,10 +192,7 @@ export const roadshowService = {
     async checkTaskStatus(taskId) {
         try {
             const config = getApiConfig();
-            const url = `${config.baseURL}/roadshow/status/${taskId}`;
-            
-            console.log('🔍 檢查任務狀態:', url);
-            console.log('🔐 使用認證token:', config.authToken);
+            const url = `${config.baseURL}/fancy_frontier/status/${taskId}`;
             
             const response = await fetch(url, {
                 method: 'GET',
@@ -214,27 +202,47 @@ export const roadshowService = {
                 }
             });
             
-            console.log('📡 響應狀態:', response.status, response.statusText);
-            console.log('📡 響應頭:', Object.fromEntries(response.headers.entries()));
-            
             if (!response.ok) {
-                // 嘗試讀取錯誤響應
                 let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
                 try {
                     const errorData = await response.text();
-                    console.log('📡 錯誤響應內容:', errorData);
                     if (errorData) {
                         errorMessage += ` - ${errorData}`;
                     }
                 } catch (e) {
-                    console.log('📡 無法讀取錯誤響應內容');
+                    // 無法讀取錯誤響應
                 }
                 throw new Error(errorMessage);
             }
             
             const data = await response.json();
-            console.log('✅ 任務狀態檢查成功:', data);
-            return data;
+            
+            let taskData = data;
+            
+            if (data.result && typeof data.result === 'object') {
+                taskData = data.result;
+            }
+            
+            // 返回標準化格式以保持向後兼容
+            if (taskData.id && taskData.status !== undefined) {
+                return {
+                    success: true,
+                    id: taskData.id,
+                    status: taskData.status,
+                    images: taskData.images || [],
+                    template_id: taskData.template_id || '',
+                    // 向後兼容字段
+                    result: taskData,
+                    // 保留原始響應
+                    originalResponse: data
+                };
+            }
+            
+            return {
+                success: true,
+                ...taskData,
+                originalResponse: data
+            };
         } catch (error) {
             console.error('❌ 檢查任務狀態失敗:', error);
             return {
@@ -269,8 +277,6 @@ export const roadshowService = {
             
             const fullUrl = `${url}?${queryParams.toString()}`;
             
-            console.log('🖼️ 發送圖片資源請求到:', fullUrl);
-            
             const response = await fetch(fullUrl, {
                 method: 'GET',
                 headers: {
@@ -278,21 +284,15 @@ export const roadshowService = {
                 }
             });
             
-            console.log('📡 響應狀態:', response.status, response.statusText);
-            console.log('📡 響應頭:', Object.fromEntries(response.headers.entries()));
-            
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
-            // 檢查響應類型
             const contentType = response.headers.get('content-type');
             
             if (contentType && contentType.startsWith('image/')) {
-                // 如果是圖片，返回 blob URL
                 const blob = await response.blob();
                 const blobUrl = URL.createObjectURL(blob);
-                console.log('✅ 圖片資源獲取成功，blob URL:', blobUrl);
                 return {
                     success: true,
                     data: blobUrl,
@@ -301,9 +301,7 @@ export const roadshowService = {
                     originalUrl: imageUrl
                 };
             } else {
-                // 如果是 JSON 或其他格式
                 const data = await response.json();
-                console.log('✅ 圖片資源獲取成功:', data);
                 return {
                     success: true,
                     data: data,
@@ -330,13 +328,9 @@ export const roadshowService = {
      */
     async processGeneratedImage(generatedImageUrl, processingOptions = {}) {
         try {
-            console.log('🔄 處理生成的圖片:', generatedImageUrl);
-            
-            // 調用圖片資源 API
             const result = await this.getImageResource(generatedImageUrl, processingOptions);
             
             if (result.success) {
-                console.log('✅ 圖片處理成功:', result);
                 return result;
             } else {
                 console.error('❌ 圖片處理失敗:', result.error);

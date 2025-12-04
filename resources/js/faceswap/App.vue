@@ -22,6 +22,7 @@
       :selectedTemplate="selectedTemplate"
       :userUsage="userUsage"
       :userId="userId"
+      :userName="userName"
       @back="goBack"
       @generate="handleGenerate"
       @showHistory="handleShowHistory"
@@ -54,6 +55,7 @@ import { API_CONFIG } from '../config/config.js'
 // 狀態
 const taskId = ref('')
 const userId = ref('') // 改為空字串，等待 LIFF 初始化
+const userName = ref('') // 用戶名稱
 const currentStep = ref('faceswap-home') // 初始狀態設定為換臉首頁
 const selectedTemplate = ref('')
 const isInitialized = ref(false)
@@ -74,25 +76,66 @@ async function initializeLiff() {
         userId.value = result.userId
         console.log('✅ LIFF 用戶 ID 已設置:', userId.value)
         console.log('👥 好友狀態:', result.isFriend ? '是好友' : '非好友')
+        console.log('📋 如需在本地測試，請將此 userId 複製到 index.html 的 testUserId 配置中:')
+        console.log(`   testUserId: '${userId.value}',`)
+        
+        // 嘗試獲取用戶名稱
+        try {
+          const profile = await liffService.getUserProfile()
+          if (profile && profile.displayName) {
+            userName.value = profile.displayName
+            console.log('✅ 用戶名稱已獲取:', userName.value)
+          } else {
+            // 如果無法獲取，使用 userId 作為後備
+            userName.value = userId.value
+            console.log('⚠️ 無法獲取用戶名稱，使用 userId 作為後備:', userName.value)
+          }
+        } catch (profileError) {
+          console.warn('⚠️ 獲取用戶資料失敗，使用 userId 作為後備:', profileError)
+          userName.value = userId.value
+        }
       } else if (!result.isLoggedIn) {
-        // 用戶未登入，使用訪客 ID
-        console.log('⚠️ 用戶未登入 LIFF，使用訪客模式')
-        userId.value = 'guest_' + Date.now()
+        // 用戶未登入，使用訪客 ID 或測試 ID
+        const testUserId = window.endpoint?.testUserId
+        if (testUserId && testUserId.trim() !== '') {
+          console.log('⚠️ 用戶未登入 LIFF，使用配置的測試用戶 ID')
+          userId.value = testUserId.trim()
+        } else {
+          console.log('⚠️ 用戶未登入 LIFF，使用訪客模式')
+          userId.value = 'guest_' + Date.now()
+        }
+        userName.value = window.endpoint?.testUserName || userId.value
       }
     } else {
       // LIFF 初始化失敗，使用測試模式
-      console.log('⚠️ LIFF 初始化失敗，使用測試模式')
-      userId.value = 'abc'
+      const testUserId = window.endpoint?.testUserId
+      if (testUserId && testUserId.trim() !== '') {
+        console.log('⚠️ LIFF 初始化失敗，使用配置的測試用戶 ID')
+        userId.value = testUserId.trim()
+        userName.value = window.endpoint?.testUserName || userId.value
+      } else {
+        console.log('⚠️ LIFF 初始化失敗，使用測試模式')
+        userId.value = 'abc'
+        userName.value = userId.value
+      }
     }
     
     isLiffInitialized.value = true
-    console.log('🔧 LIFF 初始化完成，userId:', userId.value)
+    console.log('🔧 LIFF 初始化完成，userId:', userId.value, 'userName:', userName.value)
   } catch (error) {
     console.error('❌ LIFF 初始化過程發生錯誤:', error)
-    // 錯誤時使用測試值
-    userId.value = 'abc'
+    // 錯誤時使用測試值或配置的測試 ID
+    const testUserId = window.endpoint?.testUserId
+    if (testUserId && testUserId.trim() !== '') {
+      userId.value = testUserId.trim()
+      userName.value = window.endpoint?.testUserName || userId.value
+      console.log('🔧 使用配置的測試 userId:', userId.value, 'userName:', userName.value)
+    } else {
+      userId.value = 'abc'
+      userName.value = userId.value
+      console.log('🔧 使用後備 userId:', userId.value, 'userName:', userName.value)
+    }
     isLiffInitialized.value = true
-    console.log('🔧 使用後備 userId:', userId.value)
   }
 }
 

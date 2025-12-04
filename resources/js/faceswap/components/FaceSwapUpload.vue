@@ -27,7 +27,7 @@
     </div>
     <!-- 步驟 -->
     <div
-      class="flex items-center mt-8 max-w-full text-base font-bold text-center text-[#EBD8B2] whitespace-nowrap w-[202px] mx-auto"
+      class="flex items-center mt-8 max-w-full text-base font-bold text-center text-[#FC7BBB] whitespace-nowrap w-[202px] mx-auto"
     >
       <img
         :src="imageUrls.finish"
@@ -57,7 +57,7 @@
     </div>
     <!-- 步驟文字 -->
     <div
-      class="flex gap-5 justify-between max-w-full text-sm text-center w-[218px] mx-auto mb-8"
+      class="flex gap-5 justify-between max-w-full text-sm text-center w-[218px] mx-auto mb-4"
     >
       <div class="step-gradient-text" data-name="Step 1">Step 1</div>
       <div class="step-gradient-text" data-name="Step 2">Step 2</div>
@@ -68,15 +68,15 @@
     <div class="flex-1 flex flex-col max-w-md mx-auto w-full px-5">
       <!-- Selected Template Image -->
       <div class="mb-8">
-        <div v-if="props.selectedTemplate" class="w-full h-[273px]">
+        <div v-if="props.selectedTemplate" class="w-full h-[400px]">
           <img
-            class="w-full h-full object-cover rounded-md"
+            class="w-full h-full object-contain rounded-md"
             :src="getTemplateImage(props.selectedTemplate)"
             :alt="getTemplateName(props.selectedTemplate)"
           />
         </div>
-        <div v-else class="w-full h-[273px] flex items-center justify-center bg-gray-700 rounded-md border-2 border-dashed border-[#EBD8B2]">
-          <div class="text-center text-[#EBD8B2]">
+        <div v-else class="w-full h-[400px] flex items-center justify-center bg-gray-700 rounded-md border-2 border-dashed border-[#FC7BBB]">
+          <div class="text-center text-[#FC7BBB]">
             <div class="text-lg font-bold mb-2">請先選擇模板</div>
             <div class="text-sm">請回到上一步選擇您想要的換臉模板</div>
           </div>
@@ -170,11 +170,11 @@
             </button>
           </div>
         </div>
-        <div v-else class="text-center text-[#EBD8B2] py-8">
+        <div v-else class="text-center text-[#FC7BBB] py-8">
           <div class="text-lg font-bold mb-4">無法進行換臉操作</div>
           <div class="text-sm mb-6">您需要先選擇一個模板才能繼續</div>
           <button
-            class="px-6 py-3 bg-[#EBD8B2] text-[#333] rounded-md font-bold hover:bg-[#d4c29a] transition-colors"
+            class="px-6 py-3 bg-[#FC7BBB] text-[#333] rounded-md font-bold hover:opacity-80 transition-colors"
             @click="goBack"
           >
             返回選擇模板
@@ -242,44 +242,15 @@ const props = defineProps({
   userId: {
     type: String,
     default: ''
+  },
+  userName: {
+    type: String,
+    default: ''
   }
 });
 
 const emit = defineEmits(["back", "generate", "showHistory"]);
 
-// 根據模板 ID 和角色選擇，返回正確的 face_index
-const getFaceIndex = (templateId, characterId) => {
-  if (templateId === 'play') {
-    // 模板1 (綜藝玩很大)：吳宗憲在中間，face_index = 1
-    // 0=左邊角色(不支援換臉), 1=中間吳宗憲(支援換臉), 2=右邊角色(不支援換臉)
-    return 1;
-  } else if (templateId === 'wife') {
-    // 模板2 (犀利人妻)：3個人都支援換臉
-    const wifeMapping = { 'character1': 0, 'character2': 1, 'character3': 2 };
-    return wifeMapping[characterId] || 0;
-  } else if (templateId === 'love') {
-    // 模板3 (命中註定我愛你)：2個人都支援換臉
-    const loveMapping = { 'character1': 0, 'character2': 1 };
-    return loveMapping[characterId] || 0;
-  } else if (templateId === 'super') {
-    // 模板4 (超級夜總會)：3個人都支援換臉
-    const superMapping = { 'character1': 0, 'character2': 1, 'character3': 2 };
-    return superMapping[characterId] || 0;
-  }
-  
-  // 預設值
-  return 0;
-};
-
-// 模板對應的角色選項 - 只保留需要的 4 個模板
-const templateCharacters = {
-  'play': ['吳宗憲'],                    // 模板 10 (綜藝玩很大)：1個人
-  'wife': ['朱芯儀', '溫昇豪', '隋棠'],  // 模板 8 (犀利人妻)：3個人
-  'love': ['陳喬恩', '阮經天'],          // 模板 9 (命中註定我愛你)：2個人
-  'super': ['許效舜', '苗可麗', '澎恰恰'] // 模板 11 (超級夜總會)：3個人
-};
-
-const selectedCharacter = ref("");
 const uploadedImage = ref(null);
 const uploadedImagePreview = ref(null);
 const fileInput = ref(null);
@@ -292,47 +263,19 @@ const canGenerate = computed(() => {
   return props.selectedTemplate && uploadedImage.value;
 });
 
-function selectCharacter(characterId, index) {
-  selectedCharacter.value = characterId;
-  console.log('👤 選擇角色:', characterId, '索引:', index);
-}
-
-function getTemplateCharacters() {
-  const templateId = props.selectedTemplate;
-  
-  if (templateId && templateCharacters[templateId]) {
-    return templateCharacters[templateId];
-  }
-  
-  // 當沒有選擇模板時返回空陣列
-  return [];
-}
-
 function getTemplateImage(templateKey) {
   const imageMap = {
     'a1art1': imageUrls.a1art1,
     'a1art2': imageUrls.a1art2,
     'a1art3': imageUrls.a1art3,
-    'a1art4': imageUrls.a1art4,
-    'play': imageUrls.play,   // 舊模板（向後兼容）
-    'wife': imageUrls.wife,
-    'love': imageUrls.love,
-    'super': imageUrls.super
+    'a1art4': imageUrls.a1art4
   };
   
   return imageMap[templateKey] || imageUrls.a1art1;
 }
 
 function getTemplateName(templateId) {
-  // 根據模板 ID 返回對應的名稱
-  const nameMap = {
-    'play': '綜藝玩很大',
-    'wife': '犀利人妻',
-    'love': '命中註定我愛你',
-    'super': '超級夜總會'
-  };
-  
-  return nameMap[templateId] || '';
+  return '';
 }
 
 function triggerFileUpload() {
@@ -343,7 +286,6 @@ function handleFileSelect(event) {
   const file = event.target.files[0];
   if (file) {
     uploadedImage.value = file;
-    // 創建預覽URL
     uploadedImagePreview.value = URL.createObjectURL(file);
   }
 }
@@ -354,7 +296,6 @@ function handleDrop(event) {
     const file = files[0];
     if (file.type.startsWith("image/")) {
       uploadedImage.value = file;
-      // 創建預覽URL
       uploadedImagePreview.value = URL.createObjectURL(file);
     }
   }
@@ -363,13 +304,11 @@ function handleDrop(event) {
 
 
 function goBack() {
-  // 清理預覽URL以避免內存洩漏
   if (uploadedImagePreview.value) {
     URL.revokeObjectURL(uploadedImagePreview.value);
     uploadedImagePreview.value = null;
   }
   uploadedImage.value = null;
-  // 重置彈窗狀態
   isGenerating.value = false;
   showFirstDialog.value = false;
   showSecondDialog.value = false;
@@ -382,59 +321,63 @@ async function generateFaceSwap() {
     showFirstDialog.value = true;
     
     try {
-      // 準備FormData - 純粹的API調用，不改變UI
       const formData = new FormData();
-      formData.append('userId', props.userId || 'abc'); // 使用傳入的用戶ID或後備值
-      formData.append('file', uploadedImage.value);
+      formData.append('userId', props.userId || 'abc');
+      formData.append('userName', props.userName || props.userId || 'abc');
+      const file = uploadedImage.value;
+      if (file) {
+        formData.append('file', file, file.name || 'upload.jpg');
+      } else {
+        throw new Error('請選擇要上傳的圖片');
+      }
       
-      // 將字符串模板ID轉換為對應的數字ID (1,2,3,4)
       const templateIdMap = {
-        'a1art1': '1',   // 模板 1
-        'a1art2': '2',   // 模板 2
-        'a1art3': '3',   // 模板 3
-        'a1art4': '4',   // 模板 4
-        'play': '1',     // 舊模板（向後兼容）
-        'wife': '2',
-        'love': '3',
-        'super': '4'
+        'a1art1': '0',
+        'a1art2': '1',
+        'a1art3': '2',
+        'a1art4': '3'
       };
-      const numericTemplateId = templateIdMap[props.selectedTemplate] || '1';
+      const numericTemplateId = templateIdMap[props.selectedTemplate] || '0';
       formData.append('template_id', numericTemplateId);
       
-      // 使用預設的 face_index (0)
-      formData.append('target_face_index', 0);
-      formData.append('userInfo', `選擇的模板: ${props.selectedTemplate}`);
-      
-      // 調用API生成頭像
       const result = await roadshowService.generateAvatar(formData);
       
       if (result && (result.success || result.status === 'success')) {
-        // 延遲一下再發送事件，讓用戶看到彈窗
         setTimeout(() => {
           showFirstDialog.value = false;
           showSecondDialog.value = true;
           setTimeout(() => {
             emit("generate", {
               uploadedImage: uploadedImage.value,
-              taskId: result.result?.task_id || result.result?.id,
-              selectedTemplate: props.selectedTemplate  // 添加選擇的模板ID
+              taskId: result.result?.task_id || result.result?.id || result.task_id,
+              selectedTemplate: props.selectedTemplate
             });
           }, 1000);
         }, 1000);
       } else if (result && result.error) {
-        // 處理特定錯誤狀態
-        if (result.error.status === 403) {
-          // 檢查是否是達到生成限制的錯誤
-          const errorMessage = result.error.message || '';
+        const errorStatus = result.error.status;
+        const errorMessage = result.error.message || '';
+        
+        if (errorStatus === 403) {
           if (errorMessage.includes('生成限制') || errorMessage.includes('限制')) {
             throw new Error(`您已達到每人${appConfig.maxUsageLimit}張圖片的生成限制，無法繼續生成新圖片`);
           } else {
             throw new Error('權限不足，無法生成頭像');
           }
-        } else if (result.error.status === 400) {
-          throw new Error('請求格式錯誤，請檢查上傳的檔案');
-        } else if (result.error.status !== 200) {
-          throw new Error('生成失敗，請重新上傳');
+        } else if (errorStatus === 400) {
+          if (errorMessage.includes('user id') || errorMessage.includes('用戶') || errorMessage.includes('無效')) {
+            throw new Error(`用戶 ID 錯誤：${errorMessage}。請確保在 LINE 環境中使用真實的用戶 ID。`);
+          } else if (errorMessage) {
+            throw new Error(errorMessage);
+          } else {
+            throw new Error('請求格式錯誤，請檢查上傳的檔案');
+          }
+        } else if (errorStatus !== 200) {
+          if (errorMessage) {
+            throw new Error(errorMessage);
+          } else {
+            throw new Error('生成失敗，請重新上傳');
+          }
         } else {
           throw new Error('生成失敗');
         }
@@ -447,22 +390,17 @@ async function generateFaceSwap() {
       showFirstDialog.value = false;
       showSecondDialog.value = false;
       
-              // 檢查是否是達到生成限制的錯誤
-        if (error.message.includes('生成限制')) {
-          // 顯示達到限制的錯誤訊息，並提供查看歷史的選項
-          if (confirm(`${error.message}\n\n是否要查看您的生成歷史？`)) {
-            // 可以發送一個事件來顯示歷史
-            emit('showHistory');
-          }
-        } else {
-          // 其他錯誤使用alert
-          alert(`生成失敗：${error.message}`);
+      if (error.message.includes('生成限制')) {
+        if (confirm(`${error.message}\n\n是否要查看您的生成歷史？`)) {
+          emit('showHistory');
         }
+      } else {
+        alert(`生成失敗：${error.message}`);
+      }
     }
   }
 }
 
-// 組件卸載時清理預覽URL
 onUnmounted(() => {
   if (uploadedImagePreview.value) {
     URL.revokeObjectURL(uploadedImagePreview.value);
