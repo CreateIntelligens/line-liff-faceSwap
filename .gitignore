@@ -29,3 +29,4 @@ dump.rdb
 
 # 打包輸出目錄
 /dist
+.vercel
