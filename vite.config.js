@@ -29,7 +29,7 @@ export default defineConfig({
                 chunkFileNames: 'assets/[name].[hash].js',
                 assetFileNames: (assetInfo) => {
                     if (/\.(png|jpe?g|gif|svg|webp|ico)$/.test(assetInfo.name)) {
-                        return 'images/[name].[hash][extname]'
+                        return 'images/fancy_frontier/[name].[hash][extname]'
                     }
                     return 'assets/[name].[hash][extname]'
                 }
