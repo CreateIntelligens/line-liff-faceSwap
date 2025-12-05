@@ -242,7 +242,7 @@ export function useScreenshot() {
     formData.append('file', blob, `${filename}.png`)
     formData.append('uid', userId)
     
-    const response = await fetch(`${window.endpoint.baseURL}/roadshow/files`, {
+    const response = await fetch(`${window.endpoint.baseURL}/image/fancy_frontier`, {
       method: 'POST',
       headers: {
         'X-Requested-With': 'XMLHttpRequest'

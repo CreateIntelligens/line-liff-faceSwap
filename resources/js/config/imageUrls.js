@@ -6,21 +6,13 @@ import step3InactiveImg from '../../images/step3_inactive.png'
 import step3InprogressImg from '../../images/step3_inprogress.png'
 import finishImg from '../../images/finish.png'
 import horizontalImg from '../../images/horizontal.png'
-import playImg from '../../images/play.png'
-import wifeImg from '../../images/wife.png'
-import loveImg from '../../images/love.png'
-import superImg from '../../images/super.png'
 import a1art1Img from '../../images/a1art1.png'
 import a1art2Img from '../../images/a1art2.png'
 import a1art3Img from '../../images/a1art3.png'
 import a1art4Img from '../../images/a1art4.png'
 import backImg from '../../images/back.png'
-import crownImg from '../../images/crown.png'
 import group13948Img from '../../images/Group13948.png'
-import headerImg from '../../images/header.png'
 import header1Img from '../../images/header1.png'
-import logoImg from '../../images/logo.png'
-import starImg from '../../images/star.png'
 import uploadImg from '../../images/upload.png'
 import generateIconImg from '../../images/GenerateIcon.png'
 import hpbackgroundImg from '../../images/hpbackground.png'
@@ -38,10 +30,6 @@ export const imageUrls = {
   horizontal: horizontalImg,
   
   // 模板圖片
-  play: playImg,
-  wife: wifeImg,
-  love: loveImg,
-  super: superImg,
   a1art1: a1art1Img,
   a1art2: a1art2Img,
   a1art3: a1art3Img,
@@ -49,12 +37,8 @@ export const imageUrls = {
   
   // 其他圖片
   back: backImg,
-  crown: crownImg,
   Group13948: group13948Img,
-  header: headerImg,
   header1: header1Img,
-  logo: logoImg,
-  star: starImg,
   upload: uploadImg,
   generateIcon: generateIconImg,
   hpbackground: hpbackgroundImg,
@@ -64,15 +48,16 @@ export const imageUrls = {
 // 根據模板 ID 獲取圖片
 export const getTemplateImage = (templateId) => {
   const imageMap = {
-    '1': imageUrls.play,   // 綜藝玩很大
-    '2': imageUrls.wife,   // 犀利人妻
-    '3': imageUrls.love,   // 命中註定我愛你
-    '4': imageUrls.super,  // 超級夜總會
-    'play': imageUrls.play,
-    'wife': imageUrls.wife,
-    'love': imageUrls.love,
-    'super': imageUrls.super,
+    'a1art1': imageUrls.a1art1,
+    'a1art2': imageUrls.a1art2,
+    'a1art3': imageUrls.a1art3,
+    'a1art4': imageUrls.a1art4,
+ 
+    '1': imageUrls.a1art1,
+    '2': imageUrls.a1art2,
+    '3': imageUrls.a1art3,
+    '4': imageUrls.a1art4,
   };
   
-  return imageMap[templateId] || imageUrls.play;
+  return imageMap[templateId] || imageUrls.a1art1;
 };

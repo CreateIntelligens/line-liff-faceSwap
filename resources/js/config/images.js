@@ -14,38 +14,38 @@ export const stepImages = {
 
 // 模板圖片
 export const templateImages = {
-  play: new URL('../../images/play.png', import.meta.url).href,   // 綜藝玩很大
-  wife: new URL('../../images/wife.png', import.meta.url).href,   // 犀利人妻
-  love: new URL('../../images/love.png', import.meta.url).href,   // 命中註定我愛你
-  super: new URL('../../images/super.png', import.meta.url).href, // 超級夜總會
+  a1art1: new URL('../../images/a1art1.png', import.meta.url).href,
+  a1art2: new URL('../../images/a1art2.png', import.meta.url).href,
+  a1art3: new URL('../../images/a1art3.png', import.meta.url).href,
+  a1art4: new URL('../../images/a1art4.png', import.meta.url).href,
 };
 
 // 其他圖片
 export const otherImages = {
   back: new URL('../../images/back.png', import.meta.url).href,
-  crown: new URL('../../images/crown.png', import.meta.url).href,
   Group13948: new URL('../../images/Group13948.png', import.meta.url).href,
-  header: new URL('../../images/header.png', import.meta.url).href,
-  logo: new URL('../../images/logo.png', import.meta.url).href,
-  star: new URL('../../images/star.png', import.meta.url).href,
+  header1: new URL('../../images/header1.png', import.meta.url).href,
   upload: new URL('../../images/upload.png', import.meta.url).href,
-  wife: new URL('../../images/wife.png', import.meta.url).href,
+  generateIcon: new URL('../../images/GenerateIcon.png', import.meta.url).href,
+  hpbackground: new URL('../../images/hpbackground.png', import.meta.url).href,
+  background1: new URL('../../images/background1.png', import.meta.url).href,
 };
 
 // 根據模板 ID 獲取圖片
 export const getTemplateImage = (templateId) => {
   const imageMap = {
-    '1': templateImages.play,   // 綜藝玩很大
-    '2': templateImages.wife,   // 犀利人妻
-    '3': templateImages.love,   // 命中註定我愛你
-    '4': templateImages.super,  // 超級夜總會
-    'play': templateImages.play,
-    'wife': templateImages.wife,
-    'love': templateImages.love,
-    'super': templateImages.super,
+    'a1art1': templateImages.a1art1,
+    'a1art2': templateImages.a1art2,
+    'a1art3': templateImages.a1art3,
+    'a1art4': templateImages.a1art4,
+    // 舊模板 ID 映射到新模板（向後兼容）
+    '1': templateImages.a1art1,
+    '2': templateImages.a1art2,
+    '3': templateImages.a1art3,
+    '4': templateImages.a1art4,
   };
   
-  return imageMap[templateId] || templateImages.play;
+  return imageMap[templateId] || templateImages.a1art1;
 };
 
 // 導出所有圖片

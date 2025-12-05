@@ -237,20 +237,5 @@ function nextStep() {
 function showHistory() {
   showHistoryPage.value = true;
 }
-
-function getTemplateImage(templateKey) {
-  const imageMap = {
-    'a1art1': imageUrls.a1art1,
-    'a1art2': imageUrls.a1art2,
-    'a1art3': imageUrls.a1art3,
-    'a1art4': imageUrls.a1art4,
-    'play': imageUrls.play,   // 舊模板（向後兼容）
-    'wife': imageUrls.wife,
-    'love': imageUrls.love,
-    'super': imageUrls.super
-  };
-  
-  return imageMap[templateKey] || imageUrls.a1art1;
-}
 </script>
 
