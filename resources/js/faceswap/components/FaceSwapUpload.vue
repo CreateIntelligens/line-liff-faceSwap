@@ -332,12 +332,12 @@ async function generateFaceSwap() {
       }
       
       const templateIdMap = {
-        'a1art1': '0',
-        'a1art2': '1',
-        'a1art3': '2',
-        'a1art4': '3'
+        'a1art1': '1',
+        'a1art2': '2',
+        'a1art3': '3',
+        'a1art4': '4'
       };
-      const numericTemplateId = templateIdMap[props.selectedTemplate] || '0';
+      const numericTemplateId = templateIdMap[props.selectedTemplate] || '1';
       formData.append('template_id', numericTemplateId);
       
       const result = await roadshowService.generateAvatar(formData);

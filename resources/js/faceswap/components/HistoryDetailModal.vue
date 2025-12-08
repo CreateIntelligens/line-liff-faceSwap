@@ -243,14 +243,26 @@ async function sendViaLiff(imageUrl) {
       throw new Error('LIFF SDK 未載入，請確保在 LINE 環境中使用')
     }
     
-    if (!liff.isInClient()) {
-      throw new Error('不在 LINE 應用內，無法發送訊息。請在 LINE 應用中開啟此頁面。')
-    }
-    
+    // 檢查是否已登入（這是必要條件）
     if (!liff.isLoggedIn()) {
       throw new Error('用戶未登入，無法發送訊息。請先登入 LINE 帳號。')
     }
     
+    // 檢查是否在 LINE 應用內（在某些 LINE 版本中，即使 isInClient 為 false，只要已登入仍可發送）
+    const isInClient = liff.isInClient()
+    console.log('📱 LIFF 環境檢查:', {
+      isInClient: isInClient,
+      isLoggedIn: liff.isLoggedIn(),
+      os: liff.getOS(),
+      version: liff.getVersion()
+    })
+    
+    // 如果不在 LINE 應用內，給出警告但仍嘗試發送（某些情況下仍可成功）
+    if (!isInClient) {
+      console.warn('⚠️ 檢測到不在 LINE 應用內，但仍嘗試發送訊息')
+    }
+    
+    // 嘗試發送訊息
     await liff.sendMessages([
       {
         type: 'image',
@@ -258,8 +270,16 @@ async function sendViaLiff(imageUrl) {
         previewImageUrl: imageUrl
       }
     ])
+    
+    console.log('✅ 圖片發送成功')
   } catch (error) {
     console.error('❌ 發送訊息失敗:', error)
+    
+    // 如果是因為不在 LINE 應用內而失敗，給出更明確的錯誤訊息
+    if (error.message && error.message.includes('isInClient')) {
+      throw new Error('無法發送訊息。請確保在 LINE 應用內開啟此頁面。')
+    }
+    
     if (error.message) {
       throw error
     } else {
@@ -641,3 +661,4 @@ function closeModal() {
   emit('close')
 }
 </script>
+
