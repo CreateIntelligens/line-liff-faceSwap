@@ -26,6 +26,7 @@
       @back="goBack"
       @generate="handleGenerate"
       @showHistory="handleShowHistory"
+      @refreshUsage="refreshUserUsage"
     />
 
     <!-- Face Swap Result -->
@@ -239,7 +240,16 @@ onMounted(async () => {
 })
 
 // 進入臉部交換工具
-function enterFaceSwap() {
+async function enterFaceSwap() {
+  // 進入模板選擇頁面前，刷新使用量以確保數據準確
+  if (userId.value) {
+    try {
+      await refreshUserUsage()
+      console.log('✅ 進入模板選擇頁面，使用量已刷新:', userUsage.value)
+    } catch (error) {
+      console.error('❌ 刷新使用量失敗:', error)
+    }
+  }
   currentStep.value = 'template-selection'
 }
 
@@ -250,7 +260,7 @@ function handleTemplateSelection(data) {
 }
 
 // 處理生成請求
-function handleGenerate(data) {
+async function handleGenerate(data) {
   // 保存任務ID和模板信息
   taskId.value = data.taskId
   // 保存選擇的模板ID（從data中獲取）
@@ -258,13 +268,15 @@ function handleGenerate(data) {
     selectedTemplate.value = data.selectedTemplate
   }
   
-  // 更新用戶使用量（生成新圖片後數量+1）
-  userUsage.value += 1
-  
-  // 生成完成後，也從服務器刷新一次以確保數據準確
-  setTimeout(async () => {
+  // 在生成請求成功返回後立即從服務器刷新使用量
+  // 確保顯示的數字與服務器數據一致
+  try {
     await refreshUserUsage()
-  }, 1000)
+    console.log('✅ 生成請求成功後，使用量已刷新:', userUsage.value)
+  } catch (error) {
+    console.error('❌ 刷新使用量失敗:', error)
+    // 即使刷新失敗，也繼續導航到結果頁面
+  }
   
   // 生成完成後導航到結果頁面
   currentStep.value = 'result'
@@ -294,7 +306,6 @@ async function handleShowHistory() {
   // 跳轉到結果頁面，然後顯示歷史
   currentStep.value = 'result'
   // 設置一個標記，讓結果頁面知道要顯示歷史
-  // 我們可以通過修改selectedTemplate來傳遞這個信息
   selectedTemplate.value = 'show_history'
 }
 

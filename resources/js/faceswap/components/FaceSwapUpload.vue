@@ -154,18 +154,21 @@
             </button>
             <button
               class="flex-1 h-11 px-3 py-3 flex justify-center items-center rounded-md cursor-pointer transition-all duration-300 text-base font-bold hover:shadow-lg"
-              style="background: linear-gradient(to bottom, #FFC1DE 0%, #FD79B5 100%);"
+              :style="isAtLimit ? 'background-color: #666666;' : 'background: linear-gradient(to bottom, #FFC1DE 0%, #FD79B5 100%);'"
               :class="canGenerate ? '' : 'opacity-50 cursor-not-allowed'"
               @click="generateFaceSwap"
               :disabled="!canGenerate"
             >
               <div class="flex items-center gap-2">
                 <img
+                  v-if="!isAtLimit"
                   :src="imageUrls.generateIcon"
                   class="w-5 h-5 object-contain"
                   alt="生成圖標"
                 />
-                <span class="cp-font text-[#0E0E0E]">開始生成</span>
+                <span class="cp-font text-[#0E0E0E]">
+                  {{ isAtLimit ? '已達使用上限' : (isGenerating ? '生成中...' : '開始生成') }}
+                </span>
               </div>
             </button>
           </div>
@@ -249,7 +252,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(["back", "generate", "showHistory"]);
+const emit = defineEmits(["back", "generate", "showHistory", "refreshUsage"]);
 
 const uploadedImage = ref(null);
 const uploadedImagePreview = ref(null);
@@ -260,7 +263,19 @@ const showSecondDialog = ref(false);
 
 
 const canGenerate = computed(() => {
-  return props.selectedTemplate && uploadedImage.value;
+  // 檢查是否已選擇模板和上傳圖片
+  const hasTemplateAndImage = props.selectedTemplate && uploadedImage.value;
+  // 檢查是否未達到使用量上限
+  const underLimit = props.userUsage < appConfig.maxUsageLimit;
+  // 檢查是否正在生成中（防止重複點擊）
+  const notGenerating = !isGenerating.value;
+  
+  return hasTemplateAndImage && underLimit && notGenerating;
+});
+
+// 計算是否已達上限
+const isAtLimit = computed(() => {
+  return props.userUsage >= appConfig.maxUsageLimit;
 });
 
 function getTemplateImage(templateKey) {
@@ -316,11 +331,22 @@ function goBack() {
 }
 
 async function generateFaceSwap() {
-  if (canGenerate.value) {
-    isGenerating.value = true;
-    showFirstDialog.value = true;
-    
-    try {
+  // 檢查是否已達上限
+  if (isAtLimit.value) {
+    alert(`您已達到每人${appConfig.maxUsageLimit}張圖片的生成限制，無法繼續生成新圖片。\n\n是否要查看您的生成歷史？`);
+    emit('showHistory');
+    return;
+  }
+  
+  if (!canGenerate.value) {
+    return;
+  }
+  
+  // 立即設置生成狀態，防止重複點擊
+  isGenerating.value = true;
+  showFirstDialog.value = true;
+  
+  try {
       const formData = new FormData();
       formData.append('userId', props.userId || 'abc');
       formData.append('userName', props.userName || props.userId || 'abc');
@@ -343,6 +369,10 @@ async function generateFaceSwap() {
       const result = await roadshowService.generateAvatar(formData);
       
       if (result && (result.success || result.status === 'success')) {
+        // 生成請求成功後，立即通知父組件刷新使用量
+        // 確保使用量數字及時更新，與服務器數據一致
+        emit('refreshUsage');
+        
         setTimeout(() => {
           showFirstDialog.value = false;
           showSecondDialog.value = true;
@@ -359,6 +389,9 @@ async function generateFaceSwap() {
         const errorMessage = result.error.message || '';
         
         if (errorStatus === 403) {
+          // 當後端返回 403 時，強制刷新使用量以確保介面同步（處理併發場景）
+          emit('refreshUsage');
+          
           if (errorMessage.includes('生成限制') || errorMessage.includes('限制')) {
             throw new Error(`您已達到每人${appConfig.maxUsageLimit}張圖片的生成限制，無法繼續生成新圖片`);
           } else {
@@ -391,6 +424,8 @@ async function generateFaceSwap() {
       showSecondDialog.value = false;
       
       if (error.message.includes('生成限制')) {
+        // 再次刷新使用量以確保數據同步
+        emit('refreshUsage');
         if (confirm(`${error.message}\n\n是否要查看您的生成歷史？`)) {
           emit('showHistory');
         }
@@ -398,7 +433,6 @@ async function generateFaceSwap() {
         alert(`生成失敗：${error.message}`);
       }
     }
-  }
 }
 
 onUnmounted(() => {

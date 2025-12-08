@@ -164,11 +164,13 @@
         >
           <div
             class="flex gap-5 justify-center items-center px-36 py-3.5 rounded-md min-h-11 cursor-pointer transition-all duration-300 hover:shadow-lg"
-            style="background: linear-gradient(to bottom, #FFC1DE 0%, #FD79B5 100%);"
-            :class="selectedTemplate ? '' : 'opacity-50 cursor-not-allowed'"
+            :style="isAtLimit ? 'background-color: #666666;' : 'background: linear-gradient(to bottom, #FFC1DE 0%, #FD79B5 100%);'"
+            :class="(selectedTemplate && !isAtLimit) ? '' : 'opacity-50 cursor-not-allowed'"
             @click="nextStep"
           >
-            <div class="self-stretch my-auto cp-font text-[#0E0E0E]" data-name="下一步">下一步</div>
+            <div class="self-stretch my-auto cp-font text-[#0E0E0E]" data-name="下一步">
+              {{ isAtLimit ? '已達使用上限' : '下一步' }}
+            </div>
           </div>
         </div>
       </div>
@@ -184,11 +186,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { roadshowService } from "../../services/roadshowService.js";
 import FaceSwapHistory from "./FaceSwapHistory.vue";
 import UsageCounter from "./UsageCounter.vue";
 import { imageUrls } from "@/config/imageUrls";
+import { appConfig } from '@/config/appConfig'
 
 const props = defineProps({
   userUsage: {
@@ -206,6 +209,11 @@ const emit = defineEmits(["next-step", "back"]);
 const selectedTemplate = ref("");
 const showHistoryPage = ref(false);
 const templates = ref({});
+
+// 計算是否已達使用量上限
+const isAtLimit = computed(() => {
+  return props.userUsage >= appConfig.maxUsageLimit;
+});
 
 // 在組件掛載時獲取模板列表
 onMounted(async () => {
@@ -229,9 +237,22 @@ function selectTemplate(templateId) {
 }
 
 function nextStep() {
-  if (selectedTemplate.value) {
-    emit("next-step", { selectedTemplate: selectedTemplate.value });
+  // 檢查是否已選擇模板
+  if (!selectedTemplate.value) {
+    return;
   }
+  
+  // 檢查是否已達使用量上限
+  if (isAtLimit.value) {
+    const message = `您已達到每人${appConfig.maxUsageLimit}張圖片的生成限制，無法繼續生成新圖片。\n\n是否要查看您的生成歷史？`;
+    if (confirm(message)) {
+      showHistoryPage.value = true;
+    }
+    return;
+  }
+  
+  // 通過所有檢查，允許進入下一步
+  emit("next-step", { selectedTemplate: selectedTemplate.value });
 }
 
 function showHistory() {
