@@ -22,7 +22,8 @@
 }
 @font-face {
   font-family: 'CP Font';
-  src: url('/fonts/CP-Font.otf') format('opentype');
+  /* 使用相對路徑，讓 Vite 處理並應用 hash */
+  src: url('../assets/fonts/CP-Font.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;

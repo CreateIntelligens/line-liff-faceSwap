@@ -28,6 +28,11 @@ export default defineConfig({
                 entryFileNames: 'assets/[name].[hash].js',
                 chunkFileNames: 'assets/[name].[hash].js',
                 assetFileNames: (assetInfo) => {
+                    // 字體文件放在 fonts 目錄，並加上 hash 以避免快取問題
+                    if (/\.(otf|ttf|woff|woff2|eot)$/.test(assetInfo.name)) {
+                        return 'fonts/[name].[hash][extname]'
+                    }
+                    // 圖片文件放在 images 目錄
                     if (/\.(png|jpe?g|gif|svg|webp|ico)$/.test(assetInfo.name)) {
                         return 'images/fancy_frontier/[name].[hash][extname]'
                     }
@@ -36,6 +41,6 @@ export default defineConfig({
             }
         },
         assetsInlineLimit: 4096,
-        copyPublicDir: false
+        copyPublicDir: true  // 啟用 public 目錄複製，確保字體文件可用
     }
 });
