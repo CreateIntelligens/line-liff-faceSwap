@@ -210,9 +210,14 @@ const selectedTemplate = ref("");
 const showHistoryPage = ref(false);
 const templates = ref({});
 
-// 計算是否已達使用量上限
+// 檢查是否為 dev_user（不受限制）
+const isDevUser = computed(() => {
+  return props.userId && props.userId.startsWith('dev_user_')
+})
+
+// 計算是否已達使用量上限（dev_user 不受限制）
 const isAtLimit = computed(() => {
-  return props.userUsage >= appConfig.maxUsageLimit;
+  return !isDevUser.value && props.userUsage >= appConfig.maxUsageLimit;
 });
 
 // 在組件掛載時獲取模板列表
@@ -242,7 +247,7 @@ function nextStep() {
     return;
   }
   
-  // 檢查是否已達使用量上限
+  // 檢查是否已達使用量上限（dev_user 不受限制）
   if (isAtLimit.value) {
     const message = `您已達到每人${appConfig.maxUsageLimit}張圖片的生成限制，無法繼續生成新圖片。\n\n是否要查看您的生成歷史？`;
     if (confirm(message)) {

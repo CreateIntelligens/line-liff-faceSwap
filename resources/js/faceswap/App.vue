@@ -63,6 +63,38 @@ const isInitialized = ref(false)
 const userUsage = ref(0) // 用戶已生成的圖片數量
 const isLiffInitialized = ref(false)
 
+// 檢查是否為本地開發環境
+function isLocalDevEnvironment() {
+  if (typeof window === 'undefined') return false
+  const hostname = window.location.hostname
+  return hostname === 'localhost' || hostname === '127.0.0.1'
+}
+
+// 檢查是否為 LINE LIFF 真實用戶 ID（以 U 開頭）
+function isLineUserId(userId) {
+  return userId && userId.startsWith('U') && userId.length > 20
+}
+
+// 為 userId 添加開發模式前綴（如果適用）
+function addDevPrefixIfNeeded(userIdValue) {
+  if (!userIdValue) return userIdValue
+  
+  // 檢查是否為本地開發環境
+  const isLocalDev = isLocalDevEnvironment()
+  
+  // 在本地開發環境中，無論是否為 LINE 用戶 ID，都加上前綴
+  // 這樣可以方便在本地測試時繞過限制
+  if (isLocalDev && !userIdValue.startsWith('dev_user_')) {
+    const prefixedUserId = `dev_user_${userIdValue}`
+    console.log('🔧 開發模式：為 userId 添加 dev_user_ 前綴')
+    console.log(`   原始: ${userIdValue}`)
+    console.log(`   加上前綴: ${prefixedUserId}`)
+    return prefixedUserId
+  }
+  
+  return userIdValue
+}
+
 // LIFF 初始化函數
 async function initializeLiff() {
   try {
@@ -74,11 +106,12 @@ async function initializeLiff() {
     if (result.success) {
       if (result.isLoggedIn && result.userId) {
         // 用戶已登入，設置用戶 ID
-        userId.value = result.userId
+        // 在本地開發環境中會自動加上 dev_user_ 前綴
+        userId.value = addDevPrefixIfNeeded(result.userId)
         console.log('✅ LIFF 用戶 ID 已設置:', userId.value)
         console.log('👥 好友狀態:', result.isFriend ? '是好友' : '非好友')
         console.log('📋 如需在本地測試，請將此 userId 複製到 index.html 的 testUserId 配置中:')
-        console.log(`   testUserId: '${userId.value}',`)
+        console.log(`   testUserId: '${result.userId}',`)
         
         // 嘗試獲取用戶名稱
         try {
@@ -100,10 +133,10 @@ async function initializeLiff() {
         const testUserId = window.endpoint?.testUserId
         if (testUserId && testUserId.trim() !== '') {
           console.log('⚠️ 用戶未登入 LIFF，使用配置的測試用戶 ID')
-          userId.value = testUserId.trim()
+          userId.value = addDevPrefixIfNeeded(testUserId.trim())
         } else {
           console.log('⚠️ 用戶未登入 LIFF，使用訪客模式')
-          userId.value = 'guest_' + Date.now()
+          userId.value = addDevPrefixIfNeeded('guest_' + Date.now())
         }
         userName.value = window.endpoint?.testUserName || userId.value
       }
@@ -112,11 +145,11 @@ async function initializeLiff() {
       const testUserId = window.endpoint?.testUserId
       if (testUserId && testUserId.trim() !== '') {
         console.log('⚠️ LIFF 初始化失敗，使用配置的測試用戶 ID')
-        userId.value = testUserId.trim()
+        userId.value = addDevPrefixIfNeeded(testUserId.trim())
         userName.value = window.endpoint?.testUserName || userId.value
       } else {
         console.log('⚠️ LIFF 初始化失敗，使用測試模式')
-        userId.value = 'abc'
+        userId.value = addDevPrefixIfNeeded('abc')
         userName.value = userId.value
       }
     }
@@ -128,11 +161,11 @@ async function initializeLiff() {
     // 錯誤時使用測試值或配置的測試 ID
     const testUserId = window.endpoint?.testUserId
     if (testUserId && testUserId.trim() !== '') {
-      userId.value = testUserId.trim()
+      userId.value = addDevPrefixIfNeeded(testUserId.trim())
       userName.value = window.endpoint?.testUserName || userId.value
       console.log('🔧 使用配置的測試 userId:', userId.value, 'userName:', userName.value)
     } else {
-      userId.value = 'abc'
+      userId.value = addDevPrefixIfNeeded('abc')
       userName.value = userId.value
       console.log('🔧 使用後備 userId:', userId.value, 'userName:', userName.value)
     }
@@ -299,7 +332,7 @@ async function handleShowHistory() {
   if (!userId.value) {
     await initializeLiff()
     if (!userId.value) {
-      userId.value = 'abc'
+      userId.value = addDevPrefixIfNeeded('abc')
     }
   }
   

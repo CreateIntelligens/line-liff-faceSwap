@@ -262,20 +262,25 @@ const showFirstDialog = ref(false);
 const showSecondDialog = ref(false);
 
 
+// 檢查是否為 dev_user（不受限制）
+const isDevUser = computed(() => {
+  return props.userId && props.userId.startsWith('dev_user_')
+})
+
 const canGenerate = computed(() => {
   // 檢查是否已選擇模板和上傳圖片
   const hasTemplateAndImage = props.selectedTemplate && uploadedImage.value;
-  // 檢查是否未達到使用量上限
-  const underLimit = props.userUsage < appConfig.maxUsageLimit;
+  // 檢查是否未達到使用量上限（dev_user 不受限制）
+  const underLimit = isDevUser.value || props.userUsage < appConfig.maxUsageLimit;
   // 檢查是否正在生成中（防止重複點擊）
   const notGenerating = !isGenerating.value;
   
   return hasTemplateAndImage && underLimit && notGenerating;
 });
 
-// 計算是否已達上限
+// 計算是否已達上限（dev_user 不受限制）
 const isAtLimit = computed(() => {
-  return props.userUsage >= appConfig.maxUsageLimit;
+  return !isDevUser.value && props.userUsage >= appConfig.maxUsageLimit;
 });
 
 function getTemplateImage(templateKey) {
@@ -331,7 +336,7 @@ function goBack() {
 }
 
 async function generateFaceSwap() {
-  // 檢查是否已達上限
+  // 檢查是否已達上限（dev_user 不受限制）
   if (isAtLimit.value) {
     alert(`您已達到每人${appConfig.maxUsageLimit}張圖片的生成限制，無法繼續生成新圖片。\n\n是否要查看您的生成歷史？`);
     emit('showHistory');
