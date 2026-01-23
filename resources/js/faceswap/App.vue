@@ -7,19 +7,9 @@
       @enter-face-swap="enterFaceSwap"
     />
 
-    <!-- Face Swap Template Selection -->
-    <FaceSwapTemplateSelection
-      v-if="currentStep === 'template-selection'"
-      :userUsage="userUsage"
-      :userId="userId"
-      @next-step="handleTemplateSelection"
-      @back="goBack"
-    />
-
     <!-- Face Swap Upload -->
     <FaceSwapUpload
       v-if="currentStep === 'upload'"
-      :selectedTemplate="selectedTemplate"
       :userUsage="userUsage"
       :userId="userId"
       :userName="userName"
@@ -34,7 +24,6 @@
       v-if="currentStep === 'result'"
       :taskId="taskId"
       :userId="userId"
-      :selectedTemplate="selectedTemplate"
       :userUsage="userUsage"
       @back="goBack"
       @regenerate="handleRegenerate"
@@ -46,7 +35,6 @@
 <script setup>
 import { ref, onMounted, onBeforeMount, nextTick } from 'vue'
 import FaceSwapHomepage from './components/FaceSwapHomepage.vue'
-import FaceSwapTemplateSelection from './components/FaceSwapTemplateSelection.vue'
 import FaceSwapUpload from './components/FaceSwapUpload.vue'
 import FaceSwapResult from './components/FaceSwapResult.vue'
 import { roadshowService } from '../services/roadshowService.js'
@@ -58,7 +46,6 @@ const taskId = ref('')
 const userId = ref('') // 改為空字串，等待 LIFF 初始化
 const userName = ref('') // 用戶名稱
 const currentStep = ref('faceswap-home') // 初始狀態設定為換臉首頁
-const selectedTemplate = ref('')
 const isInitialized = ref(false)
 const userUsage = ref(0) // 用戶已生成的圖片數量
 const isLiffInitialized = ref(false)
@@ -180,7 +167,6 @@ async function initializeApp() {
   try {
     // 重置所有狀態，確保重整後是乾淨的狀態
     currentStep.value = 'faceswap-home'
-    selectedTemplate.value = ''
     taskId.value = ''
     
     // 檢查用戶 ID
@@ -274,32 +260,22 @@ onMounted(async () => {
 
 // 進入臉部交換工具
 async function enterFaceSwap() {
-  // 進入模板選擇頁面前，刷新使用量以確保數據準確
+  // 直接進入上傳頁面，刷新使用量以確保數據準確
   if (userId.value) {
     try {
       await refreshUserUsage()
-      console.log('✅ 進入模板選擇頁面，使用量已刷新:', userUsage.value)
+      console.log('✅ 進入上傳頁面，使用量已刷新:', userUsage.value)
     } catch (error) {
       console.error('❌ 刷新使用量失敗:', error)
     }
   }
-  currentStep.value = 'template-selection'
-}
-
-// 處理模板選擇
-function handleTemplateSelection(data) {
-  selectedTemplate.value = data.selectedTemplate
   currentStep.value = 'upload'
 }
 
 // 處理生成請求
 async function handleGenerate(data) {
-  // 保存任務ID和模板信息
+  // 保存任務ID
   taskId.value = data.taskId
-  // 保存選擇的模板ID（從data中獲取）
-  if (data.selectedTemplate) {
-    selectedTemplate.value = data.selectedTemplate
-  }
   
   // 在生成請求成功返回後立即從服務器刷新使用量
   // 確保顯示的數字與服務器數據一致
@@ -317,8 +293,8 @@ async function handleGenerate(data) {
 
 // 處理重新生成
 function handleRegenerate() {
-  // 返回到模板選擇步驟重新開始
-  currentStep.value = 'template-selection'
+  // 返回到上傳步驟重新開始
+  currentStep.value = 'upload'
 }
 
 // 處理下載到官方帳號
@@ -338,16 +314,12 @@ async function handleShowHistory() {
   
   // 跳轉到結果頁面，然後顯示歷史
   currentStep.value = 'result'
-  // 設置一個標記，讓結果頁面知道要顯示歷史
-  selectedTemplate.value = 'show_history'
 }
 
 // 返回上一步
 function goBack() {
-  if (currentStep.value === 'template-selection') {
+  if (currentStep.value === 'upload') {
     currentStep.value = 'faceswap-home'
-  } else if (currentStep.value === 'upload') {
-    currentStep.value = 'template-selection'
   } else if (currentStep.value === 'result') {
     currentStep.value = 'upload'
   }

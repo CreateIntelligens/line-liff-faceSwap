@@ -21,7 +21,7 @@
     }"
   >
     <div
-      class="flex gap-5 justify-center items-center self-stretch px-5 py-6 w-full font-bold whitespace-nowrap gradient-border-bottom min-h-20"
+      class="flex gap-5 justify-center items-center self-stretch py-6 w-full font-bold whitespace-nowrap min-h-20"
     >
       <div
         class="self-stretch my-auto"
@@ -29,7 +29,7 @@
       >
         <img
           :src="imageUrls.header1"
-          class="h-16 object-contain"
+          class="h-30 object-contain"
           alt="AI換臉"
         />
       </div>
@@ -164,7 +164,7 @@
         >
           <div
             class="flex gap-5 justify-center items-center px-36 py-3.5 rounded-md min-h-11 cursor-pointer transition-all duration-300 hover:shadow-lg"
-            :style="isAtLimit ? 'background-color: #666666;' : 'background: linear-gradient(to bottom, #FFC1DE 0%, #FD79B5 100%);'"
+            :style="isAtLimit ? 'background-color: #666666;' : 'background-color: #E0BE91;'"
             :class="(selectedTemplate && !isAtLimit) ? '' : 'opacity-50 cursor-not-allowed'"
             @click="nextStep"
           >

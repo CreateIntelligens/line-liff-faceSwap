@@ -11,7 +11,7 @@
   >
     <!-- Header -->
     <div
-      class="flex gap-5 justify-center items-center self-stretch px-5 py-6 w-full font-bold whitespace-nowrap gradient-border-bottom min-h-20"
+      class="flex gap-5 justify-center items-center self-stretch py-6 w-full font-bold whitespace-nowrap min-h-20"
     >
       <div
         class="self-stretch my-auto"
@@ -19,170 +19,120 @@
       >
         <img
           :src="imageUrls.header1"
-          class="h-16 object-contain"
+          class="h-30 object-contain"
           alt="AI換臉"
         />
       </div>
-      <UsageCounter :currentCount="userUsage" />
-    </div>
-    <!-- 步驟 -->
-    <div
-      class="flex items-center mt-8 max-w-full text-base font-bold text-center text-[#FC7BBB] whitespace-nowrap w-[202px] mx-auto"
-    >
-      <img
-        :src="imageUrls.finish"
-        class="w-6 h-6 object-contain"
-        alt="Step 1"
-      />
-      <img
-        :src="imageUrls.horizontal"
-        class="shrink-0 w-[65px] h-6 object-cover translate-y-2.5"
-        alt="分隔線"
-      />
-      <img
-        :src="imageUrls.step2_inprogress"
-        class="w-6 h-6 object-contain"
-        alt="Step 2"
-      />
-      <img
-        :src="imageUrls.horizontal"
-        class="shrink-0 w-[65px] h-6 object-cover translate-y-2.5"
-        alt="分隔線"
-      />
-      <img
-        :src="imageUrls.step3_inactive"
-        class="w-6 h-6 object-contain"
-        alt="Step 3"
-      />
-    </div>
-    <!-- 步驟文字 -->
-    <div
-      class="flex gap-5 justify-between max-w-full text-sm text-center w-[218px] mx-auto mb-4"
-    >
-      <div class="step-gradient-text" data-name="Step 1">Step 1</div>
-      <div class="step-gradient-text" data-name="Step 2">Step 2</div>
-      <div class="step-gradient-text" data-name="Step 3">Step 3</div>
     </div>
 
     <!-- Main Content Container -->
-    <div class="flex-1 flex flex-col max-w-md mx-auto w-full px-5">
-      <!-- Selected Template Image -->
+    <div class="flex-1 flex flex-col max-w-md mx-auto w-full px-5 pb-8">
+      <!-- 步驟一：上傳部分 -->
       <div class="mb-8">
-        <div v-if="props.selectedTemplate" class="w-full h-[400px]">
+        <div class="mb-4">
           <img
-            class="w-full h-full object-contain rounded-md"
-            :src="getTemplateImage(props.selectedTemplate)"
-            :alt="getTemplateName(props.selectedTemplate)"
+            :src="imageUrls.step1"
+            class="w-full h-auto object-contain"
+            alt="【步驟1】求籤前準備：呈上正面清晰照片"
           />
         </div>
-        <div v-else class="w-full h-[400px] flex items-center justify-center bg-gray-700 rounded-md border-2 border-dashed border-[#FC7BBB]">
-          <div class="text-center text-[#FC7BBB]">
-            <div class="text-lg font-bold mb-2">請先選擇模板</div>
-            <div class="text-sm">請回到上一步選擇您想要的換臉模板</div>
+
+        <!-- Upload Area -->
+        <div class="mb-4">
+          <div
+            class="flex h-[200px] flex-col items-center justify-center gap-5 gradient-border-dashed cursor-pointer transition-colors rounded-md"
+            @click="triggerFileUpload"
+            @dragover.prevent
+            @drop.prevent="handleDrop"
+          >
+            <div v-if="!uploadedImage" class="flex flex-col items-center gap-3">
+              <!-- Upload Icon -->
+              <div class="w-[50px] h-[35px] relative">
+                <img
+                  :src="imageUrls.upload"
+                  alt="Upload Icon"
+                  class="w-[50px] h-[35px] object-contain"
+                />
+              </div>
+              <div class="text-base font-medium cp-font text-center" style="color: #E0BE91;">
+                點擊上傳
+              </div>
+              <div class="text-sm font-medium cp-font text-center" style="color: #E0BE91;">
+                支援 JPG, PNG 格式
+              </div>
+            </div>
+            <div v-else class="w-full h-full">
+              <!-- 圖片預覽 -->
+              <img
+                :src="uploadedImagePreview"
+                :alt="uploadedImage.name"
+                class="w-full h-full object-contain rounded-md bg-gray-800"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Upload Instructions -->
+        <div class="mb-6">
+          <h4 class="text-sm font-bold text-white mb-3 cp-font">求籤須知：</h4>
+          <div class="text-[13px] font-normal text-white space-y-2 cp-font">
+            <div>1.上傳照片僅用於海報生成,不會改作他用</div>
+            <div>2.請上傳清晰、光線充足的照片以獲得最佳效果</div>
+            <div>3.建議上傳正面或半側面照片</div>
+            <div>4.活動期間生成的海報將保留於個人帳戶中</div>
+            <div>5.Fanpokka 保留活動最終解釋權</div>
           </div>
         </div>
       </div>
 
-      <!-- Upload Section -->
-      <div class="flex-1">
-        <div v-if="props.selectedTemplate">
-          <div class="flex items-center gap-3 mb-6">
-            <img
-              :src="imageUrls.step2_inprogress"
-              class="w-[26px] h-[26px] object-contain"
-              alt="Step 2 In Progress"
-            />
-            <h3 class="text-base font-bold step-gradient-text">
-              請上傳一張正面清晰的原始圖片
-            </h3>
-          </div>
-
-          <!-- Upload Area -->
-          <div class="mb-6">
-            <div
-              class="flex h-[200px] flex-col items-center justify-center gap-5 gradient-border-dashed cursor-pointer transition-colors rounded-md"
-              @click="triggerFileUpload"
-              @dragover.prevent
-              @drop.prevent="handleDrop"
-            >
-              <div v-if="!uploadedImage" class="flex flex-col items-center gap-3">
-                <!-- Upload Icon -->
-                <div class="w-[50px] h-[35px] relative">
-                  <img
-                    :src="imageUrls.upload"
-                    alt="Upload Icon"
-                    class="w-[50px] h-[35px] object-contain"
-                  />
-                </div>
-                <div class="text-base font-medium cp-font step-gradient-text text-center">
-                  點擊上傳
-                </div>
-                <div class="text-sm font-medium cp-font step-gradient-text text-center">
-                  支援 JPG, PNG 格式
-                </div>
-              </div>
-              <div v-else class="w-full h-full">
-                <!-- 圖片預覽 -->
-                <img
-                  :src="uploadedImagePreview"
-                  :alt="uploadedImage.name"
-                  class="w-full h-full object-contain rounded-md bg-gray-800"
-                />
-              </div>
-            </div>
-          </div>
-
-          <!-- Upload Instructions -->
-          <div class="mb-8">
-            <h4 class="text-sm font-bold text-white mb-3">上傳注意事項：</h4>
-            <div class="text-[13px] font-normal text-white space-y-2">
-              <div>1.請上傳單人清晰正面照，避免多人合照，以利準確辨識</div>
-              <div>2.僅支援人像照片，請勿上傳風景、動物或其他非人物圖片</div>
-              <div>3.請確保臉部五官完整可見，避免口罩、手部、頭髮等遮擋</div>
-              <div>4.避免模糊、晃動或低解析度圖片，以免影響生成品質</div>
-            </div>
-          </div>
-
-          <!-- Action Buttons -->
-          <div class="flex gap-3 mb-8">
-            <button
-              class="flex-1 h-11 px-3 py-3 flex justify-center items-center rounded-md cursor-pointer transition-colors text-base font-bold cp-font text-[#0E0E0E]"
-              style="background-color: #FFF3AB;"
-              @click="goBack"
-            >
-              重選範本
-            </button>
-            <button
-              class="flex-1 h-11 px-3 py-3 flex justify-center items-center rounded-md cursor-pointer transition-all duration-300 text-base font-bold hover:shadow-lg"
-              :style="isAtLimit ? 'background-color: #666666;' : 'background: linear-gradient(to bottom, #FFC1DE 0%, #FD79B5 100%);'"
-              :class="canGenerate ? '' : 'opacity-50 cursor-not-allowed'"
-              @click="generateFaceSwap"
-              :disabled="!canGenerate"
-            >
-              <div class="flex items-center gap-2">
-                <img
-                  v-if="!isAtLimit"
-                  :src="imageUrls.generateIcon"
-                  class="w-5 h-5 object-contain"
-                  alt="生成圖標"
-                />
-                <span class="cp-font text-[#0E0E0E]">
-                  {{ isAtLimit ? '已達使用上限' : (isGenerating ? '生成中...' : '開始生成') }}
-                </span>
-              </div>
-            </button>
-          </div>
+      <!-- 步驟二：閉眼默念新年願望 -->
+      <div class="mb-8">
+        <div class="mb-4">
+          <img
+            :src="imageUrls.step2"
+            class="w-full h-auto object-contain"
+            alt="【步驟2】抽取你的2026年運勢籤"
+          />
         </div>
-        <div v-else class="text-center text-[#FC7BBB] py-8">
-          <div class="text-lg font-bold mb-4">無法進行換臉操作</div>
-          <div class="text-sm mb-6">您需要先選擇一個模板才能繼續</div>
-          <button
-            class="px-6 py-3 bg-[#FC7BBB] text-[#333] rounded-md font-bold hover:opacity-80 transition-colors"
-            @click="goBack"
-          >
-            返回選擇模板
-          </button>
+        
+        <!-- 步驟二說明文字圖片 -->
+        <div class="mb-4 flex justify-center">
+          <img
+            :src="imageUrls.step2Instructions"
+            alt="閉上眼睛，默念你的新年願望。點擊下一步抽出靈籤"
+            class="w-[90%] h-auto object-contain"
+          />
         </div>
+
+        <!-- 求籤圖 -->
+        <div class="flex justify-center items-center">
+          <img
+            :src="imageUrls.lots"
+            alt="求籤"
+            class="max-w-full h-auto object-contain"
+          />
+        </div>
+      </div>
+
+      <!-- 下一步按鈕 -->
+      <div class="mt-auto flex flex-col items-center gap-4">
+        <button
+          class="cursor-pointer transition-all duration-300 hover:opacity-80"
+          :class="canGenerate ? '' : 'opacity-50 cursor-not-allowed'"
+          @click="generateFaceSwap"
+          :disabled="!canGenerate"
+        >
+          <img
+            :src="imageUrls.next"
+            alt="下一步"
+            class="w-full h-auto object-contain"
+          />
+        </button>
+        <!-- 使用量計數器（可點擊跳轉到歷史） -->
+        <UsageCounter 
+          :currentCount="userUsage" 
+          @click="emit('showHistory')"
+        />
       </div>
     </div>
 
@@ -234,10 +184,6 @@ import { imageUrls } from '@/config/imageUrls'
 import { appConfig } from '@/config/appConfig'
 
 const props = defineProps({
-  selectedTemplate: {
-    type: String,
-    default: ''
-  },
   userUsage: {
     type: Number,
     default: 0
@@ -268,14 +214,14 @@ const isDevUser = computed(() => {
 })
 
 const canGenerate = computed(() => {
-  // 檢查是否已選擇模板和上傳圖片
-  const hasTemplateAndImage = props.selectedTemplate && uploadedImage.value;
+  // 檢查是否已上傳圖片
+  const hasImage = uploadedImage.value;
   // 檢查是否未達到使用量上限（dev_user 不受限制）
   const underLimit = isDevUser.value || props.userUsage < appConfig.maxUsageLimit;
   // 檢查是否正在生成中（防止重複點擊）
   const notGenerating = !isGenerating.value;
   
-  return hasTemplateAndImage && underLimit && notGenerating;
+  return hasImage && underLimit && notGenerating;
 });
 
 // 計算是否已達上限（dev_user 不受限制）
@@ -283,20 +229,6 @@ const isAtLimit = computed(() => {
   return !isDevUser.value && props.userUsage >= appConfig.maxUsageLimit;
 });
 
-function getTemplateImage(templateKey) {
-  const imageMap = {
-    'a1art1': imageUrls.a1art1,
-    'a1art2': imageUrls.a1art2,
-    'a1art3': imageUrls.a1art3,
-    'a1art4': imageUrls.a1art4
-  };
-  
-  return imageMap[templateKey] || imageUrls.a1art1;
-}
-
-function getTemplateName(templateId) {
-  return '';
-}
 
 function triggerFileUpload() {
   fileInput.value?.click();
@@ -362,14 +294,8 @@ async function generateFaceSwap() {
         throw new Error('請選擇要上傳的圖片');
       }
       
-      const templateIdMap = {
-        'a1art1': '1',
-        'a1art2': '2',
-        'a1art3': '3',
-        'a1art4': '4'
-      };
-      const numericTemplateId = templateIdMap[props.selectedTemplate] || '1';
-      formData.append('template_id', numericTemplateId);
+      // 使用默認模板 ID（因為沒有模板選擇頁面）
+      formData.append('template_id', '1');
       
       const result = await roadshowService.generateAvatar(formData);
       
@@ -384,8 +310,7 @@ async function generateFaceSwap() {
           setTimeout(() => {
             emit("generate", {
               uploadedImage: uploadedImage.value,
-              taskId: result.result?.task_id || result.result?.id || result.task_id,
-              selectedTemplate: props.selectedTemplate
+              taskId: result.result?.task_id || result.result?.id || result.task_id
             });
           }, 1000);
         }, 1000);

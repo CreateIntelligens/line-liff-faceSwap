@@ -11,7 +11,7 @@
     }"
   >
       <!-- Header -->
-      <div class="flex justify-between items-center px-5 py-5 gradient-border-bottom">
+      <div class="flex justify-between items-center px-5 py-5">
         <!-- Left side: Back button and Title -->
         <div class="flex items-center gap-3">
           <button 
@@ -39,8 +39,8 @@
       <div class="flex-1 flex items-center justify-center">
           <!-- 載入狀態 -->
           <div v-if="isLoading" class="flex flex-col items-center justify-center h-60">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FFC1DE] mb-4"></div>
-            <div class="text-[#FFC1DE] text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 mb-4" style="border-color: #E0BE91;"></div>
+            <div class="text-center" style="color: #E0BE91;">
               <div class="text-lg font-bold mb-2">載入中...</div>
               <div class="text-sm">正在獲取生成詳情</div>
             </div>
@@ -78,7 +78,7 @@
               </div>
             </template>
             <div v-else class="w-full h-60 bg-gray-700 rounded-md flex items-center justify-center">
-              <div class="text-[#FFC1DE] text-center">
+              <div class="text-center" style="color: #E0BE91;">
                 <div class="text-lg font-bold mb-2">無法載入圖片</div>
                 <div class="text-xs mt-2">歷史項目: {{ historyDetail?.id || '無ID' }}</div>
                 <div class="text-xs">圖片字段: {{ historyDetail?.image || historyDetail?.image_url || historyDetail?.result_image || '無' }}</div>
@@ -102,7 +102,7 @@
           <!-- Download Button -->
           <button 
             class="flex-1 h-11 flex justify-center items-center rounded-md cursor-pointer transition-all duration-300 text-base font-bold hover:shadow-lg"
-            style="background: linear-gradient(to bottom, #FFC1DE 0%, #FD79B5 100%);"
+            style="background-color: #E0BE91;"
             :class="
               historyDetail && historyDetail.status === 'completed' && !isDownloading
                 ? ''

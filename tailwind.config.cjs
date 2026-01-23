@@ -16,6 +16,9 @@ module.exports = {
         'poppins': ['Poppins', 'sans-serif'],
         'noto-sans-tc': ['Noto Sans TC', '-apple-system', 'Roboto', 'Helvetica', 'sans-serif'],
       },
+      height: {
+        '30': '7.5rem', // 120px
+      },
     },
   },
   plugins: [],

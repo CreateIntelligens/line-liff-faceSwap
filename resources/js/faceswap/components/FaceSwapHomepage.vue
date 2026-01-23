@@ -5,15 +5,15 @@
     :style="{ 
       minHeight: '100vh',
       height: '100dvh',
-      backgroundImage: `url(${imageUrls.hpbackground})`, 
+      backgroundImage: `url(${imageUrls.background1})`, 
       backgroundSize: 'cover', 
       backgroundPosition: 'center', 
       backgroundRepeat: 'no-repeat' 
     }"
   >
     <img
-      :src="imageUrls.Group13948"
-      alt="Hero Image"
+      :src="imageUrls.homepage"
+      alt="Homepage Content"
       class="max-w-full max-h-full w-auto h-auto object-contain"
     />
   </div>

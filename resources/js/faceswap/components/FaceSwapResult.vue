@@ -21,14 +21,14 @@
     <!-- Main Result Page -->
     <div v-if="!showHistory" class="flex-1 flex flex-col">
       <!-- Header -->
-      <div class="flex gap-5 justify-center items-center self-stretch px-5 py-6 w-full font-bold whitespace-nowrap gradient-border-bottom min-h-20">
+      <div class="flex gap-5 justify-center items-center self-stretch py-6 w-full font-bold whitespace-nowrap min-h-20">
         <div
           class="self-stretch my-auto"
           data-name="AI換臉"
         >
           <img
             :src="imageUrls.header1"
-            class="h-16 object-contain"
+            class="h-30 object-contain"
             alt="AI換臉"
           />
         </div>
@@ -40,7 +40,7 @@
       class="flex items-center mt-8 max-w-full text-base font-bold text-center text-[#EBD8B2] whitespace-nowrap w-[202px] mx-auto"
     >
       <img
-        :src="imageUrls.finish"
+        :src="imageUrls.step1"
         class="w-6 h-6 object-contain"
         alt="Step 1"
       />
@@ -50,19 +50,9 @@
         alt="分隔線"
       />
       <img
-        :src="imageUrls.step2_inprogress"
+        :src="imageUrls.step2"
         class="w-6 h-6 object-contain"
         alt="Step 2"
-      />
-      <img
-        :src="imageUrls.horizontal"
-        class="shrink-0 w-[65px] h-6 object-cover translate-y-2.5"
-        alt="分隔線"
-      />
-      <img
-        :src="imageUrls.step3_inprogress"
-        class="w-6 h-6 object-contain"
-        alt="Step 3"
       />
     </div>
     <!-- 步驟文字 -->
@@ -71,7 +61,6 @@
     >
       <div class="step-gradient-text" data-name="Step 1">Step 1</div>
       <div class="step-gradient-text" data-name="Step 2">Step 2</div>
-      <div class="step-gradient-text" data-name="Step 3">Step 3</div>
     </div>
 
       
@@ -91,8 +80,8 @@
       <div class="flex-1">
           <!-- 載入狀態 -->
           <div v-if="isLoading" class="flex flex-col items-center justify-center h-60">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FFC1DE] mb-4"></div>
-            <div class="text-[#FFC1DE] text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 mb-4" style="border-color: #E0BE91;"></div>
+            <div class="text-center" style="color: #E0BE91;">
               <div class="text-lg font-bold mb-2">{{ loadingMessage }}</div>
               <div class="text-sm">{{ loadingSubMessage }}</div>
             </div>
@@ -135,7 +124,7 @@
               </div>
             </div>
             <div v-else class="w-full h-60 bg-gray-700 rounded-md flex items-center justify-center">
-              <div class="text-[#FFC1DE] text-center">
+              <div class="text-center" style="color: #E0BE91;">
                 <div class="text-lg font-bold mb-2">生成中...</div>
                 <div class="text-sm">請稍候，正在處理您的圖片</div>
               </div>
@@ -159,7 +148,7 @@
           <!-- Download Button -->
           <button 
             class="flex-1 h-11 flex justify-center items-center rounded-md cursor-pointer transition-all duration-300 text-base font-bold hover:shadow-lg"
-            style="background: linear-gradient(to bottom, #FFC1DE 0%, #FD79B5 100%);"
+            style="background-color: #E0BE91;"
             :class="
               taskResult && taskResult.status === 'completed' && !isDownloading
                 ? ''
@@ -206,10 +195,6 @@ const props = defineProps({
     default: ''
   },
   userId: {
-    type: String,
-    default: ''
-  },
-  selectedTemplate: {
     type: String,
     default: ''
   },
@@ -335,14 +320,6 @@ async function sendViaLiff(imageUrl) {
 watch(() => props.taskId, (newTaskId) => {
   if (newTaskId) {
     checkTaskStatus()
-  }
-}, { immediate: true })
-
-// 監聽selectedTemplate變化，處理顯示歷史的請求
-watch(() => props.selectedTemplate, (newTemplate) => {
-  if (newTemplate === 'show_history') {
-    // 設置顯示歷史
-    showHistory.value = true
   }
 }, { immediate: true })
 
