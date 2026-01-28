@@ -13,14 +13,15 @@
   <meta property="line:card" content="summary_large_image">
   <meta property="line:title" content="面相指路，靈籤定運">
   <meta property="line:description" content="從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~">
-  <meta property="line:image" content="https://line-liff-face-swap-draw-lots-2026.vercel.app/images/og.png">
+  <!-- 下方 line:image / og:url / og:image 會在腳本中依據 window.endpoint.domain 動態覆寫 -->
+  <meta id="line-og-image" property="line:image" content="">
   
   <!-- 標準 Open Graph Tags -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://line-liff-face-swap-draw-lots-2026.vercel.app/">
+  <meta id="og-url" property="og:url" content="">
   <meta property="og:title" content="面相指路，靈籤定運">
   <meta property="og:description" content="從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~">
-  <meta property="og:image" content="https://line-liff-face-swap-draw-lots-2026.vercel.app/images/og.png">
+  <meta id="og-image" property="og:image" content="">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="面相指路，靈籤定運">
@@ -32,9 +33,11 @@
   
   <!-- 全局配置 - 可在打包後直接修改 -->
   <script>
-    // ===== API 配置 =====
+      // ===== Domain / API 配置 =====
     // 這些配置可以在打包後的 dist 目錄中直接修改
     window.endpoint = {
+      // 前端與 OG / 分享共用的網域設定（後端如需更換 domain，改這裡即可）
+      domain: 'https://line-liff-face-swap-draw-lots-2026.vercel.app',
       // API 基礎 URL - 修改這裡來改變 API 伺服器地址
       baseURL: 'https://stg-line-crm.fanpokka.ai/api',
       // 認證 Token
@@ -68,6 +71,22 @@
       enableLiff: true,
       testUserId: 'dev_user_'
     };
+    
+    // 動態設定 OG / LINE 圖片與 URL
+    (function () {
+      try {
+        var domain = (window.endpoint && window.endpoint.domain) || '';
+        if (!domain) return;
+        var ogUrl = document.getElementById('og-url');
+        var ogImage = document.getElementById('og-image');
+        var lineImage = document.getElementById('line-og-image');
+        if (ogUrl) ogUrl.setAttribute('content', domain + '/');
+        if (ogImage) ogImage.setAttribute('content', domain + '/images/og.png');
+        if (lineImage) lineImage.setAttribute('content', domain + '/images/og.png');
+      } catch (e) {
+        console.error('設定 OG / LINE 圖片失敗:', e);
+      }
+    })();
     
     // 輸出配置到控制台（如果啟用調試模式）
     if (window.endpoint.debug) {
