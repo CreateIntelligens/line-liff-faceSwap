@@ -234,56 +234,36 @@ async function downloadImageViaCanvas(imageUrl, filename) {
   })
 }
 
-// 透過 LIFF 分享文字和連結
+// 透過 LIFF 分享文字和連結（僅使用 shareTargetPicker，不再 fallback sendMessages）
 async function shareViaLiff() {
-  try {
-    if (typeof liff === 'undefined') {
-      throw new Error('LIFF SDK 未載入，請確保在 LINE 環境中使用')
+  if (typeof liff === 'undefined') {
+    throw new Error('LIFF SDK 未載入，請確保在 LINE 環境中使用')
+  }
+  
+  const shareUrl = 'https://line-liff-face-swap-draw-lots-2026.vercel.app/'
+  const shareText = '面相指路，靈籤定運\n從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~\n開始測算：' + shareUrl
+  
+  if (!liff.isInClient()) {
+    throw new Error('請在 LINE 應用中開啟此活動頁面後再分享')
+  }
+  
+  if (!liff.isLoggedIn()) {
+    throw new Error('用戶未登入，無法分享。請先登入 LINE 帳號。')
+  }
+  
+  if (!liff.shareTargetPicker) {
+    throw new Error('目前裝置暫不支援好友分享功能')
+  }
+  
+  const result = await liff.shareTargetPicker([
+    {
+      type: 'text',
+      text: shareText
     }
-    
-    const shareUrl = 'https://line-liff-face-swap-draw-lots-2026.vercel.app/'
-    const shareText = '面相指路，靈籤定運\n從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~\n開始測算：' + shareUrl
-    
-    // 如果不在 LINE App 內，改為直接開啟分享連結（不再拋錯）
-    if (!liff.isInClient()) {
-      console.warn('⚠️ 不在 LINE 應用內，改為直接開啟分享連結')
-      window.location.href = shareUrl
-      return
-    }
-    
-    if (!liff.isLoggedIn()) {
-      throw new Error('用戶未登入，無法分享。請先登入 LINE 帳號。')
-    }
-    
-    // 使用 shareTargetPicker 分享 URL（會自動觸發 OG meta tags）
-    if (liff.shareTargetPicker) {
-      try {
-        await liff.shareTargetPicker([
-          {
-            type: 'text',
-            text: shareText
-          }
-        ])
-        return
-      } catch (shareError) {
-        console.warn('⚠️ shareTargetPicker 失敗，改用 sendMessages:', shareError)
-      }
-    }
-    
-    // 後備方案：使用 sendMessages 發送文字訊息
-    await liff.sendMessages([
-      {
-        type: 'text',
-        text: shareText
-      }
-    ])
-  } catch (error) {
-    console.error('❌ 分享失敗:', error)
-    if (error.message) {
-      throw error
-    } else {
-      throw new Error(`分享失敗: ${error.toString()}`)
-    }
+  ])
+  
+  if (result === null) {
+    throw new Error('已取消分享')
   }
 }
 
