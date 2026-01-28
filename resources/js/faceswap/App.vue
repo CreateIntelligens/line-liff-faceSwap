@@ -26,6 +26,7 @@
       :taskId="taskId"
       :userId="userId"
       :userUsage="userUsage"
+      :startWithHistory="startWithHistory"
       @back="goBack"
       @regenerate="handleRegenerate"
       @download="handleDownload"
@@ -51,6 +52,7 @@ const isInitialized = ref(false)
 const userUsage = ref(0) // 用戶已生成的圖片數量
 const isLiffInitialized = ref(false)
 const isFriend = ref(true) // 好友狀態，默認為 true（本地開發環境）
+const startWithHistory = ref(false) // 是否在結果頁直接顯示歷史紀錄
 
 // 檢查是否為本地開發環境
 function isLocalDevEnvironment() {
@@ -284,6 +286,8 @@ async function enterFaceSwap() {
 async function handleGenerate(data) {
   // 保存任務ID
   taskId.value = data.taskId
+  // 從上傳流程進入結果頁，不預設顯示歷史
+  startWithHistory.value = false
   
   // 在生成請求成功返回後立即從服務器刷新使用量
   // 確保顯示的數字與服務器數據一致
@@ -320,7 +324,8 @@ async function handleShowHistory() {
     }
   }
   
-  // 跳轉到結果頁面，然後顯示歷史
+  // 跳轉到結果頁面，並在結果頁直接顯示歷史紀錄
+  startWithHistory.value = true
   currentStep.value = 'result'
 }
 

@@ -88,7 +88,7 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="px-12 pt-4 pb-8">
+      <div class="px-4 pt-4 pb-8">
         <div class="flex gap-3 mb-8">
           <!-- 再抽一次 Button -->
           <button 
@@ -234,33 +234,53 @@ async function downloadImageViaCanvas(imageUrl, filename) {
   })
 }
 
-// 透過 LIFF 發送圖片
-async function sendViaLiff(imageUrl) {
+// 透過 LIFF 分享文字和連結
+async function shareViaLiff() {
   try {
     if (typeof liff === 'undefined') {
       throw new Error('LIFF SDK 未載入，請確保在 LINE 環境中使用')
     }
     
     if (!liff.isInClient()) {
-      throw new Error('不在 LINE 應用內，無法發送訊息。請在 LINE 應用中開啟此頁面。')
+      throw new Error('不在 LINE 應用內，無法分享。請在 LINE 應用中開啟此頁面。')
     }
     
     if (!liff.isLoggedIn()) {
-      throw new Error('用戶未登入，無法發送訊息。請先登入 LINE 帳號。')
+      throw new Error('用戶未登入，無法分享。請先登入 LINE 帳號。')
     }
+    
+    // 使用 shareTargetPicker 分享 URL（會自動觸發 OG meta tags）
+    const shareUrl = 'https://line-liff-face-swap-draw-lots-2026.vercel.app/'
+    const shareText = '面相指路，靈籤定運\n從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~\n開始測算：' + shareUrl
+    
+    // 嘗試使用 shareTargetPicker（LIFF 2.0+）
+    if (liff.shareTargetPicker) {
+      try {
+        await liff.shareTargetPicker([
+          {
+            type: 'text',
+            text: shareText
+          }
+        ])
+        return
+      } catch (shareError) {
+        console.warn('⚠️ shareTargetPicker 失敗，改用 sendMessages:', shareError)
+      }
+    }
+    
+    // 後備方案：使用 sendMessages 發送文字訊息
     await liff.sendMessages([
       {
-        type: 'image',
-        originalContentUrl: imageUrl,
-        previewImageUrl: imageUrl
+        type: 'text',
+        text: shareText
       }
     ])
   } catch (error) {
-    console.error('❌ 發送訊息失敗:', error)
+    console.error('❌ 分享失敗:', error)
     if (error.message) {
       throw error
     } else {
-      throw new Error(`發送失敗: ${error.toString()}`)
+      throw new Error(`分享失敗: ${error.toString()}`)
     }
   }
 }
@@ -514,11 +534,11 @@ function regenerate() {
   emit('regenerate', historyDetail.value)
 }
 
-// 下載至官方帳號
+// 分享文字與連結
 async function downloadToOfficial() {
   if (!historyDetail.value || historyDetail.value.status !== 'completed') {
-    console.warn('⚠️ 歷史項目尚未完成，無法下載')
-    showMessage('歷史項目尚未完成，無法下載', 'error')
+    console.warn('⚠️ 歷史項目尚未完成，無法分享')
+    showMessage('歷史項目尚未完成，無法分享', 'error')
     return
   }
 
@@ -527,108 +547,32 @@ async function downloadToOfficial() {
     return
   }
 
-  // 獲取圖片 URL（顯示用的處理後 URL）
-  const displayImageUrl = getHistoryImage(historyDetail.value)
-  if (!displayImageUrl) {
-    console.warn('⚠️ 沒有圖片，無法下載')
-    showMessage('沒有圖片，無法下載', 'error')
-    return
-  }
-
-  // 在本地測試時，使用原始圖片 URL（避免 CORS 問題）
-  // 原始圖片 URL 來自 historyDetail.value.image
-  const originalImageUrl = historyDetail.value?.image || displayImageUrl
-  const downloadImageUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
-    ? originalImageUrl 
-    : displayImageUrl
-
   try {
     isDownloading.value = true
-    console.log('📥 開始下載歷史項目至官方帳號流程')
     
-    // 本地測試：先下載到本機確認圖片
+    // 本地測試：顯示分享文字
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      console.log('🧪 本地測試模式：下載圖片到本機')
-      console.log('📸 顯示用圖片 URL:', displayImageUrl)
-      console.log('📸 下載用原始圖片 URL:', downloadImageUrl)
-      
-      try {
-        // 方法1: 使用 XMLHttpRequest 下載圖片（更可靠，支持跨域）
-        const blob = await new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest()
-          xhr.open('GET', downloadImageUrl, true)
-          xhr.responseType = 'blob'
-          
-          xhr.onload = function() {
-            if (xhr.status === 200) {
-              resolve(xhr.response)
-            } else {
-              reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`))
-            }
-          }
-          
-          xhr.onerror = function() {
-            reject(new Error('網路錯誤，無法下載圖片'))
-          }
-          
-          xhr.onabort = function() {
-            reject(new Error('下載被取消'))
-          }
-          
-          xhr.send()
-        })
-        
-        // 創建 blob URL 並下載
-        const blobUrl = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = blobUrl
-        link.download = `history-detail-${Date.now()}.jpg`
-        link.style.display = 'none'
-        document.body.appendChild(link)
-        link.click()
-        
-        // 延遲清理，確保下載開始
-        setTimeout(() => {
-          document.body.removeChild(link)
-          window.URL.revokeObjectURL(blobUrl)
-        }, 100)
-        
-        console.log('✅ 圖片已下載到本機')
-        showMessage('圖片已下載到本機', 'success')
-      } catch (downloadError) {
-        console.error('❌ 下載圖片失敗:', downloadError)
-        console.error('❌ 錯誤詳情:', {
-          message: downloadError.message,
-          stack: downloadError.stack,
-          downloadImageUrl: downloadImageUrl,
-          displayImageUrl: displayImageUrl
-        })
-        
-        // 如果 XMLHttpRequest 也失敗，嘗試使用 canvas 方式
-        try {
-          await downloadImageViaCanvas(downloadImageUrl, 'history-detail.jpg')
-          showMessage('圖片已下載到本機', 'success')
-        } catch (canvasError) {
-          console.error('❌ Canvas 下載也失敗:', canvasError)
-          // 最後的後備方案：直接打開連結
-          window.open(downloadImageUrl, '_blank')
-          showMessage('下載失敗，已在新視窗打開圖片連結', 'error')
-        }
-      }
+      const shareUrl = 'https://line-liff-face-swap-draw-lots-2026.vercel.app/'
+      const shareText = '面相指路，靈籤定運\\n從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~\\n開始測算：' + shareUrl
+      console.log('📤 分享內容:', shareText)
+      alert('分享內容：\\n\\n' + shareText)
+      showMessage('分享內容已顯示（本地測試模式）', 'success')
       return
     }
     
-    // 生產環境：透過 LIFF 發送（使用顯示用的處理後 URL）
-    await sendViaLiff(displayImageUrl)
-    console.log('✅ 發送完成')
+    // 生產環境：透過 LIFF 分享
+    console.log('📤 準備分享文字和連結')
+    await shareViaLiff()
+    console.log('✅ 分享完成')
     
-    showMessage('圖片已成功發送到官方帳號！', 'success')
+    showMessage('已成功分享！', 'success')
     
   } catch (error) {
-    console.error('❌ 下載流程失敗:', error)
-    showMessage(`下載失敗: ${error.message}`, 'error')
+    console.error('❌ 分享流程失敗:', error)
+    showMessage(`分享失敗: ${error.message}`, 'error')
   } finally {
     isDownloading.value = false
+    // 不更動其他載入訊息，保持原本狀態
   }
 }
 

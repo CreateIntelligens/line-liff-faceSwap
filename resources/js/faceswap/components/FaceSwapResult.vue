@@ -92,7 +92,7 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="px-12 pt-4 pb-8">
+      <div class="px-4 pt-4 pb-8">
         <div class="flex gap-3 mb-8">
           <!-- 再抽一次 Button -->
           <button 
@@ -168,6 +168,11 @@ const props = defineProps({
   userUsage: {
     type: Number,
     default: 0
+  },
+  // 是否在載入時直接顯示歷史紀錄（從上傳頁點「抽籤紀錄」進來）
+  startWithHistory: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -255,33 +260,53 @@ async function downloadImageViaCanvas(imageUrl, filename) {
   })
 }
 
-// 透過 LIFF 發送圖片
-async function sendViaLiff(imageUrl) {
+// 透過 LIFF 分享文字和連結
+async function shareViaLiff() {
   try {
     if (typeof liff === 'undefined') {
       throw new Error('LIFF SDK 未載入，請確保在 LINE 環境中使用')
     }
     
     if (!liff.isInClient()) {
-      throw new Error('不在 LINE 應用內，無法發送訊息。請在 LINE 應用中開啟此頁面。')
+      throw new Error('不在 LINE 應用內，無法分享。請在 LINE 應用中開啟此頁面。')
     }
     
     if (!liff.isLoggedIn()) {
-      throw new Error('用戶未登入，無法發送訊息。請先登入 LINE 帳號。')
+      throw new Error('用戶未登入，無法分享。請先登入 LINE 帳號。')
     }
+    
+    // 使用 shareTargetPicker 分享 URL（會自動觸發 OG meta tags）
+    const shareUrl = 'https://line-liff-face-swap-draw-lots-2026.vercel.app/'
+    const shareText = '面相指路，靈籤定運\n從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~\n開始測算：' + shareUrl
+    
+    // 嘗試使用 shareTargetPicker（LIFF 2.0+）
+    if (liff.shareTargetPicker) {
+      try {
+        await liff.shareTargetPicker([
+          {
+            type: 'text',
+            text: shareText
+          }
+        ])
+        return
+      } catch (shareError) {
+        console.warn('⚠️ shareTargetPicker 失敗，改用 sendMessages:', shareError)
+      }
+    }
+    
+    // 後備方案：使用 sendMessages 發送文字訊息
     await liff.sendMessages([
       {
-        type: 'image',
-        originalContentUrl: imageUrl,
-        previewImageUrl: imageUrl
+        type: 'text',
+        text: shareText
       }
     ])
   } catch (error) {
-    console.error('❌ 發送訊息失敗:', error)
+    console.error('❌ 分享失敗:', error)
     if (error.message) {
       throw error
     } else {
-      throw new Error(`發送失敗: ${error.toString()}`)
+      throw new Error(`分享失敗: ${error.toString()}`)
     }
   }
 }
@@ -306,6 +331,17 @@ watch(() => props.taskId, (newTaskId, oldTaskId) => {
 watch(() => props.userUsage, (newUsage, oldUsage) => {
   // 用戶使用量變化時的處理邏輯
 }, { immediate: true })
+
+// 監聽是否要直接顯示歷史紀錄
+watch(
+  () => props.startWithHistory,
+  (value) => {
+    if (value) {
+      showHistory.value = true
+    }
+  },
+  { immediate: true }
+)
 
 // 檢查任務狀態
 async function checkTaskStatus() {
@@ -593,93 +629,29 @@ async function downloadToOfficial() {
     return
   }
 
-  if (!generatedImages.value || generatedImages.value.length === 0) {
-    showMessage('沒有生成的圖片，無法下載', 'error')
-    return
-  }
-
   try {
     isDownloading.value = true
     
-    const imageIndex = selectedImageIndex.value >= 0 && selectedImageIndex.value < generatedImages.value.length 
-      ? selectedImageIndex.value 
-      : 0
-    
-    // 本地測試：使用原始圖片 URL 下載（避免 CORS 問題）
+    // 本地測試：顯示分享文字
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      const originalImageUrl = originalImages.value[imageIndex] || generatedImages.value[imageIndex]
-      
-      try {
-        const blob = await new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest()
-          xhr.open('GET', originalImageUrl, true)
-          xhr.responseType = 'blob'
-          
-          xhr.onload = function() {
-            if (xhr.status === 200) {
-              resolve(xhr.response)
-            } else {
-              reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`))
-            }
-          }
-          
-          xhr.onerror = function() {
-            reject(new Error('網路錯誤，無法下載圖片'))
-          }
-          
-          xhr.onabort = function() {
-            reject(new Error('下載被取消'))
-          }
-          
-          xhr.send()
-        })
-        
-        const blobUrl = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = blobUrl
-        link.download = `faceswap-result-${imageIndex + 1}-${Date.now()}.jpg`
-        link.style.display = 'none'
-        document.body.appendChild(link)
-        link.click()
-        
-        setTimeout(() => {
-          document.body.removeChild(link)
-          window.URL.revokeObjectURL(blobUrl)
-        }, 100)
-        
-        showMessage('圖片已下載到本機', 'success')
-      } catch (downloadError) {
-        console.error('❌ 下載圖片失敗:', downloadError)
-        try {
-          await downloadImageViaCanvas(originalImageUrl, `faceswap-result-${imageIndex + 1}.jpg`)
-          showMessage('圖片已下載到本機', 'success')
-        } catch (canvasError) {
-          console.error('❌ Canvas 下載也失敗:', canvasError)
-          window.open(originalImageUrl, '_blank')
-          showMessage('下載失敗，已在新視窗打開圖片連結', 'error')
-        }
-      }
+      const shareUrl = 'https://line-liff-face-swap-draw-lots-2026.vercel.app/'
+      const shareText = '面相指路，靈籤定運\n從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~\n開始測算：' + shareUrl
+      console.log('📤 分享內容:', shareText)
+      alert('分享內容：\n\n' + shareText)
+      showMessage('分享內容已顯示（本地測試模式）', 'success')
       return
     }
     
-    // 生產環境：透過 LIFF 發送
-    loadingMessage.value = '正在發送到官方帳號...'
+    // 生產環境：透過 LIFF 分享
+    loadingMessage.value = '正在分享...'
     
-    // 獲取要發送的圖片 URL（使用原始圖片 URL，因為 LIFF 需要完整的 URL）
-    const imageUrlToSend = originalImages.value[imageIndex] || generatedImages.value[imageIndex]
-    
-    if (!imageUrlToSend) {
-      showMessage('無法獲取圖片 URL，無法下載', 'error')
-      return
-    }
-    
-    console.log('📤 準備發送圖片:', imageUrlToSend)
-    await sendViaLiff(imageUrlToSend)
-    showMessage('圖片已成功發送到官方帳號！', 'success')
+    console.log('📤 準備分享文字和連結')
+    await shareViaLiff()
+    showMessage('已成功分享！', 'success')
     
   } catch (error) {
-    console.error('❌ 下載流程失敗:', error)
-    showMessage(`下載失敗: ${error.message}`, 'error')
+    console.error('❌ 分享流程失敗:', error)
+    showMessage(`分享失敗: ${error.message}`, 'error')
   } finally {
     isDownloading.value = false
     loadingMessage.value = '檢查任務狀態...'
