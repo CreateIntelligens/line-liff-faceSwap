@@ -241,8 +241,14 @@ async function shareViaLiff() {
       throw new Error('LIFF SDK 未載入，請確保在 LINE 環境中使用')
     }
     
+    const shareUrl = 'https://line-liff-face-swap-draw-lots-2026.vercel.app/'
+    const shareText = '面相指路，靈籤定運\n從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~\n開始測算：' + shareUrl
+    
+    // 如果不在 LINE App 內，改為直接開啟分享連結（不再拋錯）
     if (!liff.isInClient()) {
-      throw new Error('不在 LINE 應用內，無法分享。請在 LINE 應用中開啟此頁面。')
+      console.warn('⚠️ 不在 LINE 應用內，改為直接開啟分享連結')
+      window.location.href = shareUrl
+      return
     }
     
     if (!liff.isLoggedIn()) {
@@ -250,10 +256,6 @@ async function shareViaLiff() {
     }
     
     // 使用 shareTargetPicker 分享 URL（會自動觸發 OG meta tags）
-    const shareUrl = 'https://line-liff-face-swap-draw-lots-2026.vercel.app/'
-    const shareText = '面相指路，靈籤定運\n從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~\n開始測算：' + shareUrl
-    
-    // 嘗試使用 shareTargetPicker（LIFF 2.0+）
     if (liff.shareTargetPicker) {
       try {
         await liff.shareTargetPicker([
