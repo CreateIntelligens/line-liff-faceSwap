@@ -92,7 +92,7 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="px-12 py-8">
+      <div class="px-12 pt-4 pb-8">
         <div class="flex gap-3 mb-8">
           <!-- 再抽一次 Button -->
           <button 
@@ -152,6 +152,9 @@ import UsageCounter from './UsageCounter.vue'
 import { roadshowService } from '../../services/roadshowService.js'
 import { imageUrls } from '@/config/imageUrls'
 
+// 記錄是否已經嘗試從歷史紀錄中查找
+const hasTriedHistoryFallback = ref(false)
+
 // Define props
 const props = defineProps({
   taskId: {
@@ -183,6 +186,8 @@ const originalImages = ref([]) // 保存原始圖片 URL 用於下載
 const imageLoadErrors = ref({})
 const selectedImageIndex = ref(0)
 const isTaskCompleted = ref(false) // 標記任務是否已完成（防止後續錯誤覆蓋成功結果）
+const retryCount = ref(0) // 重試次數
+const maxRetries = 3 // 最大重試次數
 
 // 載入狀態訊息
 const loadingMessage = ref('檢查任務狀態...')
@@ -289,6 +294,8 @@ watch(() => props.taskId, (newTaskId, oldTaskId) => {
     generatedImages.value = []
     originalImages.value = []
     error.value = null
+    hasTriedHistoryFallback.value = false // 重置歷史紀錄查找標記
+    retryCount.value = 0 // 重置重試次數
   }
   if (newTaskId) {
     checkTaskStatus()
@@ -336,8 +343,95 @@ async function checkTaskStatus() {
         return
       }
       
-      // 如果是 500 錯誤，停止重試並顯示錯誤
+      // 如果是 500 錯誤，先重試幾次，如果都失敗再嘗試從歷史紀錄中獲取
       if (errorStatus === 500) {
+        retryCount.value += 1;
+        
+        if (retryCount.value < maxRetries) {
+          console.warn(`⚠️ 檢查任務狀態返回 500 錯誤，重試中 (${retryCount.value}/${maxRetries})...`);
+          loadingMessage.value = '伺服器暫時無法回應，重試中...';
+          loadingSubMessage.value = `第 ${retryCount.value} 次重試`
+          // 延遲後重試
+          setTimeout(() => {
+            checkTaskStatus();
+          }, 2000);
+          return;
+        }
+        
+        // 重試次數用完，嘗試從歷史紀錄中獲取圖片
+        console.warn('⚠️ 重試次數已用完，嘗試從歷史紀錄中查找圖片...');
+        
+        if (!hasTriedHistoryFallback.value && props.userId) {
+          hasTriedHistoryFallback.value = true;
+          loadingMessage.value = '從歷史紀錄中查找圖片...';
+          loadingSubMessage.value = '請稍候';
+          
+          try {
+            const historyResult = await roadshowService.getUserHistory(props.userId);
+            let avatars = [];
+            
+            if (Array.isArray(historyResult)) {
+              avatars = historyResult;
+            } else if (historyResult && typeof historyResult === 'object') {
+              avatars = historyResult.result?.avatars || historyResult.data?.avatars || historyResult.avatars || [];
+            }
+            
+            // 查找匹配的 taskId
+            const matchedAvatar = avatars.find(avatar => {
+              const avatarId = avatar.task_id || avatar.id;
+              return avatarId === props.taskId;
+            });
+            
+            if (matchedAvatar) {
+              console.log('✅ 從歷史紀錄中找到任務圖片:', matchedAvatar);
+              
+              // 獲取圖片 URL
+              const imageUrl = matchedAvatar.image_url || matchedAvatar.result_image || matchedAvatar.image || matchedAvatar.generated_image;
+              
+              if (imageUrl) {
+                // 處理圖片 URL（使用圖片處理 API）
+                try {
+                  const config = window.endpoint || {};
+                  const apiUrl = config.imageProcessApi || 'https://stg-api.fanpokka.ai/api/static-resource';
+                  const params = config.imageProcessParams || { scale: 2, format: 'jpg', quality: 90, width: 800, height: 600 };
+                  
+                  const queryParams = new URLSearchParams();
+                  queryParams.append('url', imageUrl);
+                  if (params.scale) queryParams.append('scale', params.scale);
+                  if (params.format) queryParams.append('format', params.format);
+                  if (params.quality) queryParams.append('quality', params.quality);
+                  if (params.width) queryParams.append('width', params.width);
+                  if (params.height) queryParams.append('height', params.height);
+                  
+                  const processedImageUrl = `${apiUrl}?${queryParams.toString()}`;
+                  
+                  // 設置圖片和任務結果
+                  originalImages.value = [imageUrl];
+                  generatedImages.value = [processedImageUrl];
+                  taskResult.value = {
+                    success: true,
+                    id: matchedAvatar.task_id || matchedAvatar.id,
+                    status: 'completed',
+                    images: [imageUrl]
+                  };
+                  isTaskCompleted.value = true;
+                  error.value = null;
+                  
+                  console.log('✅ 成功從歷史紀錄中獲取圖片，任務標記為完成');
+                  return; // 成功獲取，不再顯示錯誤
+                } catch (processError) {
+                  console.error('❌ 處理歷史圖片時發生錯誤:', processError);
+                }
+              }
+            } else {
+              console.log('⚠️ 歷史紀錄中未找到匹配的任務');
+            }
+          } catch (historyError) {
+            console.error('❌ 從歷史紀錄中查找失敗:', historyError);
+          }
+        }
+        
+        // 如果從歷史紀錄中找不到，才顯示錯誤
         error.value = `伺服器錯誤：${errorMessage}。請稍後再試或聯繫客服。`;
         console.error('❌ 檢查任務狀態失敗 (500):', result.error);
         return; // 停止重試

@@ -393,7 +393,34 @@ async function checkTaskStatusWhileShowingGif() {
         const remainingTime = minGifDuration - elapsedTime;
         console.log(`⏳ 任務已完成，等待最少顯示時間（還需 ${Math.ceil(remainingTime / 1000)} 秒）`);
       } else if (result && result.error) {
-        // 任務失敗，停止輪詢並顯示錯誤
+        const errorStatus = result.error.status || 0;
+        
+        // 如果是 500 錯誤，可能是暫時的服務器問題，繼續輪詢
+        if (errorStatus === 500) {
+          console.warn('⚠️ 檢查任務狀態返回 500 錯誤，可能是暫時的服務器問題，繼續輪詢...');
+          
+          // 如果已經顯示了足夠長的時間（10 秒），即使檢查失敗也跳轉到結果頁面
+          // 讓結果頁面自己處理（可能會從歷史紀錄中獲取）
+          if (elapsedTime >= 10000) {
+            console.log('⏰ 已顯示足夠時間，即使檢查失敗也跳轉到結果頁面');
+            if (taskStatusCheckInterval.value) {
+              clearInterval(taskStatusCheckInterval.value);
+              taskStatusCheckInterval.value = null;
+            }
+            
+            emit("generate", {
+              uploadedImage: uploadedImage.value,
+              taskId: currentTaskId.value
+            });
+            
+            gifStartTime.value = null;
+            currentTaskId.value = null;
+          }
+          // 否則繼續輪詢
+          return;
+        }
+        
+        // 其他錯誤（400, 404 等），可能是任務真的失敗了
         console.error('❌ 任務狀態檢查失敗:', result.error);
         if (taskStatusCheckInterval.value) {
           clearInterval(taskStatusCheckInterval.value);

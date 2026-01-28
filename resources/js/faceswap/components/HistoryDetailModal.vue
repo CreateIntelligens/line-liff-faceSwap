@@ -36,7 +36,7 @@
       </div>
 
       <!-- Modal Body -->
-      <div class="flex-1 flex items-center justify-center">
+      <div class="flex-1">
           <!-- 載入狀態 -->
           <div v-if="isLoading" class="flex flex-col items-center justify-center h-60">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 mb-4" style="border-color: #E0BE91;"></div>
@@ -61,7 +61,7 @@
           </div>
 
           <!-- 詳情內容 -->
-          <div v-else-if="historyDetail" class="w-full px-4 py-8">
+          <div v-else-if="historyDetail" class="space-y-6 px-4 pt-8">
             <!-- Result Image -->
             <template v-if="getHistoryImage(historyDetail)">
               <div class="mb-4">
@@ -88,7 +88,7 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="px-12 py-8">
+      <div class="px-12 pt-4 pb-8">
         <div class="flex gap-3 mb-8">
           <!-- 再抽一次 Button -->
           <button 

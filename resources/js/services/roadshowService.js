@@ -287,7 +287,7 @@ export const roadshowService = {
                 success: false,
                 error: {
                     message: error.message,
-                    status: error.message.includes('500') ? 500 : 0
+                    status: error.status || (error.message.includes('500') ? 500 : 0)
                 }
             };
         }
