@@ -76,7 +76,8 @@
 /* 漸層虛線邊框樣式 */
 .gradient-border-dashed {
   position: relative;
-  background: #343434;
+  /* 上傳區塊底色：#4E4638 60% (rgba(78, 70, 56, 0.6)) */
+  background: rgba(78, 70, 56, 0.6);
   border: 4px solid transparent;
 }
 
@@ -110,5 +111,6 @@
 }
 
 .gradient-border-dashed:hover {
-  background: #404040;
+  /* hover 保持同樣顏色，避免色跳太明顯 */
+  background: rgba(78, 70, 56, 0.6);
 }

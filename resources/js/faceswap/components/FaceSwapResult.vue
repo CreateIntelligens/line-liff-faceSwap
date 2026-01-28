@@ -14,7 +14,7 @@
       v-if="showHistory" 
       :userId="props.userId || 'abc'"
       :userUsage="userUsage"
-      @back="showHistory = false"
+      @back="handleHistoryBack"
       @regenerate="handleHistoryRegenerate"
     />
     
@@ -125,15 +125,7 @@
           </button>
         </div>
 
-        <!-- Generation History Title -->
-        <div 
-          class="text-base font-bold step-gradient-text text-center cursor-pointer transition-colors mb-4"
-          @click="showHistory = true"
-        >
-          抽籤紀錄
-        </div>
-
-        <!-- 底部使用量計數器 -->
+        <!-- 底部使用量計數器（點擊可查看抽籤紀錄） -->
         <div class="flex flex-col items-center gap-4">
           <UsageCounter 
             :currentCount="userUsage" 
@@ -584,6 +576,17 @@ function retryCheckStatus() {
 // Handle regenerate button click
 function regenerate() {
   emit('regenerate')
+}
+
+// 處理歷史頁面的返回行為
+function handleHistoryBack() {
+  // 如果有任務結果（代表是從生成結果進來看的歷史），就只關掉歷史列表
+  if (taskResult.value || props.taskId) {
+    showHistory.value = false
+  } else {
+    // 如果沒有任務結果（代表是從上傳頁直接點「抽籤紀錄」進來），就請父層返回上一頁（回到上傳頁）
+    emit('back')
+  }
 }
 
 // Handle regenerate from history

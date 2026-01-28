@@ -1,10 +1,15 @@
 <template>
   <div 
-    class="text-sm font-medium cursor-pointer transition-opacity hover:opacity-80 cp-font"
+    class="text-sm font-medium cursor-pointer cp-font transition-opacity hover:opacity-80"
     style="color: #E0BE91;"
     @click="$emit('click')"
   >
-    抽籤記錄 / 已抽籤 : {{ currentCount }}/{{ maxLimit }}
+    <span class="underline inline-block transition-transform duration-200 hover:scale-105 active:scale-105">
+      抽籤紀錄
+    </span>
+    <span>
+      &nbsp;/ 已抽籤 : {{ currentCount }}/{{ maxLimit }}
+    </span>
   </div>
 </template>
 

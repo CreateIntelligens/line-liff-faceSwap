@@ -40,7 +40,7 @@
         <!-- Upload Area -->
         <div class="mb-4">
           <div
-            class="flex h-[200px] flex-col items-center justify-center gap-5 gradient-border-dashed cursor-pointer transition-colors rounded-md"
+            class="flex h-[200px] flex-col items-center justify-center gap-5 gradient-border-dashed cursor-pointer transition-colors rounded-md bg-transparent"
             @click="triggerFileUpload"
             @dragover.prevent
             @drop.prevent="handleDrop"
@@ -66,7 +66,7 @@
               <img
                 :src="uploadedImagePreview"
                 :alt="uploadedImage.name"
-                class="w-full h-full object-contain rounded-md bg-gray-800"
+                class="w-full h-full object-contain rounded-md"
               />
             </div>
           </div>
