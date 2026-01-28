@@ -90,19 +90,21 @@
       <!-- Action Buttons -->
       <div class="px-12 py-8">
         <div class="flex gap-3 mb-8">
-          <!-- Regenerate Button -->
+          <!-- 再抽一次 Button -->
           <button 
-            class="flex-1 h-11 flex justify-center items-center rounded-md cursor-pointer transition-colors text-base font-bold cp-font text-[#0E0E0E]"
-            style="background-color: #FFF3AB;"
+            class="flex-1 cursor-pointer transition-opacity hover:opacity-80"
             @click="regenerate"
           >
-            重新生成
+            <img
+              :src="imageUrls.drawAgain"
+              alt="再抽一次"
+              class="w-full h-auto object-contain"
+            />
           </button>
           
-          <!-- Download Button -->
+          <!-- 分享好友 Button -->
           <button 
-            class="flex-1 h-11 flex justify-center items-center rounded-md cursor-pointer transition-all duration-300 text-base font-bold hover:shadow-lg"
-            style="background-color: #E0BE91;"
+            class="flex-1 cursor-pointer transition-opacity hover:opacity-80"
             :class="
               historyDetail && historyDetail.status === 'completed' && !isDownloading
                 ? ''
@@ -111,15 +113,11 @@
             @click="downloadToOfficial"
             :disabled="!historyDetail || historyDetail.status !== 'completed' || isDownloading"
           >
-            <div v-if="isDownloading" class="flex items-center gap-2">
-              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-[#0E0E0E]"></div>
-              <div class="cp-font text-[#0E0E0E]">
-                處理中...
-              </div>
-            </div>
-            <div v-else class="cp-font text-[#0E0E0E]">
-              下載至官方帳號
-            </div>
+            <img
+              :src="imageUrls.share"
+              alt="分享好友"
+              class="w-full h-auto object-contain"
+            />
           </button>
         </div>
       </div>

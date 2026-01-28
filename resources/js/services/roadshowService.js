@@ -23,6 +23,8 @@ const getApiConfig = () => {
 export const roadshowService = {
     /**
      * 獲取模板列表
+     * @deprecated 此方法已棄用。新 API (2026_draw_face_swap) 無對應的模板列表端點，且專案流程不需要模板選擇功能。
+     * 保留此方法以避免破壞現有代碼（FaceSwapTemplateSelection.vue 中有調用）。
      */
     async getTemplates() {
         try {
@@ -62,7 +64,7 @@ export const roadshowService = {
     async getUserHistory(userId) {
         try {
             const config = getApiConfig();
-            const url = `${config.baseURL}/fancy_frontier/user/${userId}/avatars`;
+            const url = `${config.baseURL}/2026_draw_face_swap/user/${userId}/avatars`;
             
             const response = await fetch(url, {
                 method: 'GET',
@@ -119,7 +121,15 @@ export const roadshowService = {
     async generateAvatar(formData) {
         try {
             const config = getApiConfig();
-            const url = `${config.baseURL}/fancy_frontier`;
+            const url = `${config.baseURL}/2026_draw_face_swap`;
+            
+            // 移除 dev_user_ 前綴（如果存在），因為新 API 只接受真實的 LINE userId
+            const userId = formData.get('userId');
+            if (userId && userId.startsWith('dev_user_')) {
+                const originalUserId = userId.replace(/^dev_user_/, '');
+                formData.set('userId', originalUserId);
+                console.log('🔧 移除 dev_user_ 前綴，使用原始 userId:', originalUserId);
+            }
             
             const response = await fetch(url, {
                 method: 'POST',
@@ -192,7 +202,7 @@ export const roadshowService = {
     async checkTaskStatus(taskId) {
         try {
             const config = getApiConfig();
-            const url = `${config.baseURL}/fancy_frontier/status/${taskId}`;
+            const url = `${config.baseURL}/2026_draw_face_swap/status/${taskId}`;
             
             const response = await fetch(url, {
                 method: 'GET',
@@ -204,15 +214,32 @@ export const roadshowService = {
             
             if (!response.ok) {
                 let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                let errorData = null;
+                
                 try {
-                    const errorData = await response.text();
-                    if (errorData) {
-                        errorMessage += ` - ${errorData}`;
+                    const errorText = await response.text();
+                    if (errorText) {
+                        try {
+                            errorData = JSON.parse(errorText);
+                            // 處理結構化的錯誤響應
+                            errorMessage = errorData.message || 
+                                         errorData.result?.message || 
+                                         errorData.detail || 
+                                         errorData.error || 
+                                         (typeof errorData === 'string' ? errorData : errorMessage);
+                        } catch (parseError) {
+                            errorMessage += ` - ${errorText}`;
+                        }
                     }
                 } catch (e) {
                     // 無法讀取錯誤響應
                 }
-                throw new Error(errorMessage);
+                
+                // 創建結構化的錯誤對象
+                const structuredError = new Error(errorMessage);
+                structuredError.status = response.status;
+                structuredError.data = errorData;
+                throw structuredError;
             }
             
             const data = await response.json();

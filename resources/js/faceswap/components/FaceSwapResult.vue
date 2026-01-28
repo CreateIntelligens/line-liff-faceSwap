@@ -32,39 +32,9 @@
             alt="AI換臉"
           />
         </div>
-        <UsageCounter :currentCount="userUsage" />
       </div>
 
-     <!-- 步驟 -->
-     <div
-      class="flex items-center mt-8 max-w-full text-base font-bold text-center text-[#EBD8B2] whitespace-nowrap w-[202px] mx-auto"
-    >
-      <img
-        :src="imageUrls.step1"
-        class="w-6 h-6 object-contain"
-        alt="Step 1"
-      />
-      <img
-        :src="imageUrls.horizontal"
-        class="shrink-0 w-[65px] h-6 object-cover translate-y-2.5"
-        alt="分隔線"
-      />
-      <img
-        :src="imageUrls.step2"
-        class="w-6 h-6 object-contain"
-        alt="Step 2"
-      />
-    </div>
-    <!-- 步驟文字 -->
-    <div
-      class="flex gap-5 justify-between max-w-full text-sm text-center w-[218px] mx-auto mb-8"
-    >
-      <div class="step-gradient-text" data-name="Step 1">Step 1</div>
-      <div class="step-gradient-text" data-name="Step 2">Step 2</div>
-    </div>
-
-      
-    <div class="flex justify-start items-center px-12 mb-4">
+    <div class="flex justify-start items-center px-12 mb-4 mt-8">
         <div class="flex items-center gap-3">
           <img 
             :src="imageUrls.step3_inprogress" 
@@ -136,19 +106,21 @@
       <!-- Action Buttons -->
       <div class="px-12 py-8">
         <div class="flex gap-3 mb-8">
-          <!-- Regenerate Button -->
+          <!-- 再抽一次 Button -->
           <button 
-            class="flex-1 h-11 flex justify-center items-center rounded-md cursor-pointer transition-colors text-base font-bold cp-font text-[#0E0E0E]"
-            style="background-color: #FFF3AB;"
+            class="flex-1 cursor-pointer transition-opacity hover:opacity-80"
             @click="regenerate"
           >
-            重新生成
+            <img
+              :src="imageUrls.drawAgain"
+              alt="再抽一次"
+              class="w-full h-auto object-contain"
+            />
           </button>
           
-          <!-- Download Button -->
+          <!-- 分享好友 Button -->
           <button 
-            class="flex-1 h-11 flex justify-center items-center rounded-md cursor-pointer transition-all duration-300 text-base font-bold hover:shadow-lg"
-            style="background-color: #E0BE91;"
+            class="flex-1 cursor-pointer transition-opacity hover:opacity-80"
             :class="
               taskResult && taskResult.status === 'completed' && !isDownloading
                 ? ''
@@ -157,24 +129,28 @@
             @click="downloadToOfficial"
             :disabled="!taskResult || taskResult.status !== 'completed' || isDownloading"
           >
-            <div v-if="isDownloading" class="flex items-center gap-2">
-              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-[#0E0E0E]"></div>
-              <div class="cp-font text-[#0E0E0E]">
-                處理中...
-              </div>
-            </div>
-            <div v-else class="cp-font text-[#0E0E0E]">
-              下載至官方帳號
-            </div>
+            <img
+              :src="imageUrls.share"
+              alt="分享好友"
+              class="w-full h-auto object-contain"
+            />
           </button>
         </div>
 
         <!-- Generation History Title -->
         <div 
-          class="text-base font-bold step-gradient-text text-center cursor-pointer transition-colors"
+          class="text-base font-bold step-gradient-text text-center cursor-pointer transition-colors mb-4"
           @click="showHistory = true"
         >
           圖片生成紀錄
+        </div>
+
+        <!-- 底部使用量計數器 -->
+        <div class="flex flex-col items-center gap-4">
+          <UsageCounter 
+            :currentCount="userUsage" 
+            @click="showHistory = true"
+          />
         </div>
       </div>
     </div>
@@ -342,18 +318,33 @@ async function checkTaskStatus() {
     
     const result = await roadshowService.checkTaskStatus(props.taskId)
     
+    // 檢查是否有錯誤
+    if (result && result.error) {
+      const errorStatus = result.error.status;
+      const errorMessage = result.error.message || '檢查任務狀態失敗';
+      
+      // 如果是 500 錯誤，停止重試並顯示錯誤
+      if (errorStatus === 500) {
+        error.value = `伺服器錯誤：${errorMessage}。請稍後再試或聯繫客服。`;
+        console.error('❌ 檢查任務狀態失敗 (500):', result.error);
+        return; // 停止重試
+      }
+      
+      // 其他錯誤也停止重試
+      error.value = errorMessage;
+      console.error('❌ 檢查任務狀態失敗:', result.error);
+      return; // 停止重試
+    }
+    
     // 新 API 響應格式: { success: true, id, status, images, template_id, result }
     if (result && (result.success || result.status === 'completed' || result.status === 'pending' || result.status === 'processing')) {
       taskResult.value = result;
       
       // 根據狀態處理
       handleTaskStatus(result);
-    } else if (result && result.error) {
-      error.value = result.error.message || '檢查任務狀態失敗';
-      console.error('❌ 檢查任務狀態失敗:', result.error);
     } else {
-      error.value = '檢查任務狀態失敗';
-      console.error('❌ 檢查任務狀態失敗: 未知錯誤');
+      error.value = '檢查任務狀態失敗：未知錯誤';
+      console.error('❌ 檢查任務狀態失敗: 未知錯誤', result);
     }
   } catch (err) {
     error.value = '網路錯誤，請檢查連線'

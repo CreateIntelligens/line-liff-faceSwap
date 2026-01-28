@@ -148,7 +148,8 @@
     <!-- 生成中彈窗 -->
     <div
       v-if="isGenerating"
-      class="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50"
+      class="fixed inset-0 flex items-center justify-center z-50"
+      :class="showThirdDialog ? '' : 'bg-white bg-opacity-50'"
     >
       <div class="flex flex-col items-center justify-center gap-4">
         <!-- 第一個彈窗：上傳中 -->
@@ -168,6 +169,64 @@
           <div class="text-lg font-bold text-gray-800">生產正在進行中！</div>
           <div class="text-sm text-gray-600 text-center">
             如使用人數眾多可能會花費較多時間，可以稍後再回來查看唷！
+          </div>
+        </div>
+
+        <!-- 第三個彈窗：求籤畫面 -->
+        <div
+          v-if="showThirdDialog"
+          class="relative mx-auto my-0 w-[375px] max-md:w-full max-md:max-w-screen-md max-sm:w-full"
+          :style="{ 
+            minHeight: '100dvh',
+            backgroundImage: `url(${imageUrls.drawlotsbg})`, 
+            backgroundSize: '100% 100%', 
+            backgroundPosition: 'center center', 
+            backgroundRepeat: 'no-repeat'
+          }"
+        >
+          <!-- Header -->
+          <div
+            class="flex gap-5 justify-center items-center self-stretch py-6 w-full font-bold whitespace-nowrap min-h-20"
+          >
+            <div
+              class="self-stretch my-auto"
+              data-name="AI換臉"
+            >
+              <img
+                :src="imageUrls.header1"
+                class="h-30 object-contain"
+                alt="AI換臉"
+              />
+            </div>
+          </div>
+
+          <!-- Main Content Container -->
+          <div class="flex-1 flex flex-col max-w-md mx-auto w-full px-5 pb-8">
+            <!-- 文字圖片（在 GIF 上方） -->
+            <div class="flex justify-center items-center w-full mb-4">
+              <img
+                :src="imageUrls.drawlotText"
+                alt="新春好運，正在為你揭曉"
+                class="w-full max-w-[90%] h-auto object-contain"
+              />
+            </div>
+
+            <!-- 中間籤筒 GIF -->
+            <div class="flex-1 flex items-center justify-center w-full">
+              <img
+                :src="imageUrls.drawlot"
+                alt="求籤動畫"
+                class="w-full max-w-[400px] h-auto object-contain"
+              />
+            </div>
+
+            <!-- 底部使用量計數器 -->
+            <div class="mt-auto flex flex-col items-center gap-4 pb-8">
+              <UsageCounter 
+                :currentCount="userUsage" 
+                @click="emit('showHistory')"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -206,6 +265,7 @@ const fileInput = ref(null);
 const isGenerating = ref(false);
 const showFirstDialog = ref(false);
 const showSecondDialog = ref(false);
+const showThirdDialog = ref(false);
 
 
 // 檢查是否為 dev_user（不受限制）
@@ -264,6 +324,7 @@ function goBack() {
   isGenerating.value = false;
   showFirstDialog.value = false;
   showSecondDialog.value = false;
+  showThirdDialog.value = false;
   emit("back");
 }
 
@@ -286,16 +347,12 @@ async function generateFaceSwap() {
   try {
       const formData = new FormData();
       formData.append('userId', props.userId || 'abc');
-      formData.append('userName', props.userName || props.userId || 'abc');
       const file = uploadedImage.value;
       if (file) {
         formData.append('file', file, file.name || 'upload.jpg');
       } else {
         throw new Error('請選擇要上傳的圖片');
       }
-      
-      // 使用默認模板 ID（因為沒有模板選擇頁面）
-      formData.append('template_id', '1');
       
       const result = await roadshowService.generateAvatar(formData);
       
@@ -308,10 +365,15 @@ async function generateFaceSwap() {
           showFirstDialog.value = false;
           showSecondDialog.value = true;
           setTimeout(() => {
-            emit("generate", {
-              uploadedImage: uploadedImage.value,
-              taskId: result.result?.task_id || result.result?.id || result.task_id
-            });
+            showSecondDialog.value = false;
+            showThirdDialog.value = true;
+            // 顯示求籤畫面 3 秒後再跳轉到結果頁面
+            setTimeout(() => {
+              emit("generate", {
+                uploadedImage: uploadedImage.value,
+                taskId: result.result?.task_id || result.result?.id || result.task_id
+              });
+            }, 3000);
           }, 1000);
         }, 1000);
       } else if (result && result.error) {
@@ -352,6 +414,7 @@ async function generateFaceSwap() {
       isGenerating.value = false;
       showFirstDialog.value = false;
       showSecondDialog.value = false;
+      showThirdDialog.value = false;
       
       if (error.message.includes('生成限制')) {
         // 再次刷新使用量以確保數據同步
