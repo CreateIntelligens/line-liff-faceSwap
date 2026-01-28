@@ -11,28 +11,22 @@
     }"
   >
       <!-- Header -->
-      <div class="flex justify-between items-center px-5 py-5">
-        <!-- Left side: Back button and Title -->
-        <div class="flex items-center gap-3">
-          <button 
-            class="cursor-pointer hover:opacity-80 transition-opacity"
-            @click="closeModal"
-          >
-            <img 
-              :src="imageUrls.back"
-              alt="Back Arrow"
-              class="w-[26px] h-[26px] object-contain"
-            />
-          </button>
-          
-          <!-- Title -->
-          <div class="text-xl font-bold cp-font text-[#FFFFFF]">
-            生成詳情
-          </div>
-        </div>
+      <div class="flex items-center gap-3 px-5 py-5">
+        <button 
+          class="cursor-pointer hover:opacity-80 transition-opacity"
+          @click="closeModal"
+        >
+          <img 
+            :src="imageUrls.back"
+            alt="Back Arrow"
+            class="w-[26px] h-[26px] object-contain"
+          />
+        </button>
         
-        <!-- Usage counter -->
-        <UsageCounter :currentCount="props.userUsage" />
+        <!-- Title -->
+        <div class="text-xl font-bold cp-font text-[#FFFFFF]">
+          生成詳情
+        </div>
       </div>
 
       <!-- Modal Body -->
