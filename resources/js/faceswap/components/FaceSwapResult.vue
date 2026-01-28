@@ -262,45 +262,28 @@ async function downloadImageViaCanvas(imageUrl, filename) {
 
 // 透過 LIFF 分享文字和連結（僅使用 shareTargetPicker）
 async function shareViaLiff() {
-  try {
-    if (typeof liff === 'undefined') {
-      alert('錯誤：找不到 LIFF 物件，請確認在 LINE 內開啟')
-      throw new Error('LIFF SDK 未載入，請確保在 LINE 環境中使用')
+  if (typeof liff === 'undefined') {
+    throw new Error('LIFF SDK 未載入，請確保在 LINE 環境中使用')
+  }
+
+  const shareUrl = 'https://line-liff-face-swap-draw-lots-2026.vercel.app/'
+  const shareText = '面相指路，靈籤定運\n從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~\n開始測算：' + shareUrl
+
+  if (!liff.shareTargetPicker) {
+    throw new Error('目前裝置暫不支援好友分享功能')
+  }
+
+  // 呼叫 shareTargetPicker，讓使用者選好友／群組
+  const result = await liff.shareTargetPicker([
+    {
+      type: 'text',
+      text: shareText
     }
+  ])
 
-    const inClient = typeof liff.isInClient === 'function' ? liff.isInClient() : 'unknown'
-    const isLoggedIn = typeof liff.isLoggedIn === 'function' ? liff.isLoggedIn() : 'unknown'
-    alert(`shareViaLiff 狀態\ninClient: ${inClient}\nloggedIn: ${isLoggedIn}`)
-
-    const shareUrl = 'https://line-liff-face-swap-draw-lots-2026.vercel.app/'
-    const shareText = '面相指路，靈籤定運\n從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~\n開始測算：' + shareUrl
-
-    if (!liff.shareTargetPicker) {
-      alert('錯誤：此裝置不支援 shareTargetPicker')
-      throw new Error('目前裝置暫不支援好友分享功能')
-    }
-
-    alert('即將呼叫 shareTargetPicker')
-
-    // 呼叫 shareTargetPicker，讓使用者選好友／群組
-    const result = await liff.shareTargetPicker([
-      {
-        type: 'text',
-        text: shareText
-      }
-    ])
-
-    alert('shareTargetPicker 回傳：' + JSON.stringify(result))
-
-    // 根據官方文件，result 為 null 代表使用者取消
-    if (result === null) {
-      throw new Error('已取消分享')
-    }
-  } catch (error) {
-    // 在這裡也 alert 出錯內容，方便手機端查看
-    alert('分享錯誤：' + (error && error.message ? error.message : String(error)))
-    console.error('❌ 分享失敗:', error)
-    throw error
+  // 根據官方文件，result 為 null 代表使用者取消
+  if (result === null) {
+    throw new Error('已取消分享')
   }
 }
 
