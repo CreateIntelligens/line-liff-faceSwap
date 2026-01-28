@@ -254,6 +254,10 @@ const props = defineProps({
   userName: {
     type: String,
     default: ''
+  },
+  isFriend: {
+    type: Boolean,
+    default: true
   }
 });
 
@@ -266,6 +270,12 @@ const isGenerating = ref(false);
 const showFirstDialog = ref(false);
 const showSecondDialog = ref(false);
 const showThirdDialog = ref(false);
+
+// GIF 動畫顯示時間追蹤
+const gifStartTime = ref(null);
+const minGifDuration = 5000; // 最少顯示 5 秒（毫秒）
+const taskStatusCheckInterval = ref(null);
+const currentTaskId = ref(null);
 
 
 // 檢查是否為 dev_user（不受限制）
@@ -325,10 +335,95 @@ function goBack() {
   showFirstDialog.value = false;
   showSecondDialog.value = false;
   showThirdDialog.value = false;
+  // 清理定時器
+  if (taskStatusCheckInterval.value) {
+    clearInterval(taskStatusCheckInterval.value);
+    taskStatusCheckInterval.value = null;
+  }
+  gifStartTime.value = null;
+  currentTaskId.value = null;
   emit("back");
 }
 
+// 在顯示 GIF 動畫時檢查任務狀態
+async function checkTaskStatusWhileShowingGif() {
+  if (!currentTaskId.value) {
+    console.error('❌ 沒有 taskId，無法檢查任務狀態');
+    return;
+  }
+  
+  // 清除之前的定時器（如果存在）
+  if (taskStatusCheckInterval.value) {
+    clearInterval(taskStatusCheckInterval.value);
+  }
+  
+  // 每 2 秒檢查一次任務狀態
+  taskStatusCheckInterval.value = setInterval(async () => {
+    try {
+      const result = await roadshowService.checkTaskStatus(currentTaskId.value);
+      
+      // 檢查任務是否完成
+      const isCompleted = result && 
+                          (result.success !== false) && 
+                          result.status === 'completed';
+      
+      // 計算已顯示時間
+      const elapsedTime = gifStartTime.value ? Date.now() - gifStartTime.value : 0;
+      const hasMinDuration = elapsedTime >= minGifDuration;
+      
+      // 如果任務完成且已達到最少顯示時間，則跳轉
+      if (isCompleted && hasMinDuration) {
+        // 清除定時器
+        if (taskStatusCheckInterval.value) {
+          clearInterval(taskStatusCheckInterval.value);
+          taskStatusCheckInterval.value = null;
+        }
+        
+        // 跳轉到結果頁面
+        emit("generate", {
+          uploadedImage: uploadedImage.value,
+          taskId: currentTaskId.value
+        });
+        
+        // 重置狀態
+        gifStartTime.value = null;
+        currentTaskId.value = null;
+      } else if (isCompleted && !hasMinDuration) {
+        // 任務已完成但還沒達到最少顯示時間，繼續等待
+        const remainingTime = minGifDuration - elapsedTime;
+        console.log(`⏳ 任務已完成，等待最少顯示時間（還需 ${Math.ceil(remainingTime / 1000)} 秒）`);
+      } else if (result && result.error) {
+        // 任務失敗，停止輪詢並顯示錯誤
+        console.error('❌ 任務狀態檢查失敗:', result.error);
+        if (taskStatusCheckInterval.value) {
+          clearInterval(taskStatusCheckInterval.value);
+          taskStatusCheckInterval.value = null;
+        }
+        
+        // 重置狀態
+        isGenerating.value = false;
+        showFirstDialog.value = false;
+        showSecondDialog.value = false;
+        showThirdDialog.value = false;
+        gifStartTime.value = null;
+        currentTaskId.value = null;
+        
+        alert(`生成失敗：${result.error.message || '任務處理失敗'}`);
+      }
+    } catch (error) {
+      console.error('❌ 檢查任務狀態時發生錯誤:', error);
+      // 發生錯誤時不立即停止，繼續輪詢（可能是網路問題）
+    }
+  }, 2000); // 每 2 秒檢查一次
+}
+
 async function generateFaceSwap() {
+  // 檢查是否已加入好友（後端要求）
+  if (!props.isFriend) {
+    alert('請先加入官方帳號為好友，才能使用此功能。');
+    return;
+  }
+  
   // 檢查是否已達上限（dev_user 不受限制）
   if (isAtLimit.value) {
     alert(`您已達到每人${appConfig.maxUsageLimit}張圖片的生成限制，無法繼續生成新圖片。\n\n是否要查看您的生成歷史？`);
@@ -367,13 +462,14 @@ async function generateFaceSwap() {
           setTimeout(() => {
             showSecondDialog.value = false;
             showThirdDialog.value = true;
-            // 顯示求籤畫面 3 秒後再跳轉到結果頁面
-            setTimeout(() => {
-              emit("generate", {
-                uploadedImage: uploadedImage.value,
-                taskId: result.result?.task_id || result.result?.id || result.task_id
-              });
-            }, 3000);
+            
+            // 記錄 GIF 動畫開始顯示的時間
+            gifStartTime.value = Date.now();
+            // 保存 taskId 用於狀態檢查
+            currentTaskId.value = result.result?.task_id || result.result?.id || result.task_id;
+            
+            // 開始輪詢檢查任務狀態
+            checkTaskStatusWhileShowingGif();
           }, 1000);
         }, 1000);
       } else if (result && result.error) {
@@ -416,6 +512,14 @@ async function generateFaceSwap() {
       showSecondDialog.value = false;
       showThirdDialog.value = false;
       
+      // 清理定時器
+      if (taskStatusCheckInterval.value) {
+        clearInterval(taskStatusCheckInterval.value);
+        taskStatusCheckInterval.value = null;
+      }
+      gifStartTime.value = null;
+      currentTaskId.value = null;
+      
       if (error.message.includes('生成限制')) {
         // 再次刷新使用量以確保數據同步
         emit('refreshUsage');
@@ -432,5 +536,15 @@ onUnmounted(() => {
   if (uploadedImagePreview.value) {
     URL.revokeObjectURL(uploadedImagePreview.value);
   }
+  
+  // 清理定時器
+  if (taskStatusCheckInterval.value) {
+    clearInterval(taskStatusCheckInterval.value);
+    taskStatusCheckInterval.value = null;
+  }
+  
+  // 重置狀態
+  gifStartTime.value = null;
+  currentTaskId.value = null;
 });
 </script>

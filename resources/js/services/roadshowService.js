@@ -123,12 +123,13 @@ export const roadshowService = {
             const config = getApiConfig();
             const url = `${config.baseURL}/2026_draw_face_swap`;
             
-            // 移除 dev_user_ 前綴（如果存在），因為新 API 只接受真實的 LINE userId
+            // 處理測試用戶 ID：如果前端有 dev_user_ 前綴，使用後端支援的測試格式
             const userId = formData.get('userId');
             if (userId && userId.startsWith('dev_user_')) {
-                const originalUserId = userId.replace(/^dev_user_/, '');
-                formData.set('userId', originalUserId);
-                console.log('🔧 移除 dev_user_ 前綴，使用原始 userId:', originalUserId);
+                // 使用後端支援的測試 user id 格式：dev_user_
+                const testUserId = (typeof window !== 'undefined' && window.endpoint?.testUserId) || 'dev_user_';
+                formData.set('userId', testUserId);
+                console.log('🔧 使用測試 userId（後端支援格式）:', testUserId);
             }
             
             const response = await fetch(url, {
@@ -251,13 +252,23 @@ export const roadshowService = {
             }
             
             // 返回標準化格式以保持向後兼容
+            // 新 API 可能返回 image（單數）或 images（複數）
+            let images = [];
+            if (taskData.images && Array.isArray(taskData.images)) {
+                images = taskData.images;
+            } else if (taskData.image) {
+                // 如果是單數 image，轉換為陣列
+                images = Array.isArray(taskData.image) ? taskData.image : [taskData.image];
+            }
+            
             if (taskData.id && taskData.status !== undefined) {
                 return {
                     success: true,
                     id: taskData.id,
                     status: taskData.status,
-                    images: taskData.images || [],
+                    images: images,
                     template_id: taskData.template_id || '',
+                    coupon_code: taskData.coupon_code || '',
                     // 向後兼容字段
                     result: taskData,
                     // 保留原始響應

@@ -39,7 +39,7 @@
         
         <!-- Title -->
         <div class="text-xl font-bold cp-font text-[#FFFFFF]">
-          圖片生成紀錄
+          抽籤紀錄
         </div>
       </div>
       
@@ -86,18 +86,18 @@
         <div 
           v-for="(item, index) in historyData" 
           :key="item.id || index"
-          class="flex w-full h-40 p-4 items-center gap-3 bg-[#6A6A6A] rounded-[5px] cursor-pointer hover:bg-[#7A7A7A] transition-colors"
+          class="flex w-full h-56 p-4 items-center gap-3 bg-[#9B8A6D] rounded-[5px] cursor-pointer hover:bg-[#AB9A7D] transition-colors"
           @click="viewHistoryItem(item)"
         >
-          <div class="flex w-full flex-col items-start gap-3">
+          <div class="flex w-full flex-col items-start gap-2">
             <img 
               v-if="getHistoryImage(item)"
               :src="getHistoryImage(item)" 
               :alt="`生成圖片 ${index + 1}`" 
-              class="h-24 w-full object-cover rounded"
+              class="h-40 w-full object-contain rounded"
               @error="handleImageError"
             />
-            <div v-else class="h-24 w-full bg-[#444444] rounded flex items-center justify-center">
+            <div v-else class="h-40 w-full bg-[#444444] rounded flex items-center justify-center">
               <span class="text-[#999999] text-xs">無圖片</span>
             </div>
             <div class="text-white font-normal text-xs">

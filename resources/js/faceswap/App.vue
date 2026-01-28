@@ -13,6 +13,7 @@
       :userUsage="userUsage"
       :userId="userId"
       :userName="userName"
+      :isFriend="isFriend"
       @back="goBack"
       @generate="handleGenerate"
       @showHistory="handleShowHistory"
@@ -49,6 +50,7 @@ const currentStep = ref('faceswap-home') // 初始狀態設定為換臉首頁
 const isInitialized = ref(false)
 const userUsage = ref(0) // 用戶已生成的圖片數量
 const isLiffInitialized = ref(false)
+const isFriend = ref(true) // 好友狀態，默認為 true（本地開發環境）
 
 // 檢查是否為本地開發環境
 function isLocalDevEnvironment() {
@@ -69,11 +71,16 @@ function addDevPrefixIfNeeded(userIdValue) {
   // 檢查是否為本地開發環境
   const isLocalDev = isLocalDevEnvironment()
   
-  // 在本地開發環境中，無論是否為 LINE 用戶 ID，都加上前綴
-  // 這樣可以方便在本地測試時繞過限制
+  // 如果已經是 dev_user_ 開頭，直接返回（後端支援這個格式）
+  if (userIdValue.startsWith('dev_user_')) {
+    return userIdValue
+  }
+  
+  // 在本地開發環境中，如果不是 dev_user_ 開頭，才加上前綴
+  // 這樣可以方便在本地測試時繞過前端限制檢查，並讓後端識別測試用戶
   if (isLocalDev && !userIdValue.startsWith('dev_user_')) {
     const prefixedUserId = `dev_user_${userIdValue}`
-    console.log('🔧 開發模式：為 userId 添加 dev_user_ 前綴')
+    console.log('🔧 開發模式：為 userId 添加 dev_user_ 前綴（僅用於前端檢查）')
     console.log(`   原始: ${userIdValue}`)
     console.log(`   加上前綴: ${prefixedUserId}`)
     return prefixedUserId
@@ -95,8 +102,9 @@ async function initializeLiff() {
         // 用戶已登入，設置用戶 ID
         // 在本地開發環境中會自動加上 dev_user_ 前綴
         userId.value = addDevPrefixIfNeeded(result.userId)
+        isFriend.value = result.isFriend !== false // 保存好友狀態，默認為 true
         console.log('✅ LIFF 用戶 ID 已設置:', userId.value)
-        console.log('👥 好友狀態:', result.isFriend ? '是好友' : '非好友')
+        console.log('👥 好友狀態:', isFriend.value ? '是好友' : '非好友')
         console.log('📋 如需在本地測試，請將此 userId 複製到 index.html 的 testUserId 配置中:')
         console.log(`   testUserId: '${result.userId}',`)
         

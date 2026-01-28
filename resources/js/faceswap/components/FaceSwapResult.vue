@@ -34,18 +34,6 @@
         </div>
       </div>
 
-    <div class="flex justify-start items-center px-12 mb-4 mt-8">
-        <div class="flex items-center gap-3">
-          <img 
-            :src="imageUrls.step3_inprogress" 
-            class="w-6 h-6 object-contain" 
-            alt="Step 3"
-          />
-          <div class="text-base font-bold cp-font step-gradient-text">
-            生成結果
-          </div>
-        </div>
-      </div>
       <!-- Main Content -->
       <div class="flex-1">
           <!-- 載入狀態 -->
@@ -142,7 +130,7 @@
           class="text-base font-bold step-gradient-text text-center cursor-pointer transition-colors mb-4"
           @click="showHistory = true"
         >
-          圖片生成紀錄
+          抽籤紀錄
         </div>
 
         <!-- 底部使用量計數器 -->
@@ -194,6 +182,7 @@ const generatedImages = ref([])
 const originalImages = ref([]) // 保存原始圖片 URL 用於下載
 const imageLoadErrors = ref({})
 const selectedImageIndex = ref(0)
+const isTaskCompleted = ref(false) // 標記任務是否已完成（防止後續錯誤覆蓋成功結果）
 
 // 載入狀態訊息
 const loadingMessage = ref('檢查任務狀態...')
@@ -293,7 +282,14 @@ async function sendViaLiff(imageUrl) {
 }
 
 // 監聽taskId變化
-watch(() => props.taskId, (newTaskId) => {
+watch(() => props.taskId, (newTaskId, oldTaskId) => {
+  // 當 taskId 變化時，重置完成標記
+  if (newTaskId !== oldTaskId) {
+    isTaskCompleted.value = false
+    generatedImages.value = []
+    originalImages.value = []
+    error.value = null
+  }
   if (newTaskId) {
     checkTaskStatus()
   }
@@ -310,18 +306,35 @@ async function checkTaskStatus() {
     return
   }
   
+  // 如果任務已經完成且有圖片，不再檢查（防止後續錯誤覆蓋成功結果）
+  if (isTaskCompleted.value && generatedImages.value.length > 0) {
+    console.log('✅ 任務已完成，跳過後續檢查')
+    return
+  }
+  
   try {
     isLoading.value = true
-    error.value = null
+    // 只有在任務未完成時才清除錯誤（避免覆蓋成功結果）
+    if (!isTaskCompleted.value) {
+      error.value = null
+    }
     loadingMessage.value = '檢查任務狀態...'
     loadingSubMessage.value = '請稍候'
     
+    console.log('🔍 開始檢查任務狀態，taskId:', props.taskId)
     const result = await roadshowService.checkTaskStatus(props.taskId)
+    console.log('📥 任務狀態檢查結果:', result)
     
     // 檢查是否有錯誤
     if (result && result.error) {
       const errorStatus = result.error.status;
       const errorMessage = result.error.message || '檢查任務狀態失敗';
+      
+      // 如果任務已經完成，忽略後續錯誤
+      if (isTaskCompleted.value && generatedImages.value.length > 0) {
+        console.log('✅ 任務已完成，忽略後續錯誤')
+        return
+      }
       
       // 如果是 500 錯誤，停止重試並顯示錯誤
       if (errorStatus === 500) {
@@ -337,14 +350,29 @@ async function checkTaskStatus() {
     }
     
     // 新 API 響應格式: { success: true, id, status, images, template_id, result }
-    if (result && (result.success || result.status === 'completed' || result.status === 'pending' || result.status === 'processing')) {
+    // 或者直接返回: { id, status, images/image, template_id, coupon_code }
+    if (result && (result.success !== false) && result.status) {
+      // 如果有 status 字段，就認為是有效的響應
+      console.log('✅ 任務狀態有效，status:', result.status)
       taskResult.value = result;
       
       // 根據狀態處理
       handleTaskStatus(result);
+    } else if (result && result.id && result.status) {
+      // 即使沒有 success 字段，只要有 id 和 status 就處理
+      console.log('✅ 任務狀態有效（無 success 字段），status:', result.status)
+      taskResult.value = result;
+      handleTaskStatus(result);
     } else {
       error.value = '檢查任務狀態失敗：未知錯誤';
       console.error('❌ 檢查任務狀態失敗: 未知錯誤', result);
+      console.error('❌ 結果詳情:', {
+        hasResult: !!result,
+        hasSuccess: result?.success,
+        hasStatus: result?.status,
+        hasId: result?.id,
+        resultKeys: result ? Object.keys(result) : []
+      });
     }
   } catch (err) {
     error.value = '網路錯誤，請檢查連線'
@@ -362,21 +390,36 @@ async function handleTaskStatus(data) {
     case 'pending':
       loadingMessage.value = '任務等待中'
       loadingSubMessage.value = '正在排隊處理...'
-      // 延遲後再次檢查
-      setTimeout(checkTaskStatus, 3000)
+      // 如果任務未完成，延遲後再次檢查
+      if (!isTaskCompleted.value) {
+        setTimeout(checkTaskStatus, 3000)
+      }
       break
       
     case 'processing':
       loadingMessage.value = '正在處理中'
       loadingSubMessage.value = '請稍候，正在生成您的頭像...'
-      // 延遲後再次檢查
-      setTimeout(checkTaskStatus, 2000)
+      // 如果任務未完成，延遲後再次檢查
+      if (!isTaskCompleted.value) {
+        setTimeout(checkTaskStatus, 2000)
+      }
       break
       
     case 'completed':
       loadingMessage.value = '生成完成！'
       loadingSubMessage.value = ''
-      const images = data.images || data.result?.images || []
+      // 新 API 可能返回 image（單數）或 images（複數）
+      let images = [];
+      if (data.images && Array.isArray(data.images)) {
+        images = data.images;
+      } else if (data.image) {
+        // 如果是單數 image，轉換為陣列
+        images = Array.isArray(data.image) ? data.image : [data.image];
+      } else if (data.result?.images && Array.isArray(data.result.images)) {
+        images = data.result.images;
+      } else if (data.result?.image) {
+        images = Array.isArray(data.result.image) ? data.result.image : [data.result.image];
+      }
       
       if (images && Array.isArray(images) && images.length > 0) {
         // 保存原始圖片 URL
@@ -407,6 +450,10 @@ async function handleTaskStatus(data) {
         }
         
         generatedImages.value = processedImages
+        // 標記任務已完成，防止後續錯誤覆蓋成功結果
+        isTaskCompleted.value = true
+        error.value = null // 清除任何之前的錯誤
+        console.log('✅ 任務已完成，已設置完成標記')
       }
       break
       
@@ -579,6 +626,8 @@ function getTemplateName(templateId) {
 
 // 組件掛載時檢查狀態
 onMounted(() => {
+  // 重置完成標記
+  isTaskCompleted.value = false
   if (props.taskId) {
     checkTaskStatus()
   }
