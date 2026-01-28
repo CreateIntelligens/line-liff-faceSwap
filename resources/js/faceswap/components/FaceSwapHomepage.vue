@@ -14,7 +14,7 @@
     <img
       :src="imageUrls.homepage"
       alt="Homepage Content"
-      class="max-w-full max-h-full w-auto h-auto object-contain"
+      class="w-full h-auto object-contain block"
     />
   </div>
 </template>
