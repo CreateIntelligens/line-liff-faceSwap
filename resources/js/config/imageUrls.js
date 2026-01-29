@@ -15,7 +15,6 @@ import drawlotTextImg from '../../images/drawlotText.png'
 import drawlotsbgImg from '../../images/drawlotsbg.png'
 import drawAgainImg from '../../images/draw_again.png'
 import shareImg from '../../images/share.png'
-import ogImg from '../../images/og.png'
 
 // 使用 Vite 的動態導入來獲取圖片 URL，建置時會自動處理雜湊
 export const imageUrls = {
@@ -38,5 +37,4 @@ export const imageUrls = {
   drawlotsbg: drawlotsbgImg,
   drawAgain: drawAgainImg,
   share: shareImg,
-  og: ogImg,
 };

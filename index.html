@@ -73,54 +73,21 @@
     };
     
     // 動態設定 OG / LINE 圖片與 URL
-    // 等待模組載入後獲取 og 圖片路徑（包含 hash）
-    (function() {
-      function setOgImage() {
-        try {
-          var domain = (window.endpoint && window.endpoint.domain) || '';
-          if (!domain) return;
-          
-          var ogUrl = document.getElementById('og-url');
-          var ogImage = document.getElementById('og-image');
-          var lineImage = document.getElementById('line-og-image');
-          
-          if (ogUrl) ogUrl.setAttribute('content', domain + '/');
-          
-          // 嘗試從 window.imageUrls 獲取 og 圖片路徑（包含 hash）
-          // 如果還沒載入，使用 fallback 路徑
-          var ogImagePath = '';
-          if (window.imageUrls && window.imageUrls.og) {
-            // 如果是完整 URL，直接使用；如果是相對路徑，加上 domain
-            ogImagePath = window.imageUrls.og.startsWith('http') 
-              ? window.imageUrls.og 
-              : domain + window.imageUrls.og.replace(/^\./, '');
-          } else {
-            // Fallback: 使用固定路徑（如果模組還沒載入）
-            ogImagePath = domain + '/images/draw_lots_2026/og.png';
-          }
-          
-          if (ogImage) ogImage.setAttribute('content', ogImagePath);
-          if (lineImage) lineImage.setAttribute('content', ogImagePath);
-        } catch (e) {
-          console.error('設定 OG / LINE 圖片失敗:', e);
-        }
+    (function () {
+      try {
+        var domain = (window.endpoint && window.endpoint.domain) || '';
+        if (!domain) return;
+        var ogUrl = document.getElementById('og-url');
+        var ogImage = document.getElementById('og-image');
+        var lineImage = document.getElementById('line-og-image');
+        if (ogUrl) ogUrl.setAttribute('content', domain + '/');
+        // 使用固定路徑（無 hash）
+        var ogImagePath = domain + '/images/draw_lots_2026/og.png';
+        if (ogImage) ogImage.setAttribute('content', ogImagePath);
+        if (lineImage) lineImage.setAttribute('content', ogImagePath);
+      } catch (e) {
+        console.error('設定 OG / LINE 圖片失敗:', e);
       }
-      
-      // 立即執行一次（使用 fallback）
-      setOgImage();
-      
-      // 監聽 window.imageUrls 是否已載入
-      var checkInterval = setInterval(function() {
-        if (window.imageUrls && window.imageUrls.og) {
-          clearInterval(checkInterval);
-          setOgImage(); // 重新設定正確的路徑
-        }
-      }, 100);
-      
-      // 10 秒後停止檢查（避免無限循環）
-      setTimeout(function() {
-        clearInterval(checkInterval);
-      }, 10000);
     })();
     
     // 輸出配置到控制台（如果啟用調試模式）

@@ -22,9 +22,8 @@
 }
 @font-face {
   font-family: '匯文明朝體';
-  /* 優先使用 WOFF2（體積約為 TTF 的 30-40%），fallback 到 TTF */
-  src: url('../assets/fonts/匯文明朝體.woff2') format('woff2'),
-       url('../assets/fonts/匯文明朝體.ttf') format('truetype');
+  /* 只使用 WOFF2 格式（體積約為 TTF 的 30-40%，現代瀏覽器都支援） */
+  src: url('../assets/fonts/匯文明朝體.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -32,9 +31,8 @@
 
 @font-face {
   font-family: 'Noto Serif HK';
-  /* 優先使用 WOFF2（體積約為 TTF 的 30-40%），fallback 到 TTF */
-  src: url('../assets/fonts/NotoSerifHK-VariableFont_wght.woff2') format('woff2'),
-       url('../assets/fonts/NotoSerifHK-VariableFont_wght.ttf') format('truetype');
+  /* 只使用 WOFF2 格式（體積約為 TTF 的 30-40%，現代瀏覽器都支援） */
+  src: url('../assets/fonts/NotoSerifHK-VariableFont_wght.woff2') format('woff2');
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
