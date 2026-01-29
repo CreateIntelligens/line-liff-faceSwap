@@ -344,7 +344,8 @@ function goBack() {
 .app {
   font-family: 'Inter', sans-serif;
   overflow-x: hidden;
-  background-color: #333333;
+  /* 統一使用白色背景，避免看到灰黑底色 */
+  background-color: #ffffff;
   min-height: 100vh;
 }
 
