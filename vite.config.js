@@ -34,7 +34,7 @@ export default defineConfig({
                     }
                     // 圖片文件放在 images 目錄
                     if (/\.(png|jpe?g|gif|svg|webp|ico)$/.test(assetInfo.name)) {
-                        return 'images/fancy_frontier/[name].[hash][extname]'
+                        return 'images/draw_lots_2026/[name].[hash][extname]'
                     }
                     return 'assets/[name].[hash][extname]'
                 }
