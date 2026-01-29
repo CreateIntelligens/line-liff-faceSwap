@@ -658,20 +658,6 @@ function handleImageLoad(event) {
   }
 }
 
-function getTemplateImage(templateId) {
-  const imageMap = {
-    'a1art1': imageUrls.a1art1,
-    'a1art2': imageUrls.a1art2,
-    'a1art3': imageUrls.a1art3,
-    'a1art4': imageUrls.a1art4
-  };
-  
-  return imageMap[templateId] || imageUrls.a1art1;
-}
-
-function getTemplateName(templateId) {
-  return '預設模板';
-}
 
 // 組件掛載時檢查狀態
 onMounted(() => {

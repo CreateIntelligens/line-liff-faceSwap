@@ -322,35 +322,6 @@ async function loadHistoryDetail() {
   }
 }
 
-function getTemplateImage(templateId) {
-  const imageMap = {
-    'a1art1': imageUrls.a1art1,
-    'a1art2': imageUrls.a1art2,
-    'a1art3': imageUrls.a1art3,
-    'a1art4': imageUrls.a1art4,
-    '0': imageUrls.a1art1,
-    '1': imageUrls.a1art2,
-    '2': imageUrls.a1art3,
-    '3': imageUrls.a1art4
-  }
-  
-  return imageMap[templateId] || imageUrls.a1art1
-}
-
-function getTemplateName(templateId) {
-  const nameMap = {
-    'a1art1': '動漫展-90年代漫畫顛',
-    'a1art2': '動漫展-90年代漫畫顛',
-    'a1art3': '動漫展-90年代漫畫顛',
-    'a1art4': '動漫展-90年代漫畫顛',
-    '0': '動漫展-90年代漫畫顛',
-    '1': '動漫展-90年代漫畫顛',
-    '2': '動漫展-90年代漫畫顛',
-    '3': '動漫展-90年代漫畫顛'
-  }
-  
-  return nameMap[templateId] || '預設模板'
-}
 
 // 獲取歷史圖片URL，使用新的圖片處理 API
 function getHistoryImage(item) {
