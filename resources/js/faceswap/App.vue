@@ -293,7 +293,7 @@ async function enterFaceSwap() {
   
   // 強制重新檢查好友狀態（不依賴快取）
   // 只在 LIFF 已啟用且已初始化的情況下才重新檢查
-  let currentFriendStatus = false
+  let currentFriendStatus = isFriend.value // 先使用當前值作為初始值
   const isLocalhost = window.location.hostname === 'localhost' || 
                      window.location.hostname === '127.0.0.1' ||
                      window.location.hostname === '0.0.0.0'
@@ -321,11 +321,14 @@ async function enterFaceSwap() {
         console.log('🔍 最後一次檢查的 friendFlag:', lastResult.friendFlag)
         
         // 只有當所有檢查都返回 true 時，才認為是好友（更嚴格）
-        const allTrue = results.every(r => r.friendFlag === true)
+        const allTrue = results.every(r => r && r.friendFlag === true)
         currentFriendStatus = allTrue
+        // 更新 isFriend.value 以便後續使用（確保狀態同步）
         isFriend.value = currentFriendStatus
         console.log('🔍 多次檢查結果（全部為 true 才通過）:', allTrue)
         console.log('🔍 更新後的 isFriend.value:', isFriend.value)
+        console.log('🔍 更新後的 currentFriendStatus:', currentFriendStatus)
+        console.log('🔍 currentFriendStatus === false:', currentFriendStatus === false)
       }
     } catch (error) {
       console.error('❌ 重新檢查好友狀態失敗:', error)
@@ -338,9 +341,20 @@ async function enterFaceSwap() {
     currentFriendStatus = isFriend.value
   }
   
-  // 在進入上傳頁面之前檢查好友狀態
-  if (!currentFriendStatus) {
+  // 在進入上傳頁面之前檢查好友狀態（使用檢查後的值）
+  // 重要：使用嚴格等於 false 來檢查，確保只有明確為 false 時才阻止
+  console.log('🔍 最終檢查 currentFriendStatus:', currentFriendStatus)
+  console.log('🔍 currentFriendStatus === false:', currentFriendStatus === false)
+  console.log('🔍 !currentFriendStatus:', !currentFriendStatus)
+  
+  // 只有明確為 false 時才阻止進入
+  // 使用檢查後的最新狀態來判斷
+  if (currentFriendStatus !== true) {
     console.log('❌ 檢測到非好友狀態，顯示提示並阻止進入')
+    console.log('❌ currentFriendStatus 值:', currentFriendStatus)
+    console.log('❌ currentFriendStatus 類型:', typeof currentFriendStatus)
+    // 確保 isFriend.value 也被更新為 false，避免下次點擊時使用錯誤的值
+    isFriend.value = false
     alert('請先加入官方帳號為好友，才能使用此功能。')
     return // 阻止進入上傳頁面
   }
