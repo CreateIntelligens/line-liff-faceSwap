@@ -292,36 +292,49 @@ async function enterFaceSwap() {
   console.log('🔍 typeof isFriend.value:', typeof isFriend.value)
   
   // 強制重新檢查好友狀態（不依賴快取）
+  // 只在 LIFF 已啟用且已初始化的情況下才重新檢查
   let currentFriendStatus = false
-  if (isLiffInitialized.value && typeof liff !== 'undefined' && liff.isLoggedIn()) {
+  const isLocalhost = window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1' ||
+                     window.location.hostname === '0.0.0.0'
+  const isLiffEnabled = window.endpoint?.enableLiff && !isLocalhost
+  
+  if (isLiffEnabled && isLiffInitialized.value && typeof liff !== 'undefined') {
     try {
-      console.log('🔍 強制重新檢查好友狀態...')
-      // 多次檢查以確保準確性（避免快取問題）
-      const checks = []
-      for (let i = 0; i < 3; i++) {
-        checks.push(liff.getFriendship())
+      // 檢查是否已登入（需要先初始化 LIFF）
+      if (!liff.isLoggedIn()) {
+        console.log('🔍 用戶未登入，使用之前的好友狀態')
+        currentFriendStatus = isFriend.value
+      } else {
+        console.log('🔍 強制重新檢查好友狀態...')
+        // 多次檢查以確保準確性（避免快取問題）
+        const checks = []
+        for (let i = 0; i < 3; i++) {
+          checks.push(liff.getFriendship())
+        }
+        const results = await Promise.all(checks)
+        console.log('🔍 多次檢查的結果:', results)
+        
+        // 取最後一次檢查的結果（最可能反映最新狀態）
+        const lastResult = results[results.length - 1]
+        console.log('🔍 最後一次檢查的好友狀態物件:', lastResult)
+        console.log('🔍 最後一次檢查的 friendFlag:', lastResult.friendFlag)
+        
+        // 只有當所有檢查都返回 true 時，才認為是好友（更嚴格）
+        const allTrue = results.every(r => r.friendFlag === true)
+        currentFriendStatus = allTrue
+        isFriend.value = currentFriendStatus
+        console.log('🔍 多次檢查結果（全部為 true 才通過）:', allTrue)
+        console.log('🔍 更新後的 isFriend.value:', isFriend.value)
       }
-      const results = await Promise.all(checks)
-      console.log('🔍 多次檢查的結果:', results)
-      
-      // 取最後一次檢查的結果（最可能反映最新狀態）
-      const lastResult = results[results.length - 1]
-      console.log('🔍 最後一次檢查的好友狀態物件:', lastResult)
-      console.log('🔍 最後一次檢查的 friendFlag:', lastResult.friendFlag)
-      
-      // 只有當所有檢查都返回 true 時，才認為是好友（更嚴格）
-      const allTrue = results.every(r => r.friendFlag === true)
-      currentFriendStatus = allTrue
-      isFriend.value = currentFriendStatus
-      console.log('🔍 多次檢查結果（全部為 true 才通過）:', allTrue)
-      console.log('🔍 更新後的 isFriend.value:', isFriend.value)
     } catch (error) {
       console.error('❌ 重新檢查好友狀態失敗:', error)
       // 如果檢查失敗，使用之前的值
       currentFriendStatus = isFriend.value
     }
   } else {
-    // 如果 LIFF 未初始化，使用之前的值
+    // 如果 LIFF 未啟用或未初始化（本地開發環境），使用之前的值
+    console.log('🔍 LIFF 未啟用或未初始化，使用之前的好友狀態')
     currentFriendStatus = isFriend.value
   }
   

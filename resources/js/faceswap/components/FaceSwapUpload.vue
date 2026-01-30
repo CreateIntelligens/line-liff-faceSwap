@@ -58,7 +58,10 @@
                 點擊上傳
               </div>
               <div class="text-sm font-medium cp-font text-center" style="color: #E0BE91;">
-                支援 JPG, PNG 格式
+                支援png、jpg、jpeg格式
+              </div>
+              <div class="text-sm font-medium cp-font text-center" style="color: #E0BE91;">
+                檔案限制10M以下
               </div>
             </div>
             <div v-else class="w-full h-full">
@@ -288,6 +291,26 @@ const isAtLimit = computed(() => {
   return !isDevUser.value && props.userUsage >= appConfig.maxUsageLimit;
 });
 
+// 檔案大小和格式限制
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/jpg'];
+
+// 驗證檔案格式和大小
+function validateFile(file) {
+  // 檢查檔案格式
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    alert('不支援的檔案格式，請上傳 png、jpg 或 jpeg 格式的圖片');
+    return false;
+  }
+  
+  // 檢查檔案大小
+  if (file.size > MAX_FILE_SIZE) {
+    alert('檔案大小超過10M，請選擇較小的檔案');
+    return false;
+  }
+  
+  return true;
+}
 
 function triggerFileUpload() {
   fileInput.value?.click();
@@ -296,6 +319,14 @@ function triggerFileUpload() {
 function handleFileSelect(event) {
   const file = event.target.files[0];
   if (file) {
+    // 驗證檔案格式和大小
+    if (!validateFile(file)) {
+      // 清除檔案輸入
+      if (event.target) {
+        event.target.value = '';
+      }
+      return;
+    }
     uploadedImage.value = file;
     uploadedImagePreview.value = URL.createObjectURL(file);
   }
@@ -305,10 +336,12 @@ function handleDrop(event) {
   const files = event.dataTransfer.files;
   if (files.length > 0) {
     const file = files[0];
-    if (file.type.startsWith("image/")) {
-      uploadedImage.value = file;
-      uploadedImagePreview.value = URL.createObjectURL(file);
+    // 驗證檔案格式和大小（明確檢查 png、jpg、jpeg）
+    if (!validateFile(file)) {
+      return;
     }
+    uploadedImage.value = file;
+    uploadedImagePreview.value = URL.createObjectURL(file);
   }
 }
 
