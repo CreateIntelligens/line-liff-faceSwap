@@ -136,7 +136,12 @@ class LiffService {
       this.userId = window.uid
       
       const friendship = await liff.getFriendship()
+      console.log('🔍 完整的好友狀態物件:', friendship)
+      console.log('🔍 friendFlag 值:', friendship.friendFlag)
+      console.log('🔍 friendFlag 類型:', typeof friendship.friendFlag)
+      
       if (!friendship.friendFlag) {
+        console.log('❌ 用戶未加入好友或已封鎖')
         let localmbtiType = ''
         let externalUserId = ''
         const urlParams = new URLSearchParams(window.location.search)
@@ -149,6 +154,8 @@ class LiffService {
           message: '用戶已登入但未加入好友'
         }
       }
+      
+      console.log('✅ 用戶是好友')
       
       this.isInitialized = true
       

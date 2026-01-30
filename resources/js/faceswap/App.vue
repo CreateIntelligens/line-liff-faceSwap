@@ -51,7 +51,7 @@ const currentStep = ref('faceswap-home') // 初始狀態設定為換臉首頁
 const isInitialized = ref(false)
 const userUsage = ref(0) // 用戶已生成的圖片數量
 const isLiffInitialized = ref(false)
-const isFriend = ref(true) // 好友狀態，默認為 true（本地開發環境）
+const isFriend = ref(false) // 好友狀態，默認為 false，等待 LIFF 初始化後確認
 const startWithHistory = ref(false) // 是否在結果頁直接顯示歷史紀錄
 
 // 檢查是否為本地開發環境
@@ -105,9 +105,15 @@ async function initializeLiff() {
         // 在本地開發環境中會自動加上 dev_user_ 前綴
         userId.value = addDevPrefixIfNeeded(result.userId)
         // 確保好友狀態從結果中正確獲取，如果結果中沒有明確設置，則根據實際情況判斷
-        isFriend.value = result.isFriend === true // 明確檢查是否為 true，而不是默認 true
+        console.log('🔍 result 完整物件:', result)
+        console.log('🔍 result.isFriend 原始值:', result.isFriend)
+        console.log('🔍 result.isFriend 類型:', typeof result.isFriend)
+        // 只有明確為 true 時才設置為 true，其他情況（false, undefined, null）都設為 false
+        isFriend.value = result.isFriend === true
         console.log('✅ LIFF 用戶 ID 已設置:', userId.value)
         console.log('👥 好友狀態:', isFriend.value ? '是好友' : '非好友')
+        console.log('🔍 isFriend.value 最終值:', isFriend.value)
+        console.log('🔍 isFriend.value === false:', isFriend.value === false)
         console.log('📋 如需在本地測試，請將此 userId 複製到 index.html 的 testUserId 配置中:')
         console.log(`   testUserId: '${result.userId}',`)
         
@@ -280,11 +286,33 @@ onMounted(async () => {
 
 // 進入臉部交換工具
 async function enterFaceSwap() {
+  console.log('🔍 enterFaceSwap 被調用')
+  console.log('🔍 當前 isFriend.value:', isFriend.value)
+  console.log('🔍 isFriend.value === false:', isFriend.value === false)
+  console.log('🔍 typeof isFriend.value:', typeof isFriend.value)
+  
+  // 如果 LIFF 已初始化，再次檢查好友狀態以確保狀態是最新的
+  if (isLiffInitialized.value && typeof liff !== 'undefined' && liff.isLoggedIn()) {
+    try {
+      console.log('🔍 重新檢查好友狀態...')
+      const friendship = await liff.getFriendship()
+      console.log('🔍 重新檢查的好友狀態物件:', friendship)
+      console.log('🔍 重新檢查的 friendFlag:', friendship.friendFlag)
+      isFriend.value = friendship.friendFlag === true
+      console.log('🔍 更新後的 isFriend.value:', isFriend.value)
+    } catch (error) {
+      console.error('❌ 重新檢查好友狀態失敗:', error)
+    }
+  }
+  
   // 在進入上傳頁面之前檢查好友狀態
   if (isFriend.value === false) {
+    console.log('❌ 檢測到非好友狀態，顯示提示並阻止進入')
     alert('請先加入官方帳號為好友，才能使用此功能。')
     return // 阻止進入上傳頁面
   }
+  
+  console.log('✅ 好友狀態檢查通過，允許進入上傳頁面')
   
   // 直接進入上傳頁面，刷新使用量以確保數據準確
   if (userId.value) {
