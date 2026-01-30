@@ -118,12 +118,12 @@
       <div class="mt-auto flex flex-col items-center gap-4">
         <button
           class="cursor-pointer transition-all duration-300 hover:opacity-80"
-          :class="canGenerate ? '' : 'opacity-50 cursor-not-allowed'"
+          :class="canGenerate ? '' : 'cursor-not-allowed'"
           @click="generateFaceSwap"
           :disabled="!canGenerate"
         >
           <img
-            :src="imageUrls.next"
+            :src="canGenerate ? imageUrls.next : imageUrls.disable"
             alt="下一步"
             class="w-full h-auto object-contain"
           />
@@ -202,13 +202,11 @@
 
           <!-- Main Content Container -->
           <div class="flex-1 flex flex-col max-w-md mx-auto w-full px-5 pb-8">
-            <!-- 文字圖片（在 GIF 上方） -->
+            <!-- 文字（在 GIF 上方） -->
             <div class="flex justify-center items-center w-full mb-4">
-              <img
-                :src="imageUrls.drawlotText"
-                alt="新春好運，正在為你揭曉"
-                class="w-full max-w-[90%] h-auto object-contain"
-              />
+              <div class="text-center cp-font" style="color: #FCE7B1; font-size: 1.2rem;">
+                新春好運，正在為你揭曉 <span class="sparkle-emoji">🧨</span><span class="typing-dots"><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>
+              </div>
             </div>
 
             <!-- 中間籤筒 GIF -->
@@ -273,7 +271,7 @@ const showThirdDialog = ref(false);
 
 // GIF 動畫顯示時間追蹤
 const gifStartTime = ref(null);
-const minGifDuration = 5000; // 最少顯示 5 秒（毫秒）
+const minGifDuration = 10000; // 最少顯示 5 秒（毫秒）
 const taskStatusCheckInterval = ref(null);
 const currentTaskId = ref(null);
 
@@ -575,3 +573,214 @@ onUnmounted(() => {
   currentTaskId.value = null;
 });
 </script>
+
+<style scoped>
+/* 鞭炮 emoji 動畫效果選項 */
+
+/* 選項 1: 閃爍震動效果（當前使用） */
+@keyframes sparkle-shake {
+  0%, 100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+  10% {
+    transform: translateX(-3px) scale(1.15);
+    opacity: 0.9;
+  }
+  20% {
+    transform: translateX(3px) scale(1.15);
+    opacity: 1;
+  }
+  30% {
+    transform: translateX(-2px) scale(1.1);
+    opacity: 0.95;
+  }
+  40% {
+    transform: translateX(2px) scale(1.1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(0) scale(1.2);
+    opacity: 1;
+  }
+  60% {
+    transform: translateX(-2px) scale(1.1);
+    opacity: 0.95;
+  }
+  70% {
+    transform: translateX(2px) scale(1.1);
+    opacity: 1;
+  }
+  80% {
+    transform: translateX(-3px) scale(1.15);
+    opacity: 0.9;
+  }
+  90% {
+    transform: translateX(3px) scale(1.15);
+    opacity: 1;
+  }
+}
+
+/* 選項 2: 快速旋轉閃爍 */
+@keyframes sparkle-spin {
+  0% {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  25% {
+    transform: rotate(90deg) scale(1.2);
+    opacity: 0.8;
+  }
+  50% {
+    transform: rotate(180deg) scale(1.3);
+    opacity: 1;
+  }
+  75% {
+    transform: rotate(270deg) scale(1.2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* 選項 3: 脈衝放大效果 */
+@keyframes sparkle-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  25% {
+    transform: scale(1.3);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(1.3);
+    opacity: 0.9;
+  }
+}
+
+/* 選項 4: 單純縮放效果 */
+@keyframes sparkle-bounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* 選項 5: 搖擺效果 */
+@keyframes sparkle-swing {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-15deg) scale(1.15);
+  }
+  50% {
+    transform: rotate(0deg) scale(1.2);
+  }
+  75% {
+    transform: rotate(15deg) scale(1.15);
+  }
+}
+
+.sparkle-emoji {
+  display: inline-block;
+  /* 當前使用：上下跳動 + 閃爍 + 縮放 */
+  animation: sparkle-bounce 0.8s infinite;
+  
+  /* 其他選項（註解掉，需要時取消註解）：
+  animation: sparkle-shake 0.6s ease-in-out infinite;  // 閃爍震動效果
+  animation: sparkle-spin 1s linear infinite;          // 快速旋轉閃爍
+  animation: sparkle-pulse 1s ease-in-out infinite;    // 脈衝放大效果
+  animation: sparkle-swing 1s ease-in-out infinite;   // 搖擺效果
+  */
+}
+
+/* 省略號打字機動畫 - 從沒有點開始，逐個累積顯示：無點 → 一點 → 兩點 → 三點 → 循環 */
+.typing-dots {
+  display: inline-block;
+  margin-left: 2px;
+}
+
+.typing-dots .dot {
+  display: inline-block;
+  opacity: 0;
+}
+
+/* 第一個點：0-25% 隱藏，25-100% 顯示，100% 重置 */
+.typing-dots .dot:nth-child(1) {
+  animation: typing-dot-1 1.5s infinite;
+}
+
+/* 第二個點：0-50% 隱藏，50-100% 顯示，100% 重置 */
+.typing-dots .dot:nth-child(2) {
+  animation: typing-dot-2 1.5s infinite;
+}
+
+/* 第三個點：0-75% 隱藏，75-100% 顯示，100% 重置 */
+.typing-dots .dot:nth-child(3) {
+  animation: typing-dot-3 1.5s infinite;
+}
+
+@keyframes typing-dot-1 {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 0;
+  }
+  25.1% {
+    opacity: 1;
+  }
+  99.9% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes typing-dot-2 {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0;
+  }
+  50.1% {
+    opacity: 1;
+  }
+  99.9% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes typing-dot-3 {
+  0% {
+    opacity: 0;
+  }
+  75% {
+    opacity: 0;
+  }
+  75.1% {
+    opacity: 1;
+  }
+  99.9% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+</style>
