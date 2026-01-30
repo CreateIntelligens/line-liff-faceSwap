@@ -271,7 +271,7 @@ const showThirdDialog = ref(false);
 
 // GIF 動畫顯示時間追蹤
 const gifStartTime = ref(null);
-const minGifDuration = 10000; // 最少顯示 5 秒（毫秒）
+const minGifDuration = 8000; // 最少顯示 5 秒（毫秒）
 const taskStatusCheckInterval = ref(null);
 const currentTaskId = ref(null);
 
