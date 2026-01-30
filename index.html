@@ -81,9 +81,9 @@
         // og:url 使用完整 URL（符合 Open Graph 協議標準）
         var ogUrl = document.getElementById('og-url');
         if (ogUrl && domain) {
-          ogUrl.setAttribute('content', domain + '/');
+          ogUrl.setAttribute('content', domain);
           if (window.endpoint.debug) {
-            console.log('🔗 OG URL 已設置:', domain + '/');
+            console.log('🔗 OG URL 已設置:', domain);
           }
         } else if (ogUrl && !domain) {
           console.warn('⚠️ window.endpoint.domain 未設置，og:url 將使用空值');

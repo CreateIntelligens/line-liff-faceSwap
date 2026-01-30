@@ -259,8 +259,8 @@ async function shareViaLiff() {
   }
 
   const shareUrl = (window.endpoint && window.endpoint.domain) 
-    ? `${window.endpoint.domain}/`
-    : 'https://line-liff-face-swap-draw-lots-2026.vercel.app/'
+    ? `${window.endpoint.domain}`
+    : 'https://line-liff-face-swap-draw-lots-2026.vercel.app'
   const shareText = '面相指路，靈籤定運\n從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~\n開始測算：' + shareUrl
 
   if (!liff.shareTargetPicker) {
@@ -616,8 +616,8 @@ async function downloadToOfficial() {
     // 本地測試：顯示分享文字
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       const shareUrl = (window.endpoint && window.endpoint.domain) 
-        ? `${window.endpoint.domain}/`
-        : 'https://line-liff-face-swap-draw-lots-2026.vercel.app/'
+        ? `${window.endpoint.domain}`
+        : 'https://line-liff-face-swap-draw-lots-2026.vercel.app'
       const shareText = '面相指路，靈籤定運\n從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~\n開始測算：' + shareUrl
       console.log('📤 分享內容:', shareText)
       alert('分享內容：\n\n' + shareText)
