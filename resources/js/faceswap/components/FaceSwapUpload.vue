@@ -104,31 +104,22 @@
           />
         </div>
 
-        <!-- 求籤圖 -->
+        <!-- 求籤圖（可點擊觸發生成） -->
         <div class="flex justify-center items-center">
           <img
             :src="imageUrls.lots"
             alt="求籤"
-            class="max-w-full h-auto object-contain"
+            :class="[
+              'max-w-full h-auto object-contain transition-all duration-300',
+              canGenerate ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed opacity-60'
+            ]"
+            @click="handleLotsClick"
           />
         </div>
       </div>
 
-      <!-- 下一步按鈕 -->
+      <!-- 使用量計數器（可點擊跳轉到歷史） -->
       <div class="mt-auto flex flex-col items-center gap-4">
-        <button
-          class="cursor-pointer transition-all duration-300 hover:opacity-80"
-          :class="canGenerate ? '' : 'cursor-not-allowed'"
-          @click="generateFaceSwap"
-          :disabled="!canGenerate"
-        >
-          <img
-            :src="canGenerate ? imageUrls.next : imageUrls.disable"
-            alt="下一步"
-            class="w-full h-auto object-contain"
-          />
-        </button>
-        <!-- 使用量計數器（可點擊跳轉到歷史） -->
         <UsageCounter 
           :currentCount="userUsage" 
           @click="emit('showHistory')"
@@ -321,6 +312,16 @@ function handleDrop(event) {
   }
 }
 
+// 處理求籤圖點擊事件
+function handleLotsClick() {
+  // 檢查是否可以生成
+  if (!canGenerate.value) {
+    return;
+  }
+  // 觸發生成流程
+  generateFaceSwap();
+}
+
 
 
 function goBack() {
@@ -343,6 +344,104 @@ function goBack() {
   emit("back");
 }
 
+// 執行單次任務狀態檢查
+async function performSingleStatusCheck() {
+  if (!currentTaskId.value) {
+    console.error('❌ 沒有 taskId，無法檢查任務狀態');
+    return null;
+  }
+  
+  try {
+    const result = await roadshowService.checkTaskStatus(currentTaskId.value);
+    
+    // 檢查任務是否完成
+    const isCompleted = result && 
+                        (result.success !== false) && 
+                        result.status === 'completed';
+    
+    // 計算已顯示時間
+    const elapsedTime = gifStartTime.value ? Date.now() - gifStartTime.value : 0;
+    const hasMinDuration = elapsedTime >= minGifDuration;
+    
+    // 如果任務完成且已達到最少顯示時間，則跳轉
+    if (isCompleted && hasMinDuration) {
+      // 清除定時器
+      if (taskStatusCheckInterval.value) {
+        clearInterval(taskStatusCheckInterval.value);
+        taskStatusCheckInterval.value = null;
+      }
+      
+      // 跳轉到結果頁面
+      emit("generate", {
+        uploadedImage: uploadedImage.value,
+        taskId: currentTaskId.value
+      });
+      
+      // 重置狀態
+      gifStartTime.value = null;
+      currentTaskId.value = null;
+      return { shouldStop: true };
+    } else if (isCompleted && !hasMinDuration) {
+      // 任務已完成但還沒達到最少顯示時間，繼續等待
+      const remainingTime = minGifDuration - elapsedTime;
+      console.log(`⏳ 任務已完成，等待最少顯示時間（還需 ${Math.ceil(remainingTime / 1000)} 秒）`);
+      return { shouldStop: false };
+    } else if (result && result.error) {
+      const errorStatus = result.error.status || 0;
+      
+      // 如果是 500 錯誤，可能是暫時的服務器問題，繼續輪詢
+      if (errorStatus === 500) {
+        console.warn('⚠️ 檢查任務狀態返回 500 錯誤，可能是暫時的服務器問題，繼續輪詢...');
+        
+        // 如果已經顯示了足夠長的時間（10 秒），即使檢查失敗也跳轉到結果頁面
+        // 讓結果頁面自己處理（可能會從歷史紀錄中獲取）
+        if (elapsedTime >= 10000) {
+          console.log('⏰ 已顯示足夠時間，即使檢查失敗也跳轉到結果頁面');
+          if (taskStatusCheckInterval.value) {
+            clearInterval(taskStatusCheckInterval.value);
+            taskStatusCheckInterval.value = null;
+          }
+          
+          emit("generate", {
+            uploadedImage: uploadedImage.value,
+            taskId: currentTaskId.value
+          });
+          
+          gifStartTime.value = null;
+          currentTaskId.value = null;
+          return { shouldStop: true };
+        }
+        // 否則繼續輪詢
+        return { shouldStop: false };
+      }
+      
+      // 其他錯誤（400, 404 等），可能是任務真的失敗了
+      console.error('❌ 任務狀態檢查失敗:', result.error);
+      if (taskStatusCheckInterval.value) {
+        clearInterval(taskStatusCheckInterval.value);
+        taskStatusCheckInterval.value = null;
+      }
+      
+      // 重置狀態
+      isGenerating.value = false;
+      showFirstDialog.value = false;
+      showSecondDialog.value = false;
+      showThirdDialog.value = false;
+      gifStartTime.value = null;
+      currentTaskId.value = null;
+      
+      alert(`生成失敗：${result.error.message || '任務處理失敗'}`);
+      return { shouldStop: true };
+    }
+    
+    return { shouldStop: false };
+  } catch (error) {
+    console.error('❌ 檢查任務狀態時發生錯誤:', error);
+    // 發生錯誤時不立即停止，繼續輪詢（可能是網路問題）
+    return { shouldStop: false };
+  }
+}
+
 // 在顯示 GIF 動畫時檢查任務狀態
 async function checkTaskStatusWhileShowingGif() {
   if (!currentTaskId.value) {
@@ -355,104 +454,29 @@ async function checkTaskStatusWhileShowingGif() {
     clearInterval(taskStatusCheckInterval.value);
   }
   
+  // 立即執行一次檢查（不等待 2 秒）
+  const firstCheckResult = await performSingleStatusCheck();
+  if (firstCheckResult && firstCheckResult.shouldStop) {
+    return; // 如果第一次檢查就完成了，不需要設置定時器
+  }
+  
   // 每 2 秒檢查一次任務狀態
   taskStatusCheckInterval.value = setInterval(async () => {
-    try {
-      const result = await roadshowService.checkTaskStatus(currentTaskId.value);
-      
-      // 檢查任務是否完成
-      const isCompleted = result && 
-                          (result.success !== false) && 
-                          result.status === 'completed';
-      
-      // 計算已顯示時間
-      const elapsedTime = gifStartTime.value ? Date.now() - gifStartTime.value : 0;
-      const hasMinDuration = elapsedTime >= minGifDuration;
-      
-      // 如果任務完成且已達到最少顯示時間，則跳轉
-      if (isCompleted && hasMinDuration) {
-        // 清除定時器
-        if (taskStatusCheckInterval.value) {
-          clearInterval(taskStatusCheckInterval.value);
-          taskStatusCheckInterval.value = null;
-        }
-        
-        // 跳轉到結果頁面
-        emit("generate", {
-          uploadedImage: uploadedImage.value,
-          taskId: currentTaskId.value
-        });
-        
-        // 重置狀態
-        gifStartTime.value = null;
-        currentTaskId.value = null;
-      } else if (isCompleted && !hasMinDuration) {
-        // 任務已完成但還沒達到最少顯示時間，繼續等待
-        const remainingTime = minGifDuration - elapsedTime;
-        console.log(`⏳ 任務已完成，等待最少顯示時間（還需 ${Math.ceil(remainingTime / 1000)} 秒）`);
-      } else if (result && result.error) {
-        const errorStatus = result.error.status || 0;
-        
-        // 如果是 500 錯誤，可能是暫時的服務器問題，繼續輪詢
-        if (errorStatus === 500) {
-          console.warn('⚠️ 檢查任務狀態返回 500 錯誤，可能是暫時的服務器問題，繼續輪詢...');
-          
-          // 如果已經顯示了足夠長的時間（10 秒），即使檢查失敗也跳轉到結果頁面
-          // 讓結果頁面自己處理（可能會從歷史紀錄中獲取）
-          if (elapsedTime >= 10000) {
-            console.log('⏰ 已顯示足夠時間，即使檢查失敗也跳轉到結果頁面');
-            if (taskStatusCheckInterval.value) {
-              clearInterval(taskStatusCheckInterval.value);
-              taskStatusCheckInterval.value = null;
-            }
-            
-            emit("generate", {
-              uploadedImage: uploadedImage.value,
-              taskId: currentTaskId.value
-            });
-            
-            gifStartTime.value = null;
-            currentTaskId.value = null;
-          }
-          // 否則繼續輪詢
-          return;
-        }
-        
-        // 其他錯誤（400, 404 等），可能是任務真的失敗了
-        console.error('❌ 任務狀態檢查失敗:', result.error);
-        if (taskStatusCheckInterval.value) {
-          clearInterval(taskStatusCheckInterval.value);
-          taskStatusCheckInterval.value = null;
-        }
-        
-        // 重置狀態
-        isGenerating.value = false;
-        showFirstDialog.value = false;
-        showSecondDialog.value = false;
-        showThirdDialog.value = false;
-        gifStartTime.value = null;
-        currentTaskId.value = null;
-        
-        alert(`生成失敗：${result.error.message || '任務處理失敗'}`);
+    const checkResult = await performSingleStatusCheck();
+    if (checkResult && checkResult.shouldStop) {
+      // 如果檢查結果要求停止，清除定時器
+      if (taskStatusCheckInterval.value) {
+        clearInterval(taskStatusCheckInterval.value);
+        taskStatusCheckInterval.value = null;
       }
-    } catch (error) {
-      console.error('❌ 檢查任務狀態時發生錯誤:', error);
-      // 發生錯誤時不立即停止，繼續輪詢（可能是網路問題）
     }
   }, 2000); // 每 2 秒檢查一次
 }
 
 async function generateFaceSwap() {
-  // 檢查是否已加入好友（後端要求）
-  if (!props.isFriend) {
-    alert('請先加入官方帳號為好友，才能使用此功能。');
-    return;
-  }
-  
-  // 檢查是否已達上限（dev_user 不受限制）
+  // 檢查是否已達上限（dev_user 不受限制）- 在函數開頭立即檢查
   if (isAtLimit.value) {
-    alert(`您已達到每人${appConfig.maxUsageLimit}張圖片的生成限制，無法繼續生成新圖片。\n\n是否要查看您的生成歷史？`);
-    emit('showHistory');
+    alert('已達到生成限制');
     return;
   }
   
@@ -481,6 +505,28 @@ async function generateFaceSwap() {
         // 確保使用量數字及時更新，與服務器數據一致
         emit('refreshUsage');
         
+        // 保存 taskId 用於狀態檢查
+        currentTaskId.value = result.result?.task_id || result.result?.id || result.task_id;
+        
+        // 立即調用一次 check status API
+        if (currentTaskId.value) {
+          try {
+            const statusResult = await roadshowService.checkTaskStatus(currentTaskId.value);
+            console.log('📥 立即檢查任務狀態結果:', statusResult);
+            
+            // 如果任務已經完成，可以直接跳轉（但還是要顯示動畫）
+            const isCompleted = statusResult && 
+                                (statusResult.success !== false) && 
+                                statusResult.status === 'completed';
+            
+            if (isCompleted) {
+              console.log('✅ 任務已完成，將在顯示動畫後跳轉');
+            }
+          } catch (error) {
+            console.warn('⚠️ 立即檢查任務狀態失敗，將繼續輪詢:', error);
+          }
+        }
+        
         setTimeout(() => {
           showFirstDialog.value = false;
           showSecondDialog.value = true;
@@ -490,8 +536,6 @@ async function generateFaceSwap() {
             
             // 記錄 GIF 動畫開始顯示的時間
             gifStartTime.value = Date.now();
-            // 保存 taskId 用於狀態檢查
-            currentTaskId.value = result.result?.task_id || result.result?.id || result.task_id;
             
             // 開始輪詢檢查任務狀態
             checkTaskStatusWhileShowingGif();

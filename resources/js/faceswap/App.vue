@@ -104,7 +104,8 @@ async function initializeLiff() {
         // 用戶已登入，設置用戶 ID
         // 在本地開發環境中會自動加上 dev_user_ 前綴
         userId.value = addDevPrefixIfNeeded(result.userId)
-        isFriend.value = result.isFriend !== false // 保存好友狀態，默認為 true
+        // 確保好友狀態從結果中正確獲取，如果結果中沒有明確設置，則根據實際情況判斷
+        isFriend.value = result.isFriend === true // 明確檢查是否為 true，而不是默認 true
         console.log('✅ LIFF 用戶 ID 已設置:', userId.value)
         console.log('👥 好友狀態:', isFriend.value ? '是好友' : '非好友')
         console.log('📋 如需在本地測試，請將此 userId 複製到 index.html 的 testUserId 配置中:')
@@ -136,6 +137,9 @@ async function initializeLiff() {
           userId.value = addDevPrefixIfNeeded('guest_' + Date.now())
         }
         userName.value = window.endpoint?.testUserName || userId.value
+        // 用戶未登入時，無法檢查好友狀態，設置為 false
+        isFriend.value = false
+        console.log('👥 好友狀態: 未登入，無法檢查')
       }
     } else {
       // LIFF 初始化失敗，使用測試模式
@@ -149,6 +153,9 @@ async function initializeLiff() {
         userId.value = addDevPrefixIfNeeded('abc')
         userName.value = userId.value
       }
+      // LIFF 初始化失敗時，無法檢查好友狀態，設置為 false
+      isFriend.value = false
+      console.log('👥 好友狀態: LIFF 初始化失敗，無法檢查')
     }
     
     isLiffInitialized.value = true
@@ -166,6 +173,9 @@ async function initializeLiff() {
       userName.value = userId.value
       console.log('🔧 使用後備 userId:', userId.value, 'userName:', userName.value)
     }
+    // 發生錯誤時，無法檢查好友狀態，設置為 false
+    isFriend.value = false
+    console.log('👥 好友狀態: 初始化錯誤，無法檢查')
     isLiffInitialized.value = true
   }
 }
@@ -270,6 +280,12 @@ onMounted(async () => {
 
 // 進入臉部交換工具
 async function enterFaceSwap() {
+  // 在進入上傳頁面之前檢查好友狀態
+  if (isFriend.value === false) {
+    alert('請先加入官方帳號為好友，才能使用此功能。')
+    return // 阻止進入上傳頁面
+  }
+  
   // 直接進入上傳頁面，刷新使用量以確保數據準確
   if (userId.value) {
     try {

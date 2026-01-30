@@ -104,11 +104,12 @@ class LiffService {
         if (isInClient) {
           const redirectUrl = window.location.origin + window.location.pathname
           liff.login({ redirectUri: redirectUrl })
-          return {
-            success: false,
-            isLoggedIn: false,
-            message: '用戶未登入，已重定向至登入頁面'
-          }
+      return {
+        success: false,
+        isLoggedIn: false,
+        isFriend: false,
+        message: '用戶未登入，已重定向至登入頁面'
+      }
         } else {
           const redirectUrl = window.location.origin + window.location.pathname
           liff.login({ redirectUri: redirectUrl })
@@ -163,6 +164,8 @@ class LiffService {
       console.error('❌ LIFF 初始化失敗:', error)
       return {
         success: false,
+        isLoggedIn: false,
+        isFriend: false,
         error: error.message,
         message: 'LIFF 初始化失敗'
       }
