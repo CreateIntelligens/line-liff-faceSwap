@@ -314,15 +314,24 @@ async function enterFaceSwap() {
         }
         const results = await Promise.all(checks)
         console.log('🔍 多次檢查的結果:', results)
+        console.log('🔍 每次檢查的 friendFlag:', results.map(r => r?.friendFlag))
         
         // 取最後一次檢查的結果（最可能反映最新狀態）
         const lastResult = results[results.length - 1]
         console.log('🔍 最後一次檢查的好友狀態物件:', lastResult)
-        console.log('🔍 最後一次檢查的 friendFlag:', lastResult.friendFlag)
+        console.log('🔍 最後一次檢查的 friendFlag:', lastResult?.friendFlag)
         
         // 只有當所有檢查都返回 true 時，才認為是好友（更嚴格）
+        // 同時檢查結果是否存在且 friendFlag 為 true
         const allTrue = results.every(r => r && r.friendFlag === true)
-        currentFriendStatus = allTrue
+        console.log('🔍 所有檢查結果是否都為 true:', allTrue)
+        console.log('🔍 檢查結果詳情:', results.map((r, i) => `檢查${i+1}: ${r?.friendFlag}`))
+        
+        // 如果任何一次檢查返回 false，就認為不是好友
+        const hasFalse = results.some(r => !r || r.friendFlag !== true)
+        console.log('🔍 是否有任何檢查返回 false:', hasFalse)
+        
+        currentFriendStatus = !hasFalse && allTrue
         // 更新 isFriend.value 以便後續使用（確保狀態同步）
         isFriend.value = currentFriendStatus
         console.log('🔍 多次檢查結果（全部為 true 才通過）:', allTrue)
@@ -332,8 +341,11 @@ async function enterFaceSwap() {
       }
     } catch (error) {
       console.error('❌ 重新檢查好友狀態失敗:', error)
-      // 如果檢查失敗，使用之前的值
-      currentFriendStatus = isFriend.value
+      // 檢查失敗時，採用保守策略：一律視為非好友
+      // 因為每次點擊都會重新檢查，如果真的是好友，下次檢查成功就可以進入
+      currentFriendStatus = false
+      isFriend.value = false
+      console.log('⚠️ 檢查失敗，採用保守策略：視為非好友')
     }
   } else {
     // 如果 LIFF 未啟用或未初始化（本地開發環境），使用之前的值
@@ -347,7 +359,7 @@ async function enterFaceSwap() {
   console.log('🔍 currentFriendStatus === false:', currentFriendStatus === false)
   console.log('🔍 !currentFriendStatus:', !currentFriendStatus)
   
-  // 只有明確為 false 時才阻止進入
+  // 只有明確為 true 時才允許進入
   // 使用檢查後的最新狀態來判斷
   if (currentFriendStatus !== true) {
     console.log('❌ 檢測到非好友狀態，顯示提示並阻止進入')
@@ -355,7 +367,15 @@ async function enterFaceSwap() {
     console.log('❌ currentFriendStatus 類型:', typeof currentFriendStatus)
     // 確保 isFriend.value 也被更新為 false，避免下次點擊時使用錯誤的值
     isFriend.value = false
-    alert('請先加入官方帳號為好友，才能使用此功能。')
+    
+    // 根據 currentFriendStatus 顯示不同的錯誤訊息
+    if (currentFriendStatus === false) {
+      // 明確檢查到非好友狀態
+      alert('請先加入官方帳號為好友，才能使用此功能。')
+    } else {
+      // 檢查失敗的情況（可能是網路問題）
+      alert('無法檢查好友狀態，請稍後再試。如果已加入好友，請重新點擊進入。')
+    }
     return // 阻止進入上傳頁面
   }
   
