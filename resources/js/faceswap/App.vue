@@ -168,6 +168,11 @@ async function initializeLiff() {
     
     isLiffInitialized.value = true
     console.log('🔧 LIFF 初始化完成，userId:', userId.value, 'userName:', userName.value)
+    
+    // 初始化完成後，立即檢查好友狀態並處理
+    if (isLiffInitialized.value && userId.value) {
+      await checkAndHandleFriendStatus()
+    }
   } catch (error) {
     console.error('❌ LIFF 初始化過程發生錯誤:', error)
     // 錯誤時使用測試值或配置的測試 ID
@@ -262,6 +267,60 @@ async function refreshUserUsage() {
   } catch (error) {
     console.error('❌ 刷新用戶使用量失敗:', error)
     return 0
+  }
+}
+
+// 檢查好友狀態並處理（進入網址時立即檢查）
+async function checkAndHandleFriendStatus() {
+  console.log('🔍 進入網址時立即檢查好友狀態...')
+  
+  // 檢查是否在 LIFF 環境中
+  const isLocalhost = window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1' ||
+                     window.location.hostname === '0.0.0.0'
+  const isLiffEnabled = window.endpoint?.enableLiff && !isLocalhost
+  
+  if (!isLiffEnabled || !isLiffInitialized.value || typeof liff === 'undefined') {
+    console.log('⚠️ LIFF 環境不可用，跳過好友狀態檢查')
+    return
+  }
+  
+  try {
+    if (!liff.isLoggedIn()) {
+      console.log('⚠️ 用戶未登入，跳過好友狀態檢查')
+      return
+    }
+    
+    // 檢查好友狀態
+    console.log('🔍 開始檢查好友狀態...')
+    const checks = []
+    for (let i = 0; i < 3; i++) {
+      checks.push(liff.getFriendship())
+    }
+    const results = await Promise.all(checks)
+    console.log('🔍 多次檢查的結果:', results)
+    console.log('🔍 每次檢查的 friendFlag:', results.map(r => r?.friendFlag))
+    
+    // 檢查所有結果是否都為 true
+    const allTrue = results.every(r => r && r.friendFlag === true)
+    const hasFalse = results.some(r => !r || r.friendFlag !== true)
+    const currentFriendStatus = !hasFalse && allTrue
+    
+    console.log('🔍 進入網址時檢查結果:', currentFriendStatus)
+    
+    // 更新好友狀態
+    isFriend.value = currentFriendStatus
+    
+    // 如果不是好友，立即打開官方帳號頁面
+    if (!currentFriendStatus) {
+      console.log('❌ 檢測到非好友狀態，立即導向官方帳號')
+      openOfficialAccount()
+      alert('請先加入官方帳號為好友，才能使用此功能。')
+    } else {
+      console.log('✅ 用戶是好友，可以正常使用')
+    }
+  } catch (error) {
+    console.error('❌ 檢查好友狀態時發生錯誤:', error)
   }
 }
 
