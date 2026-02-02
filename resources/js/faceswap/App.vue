@@ -35,7 +35,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeMount, nextTick } from 'vue'
+import { ref, onMounted, onBeforeMount, onBeforeUnmount, nextTick } from 'vue'
 import FaceSwapHomepage from './components/FaceSwapHomepage.vue'
 import FaceSwapUpload from './components/FaceSwapUpload.vue'
 import FaceSwapResult from './components/FaceSwapResult.vue'
@@ -53,6 +53,8 @@ const userUsage = ref(0) // 用戶已生成的圖片數量
 const isLiffInitialized = ref(false)
 const isFriend = ref(false) // 好友狀態，默認為 false，等待 LIFF 初始化後確認
 const startWithHistory = ref(false) // 是否在結果頁直接顯示歷史紀錄
+const isWaitingForFriend = ref(false) // 是否正在等待用戶加入好友
+const friendCheckInterval = ref(null) // 好友狀態檢查定時器的引用
 
 // 檢查是否為本地開發環境
 function isLocalDevEnvironment() {
@@ -308,6 +310,7 @@ async function checkFriendStatusWithPolling(timeout = 30000, interval = 2000) {
       if (checkInterval) {
         clearInterval(checkInterval)
         checkInterval = null
+        friendCheckInterval.value = null
       }
     }
     
@@ -359,6 +362,7 @@ async function checkFriendStatusWithPolling(timeout = 30000, interval = 2000) {
           cleanup()
           // 更新好友狀態
           isFriend.value = true
+          isWaitingForFriend.value = false
           if (!isResolved) {
             isResolved = true
             resolve(true)
@@ -375,9 +379,81 @@ async function checkFriendStatusWithPolling(timeout = 30000, interval = 2000) {
     
     // 設置定期檢查
     checkInterval = setInterval(checkStatus, interval)
+    friendCheckInterval.value = checkInterval
     
     console.log(`🔄 開始定期檢查好友狀態（每 ${interval / 1000} 秒檢查一次，超時時間：${timeout / 1000} 秒）`)
   })
+}
+
+// 當頁面重新可見時檢查好友狀態
+async function checkFriendStatusOnReturn() {
+  if (!isWaitingForFriend.value) {
+    return // 如果不在等待好友狀態，直接返回
+  }
+  
+  console.log('👁️ 頁面重新可見，檢查好友狀態...')
+  
+  // 檢查是否在 LIFF 環境中
+  const isLocalhost = window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1' ||
+                     window.location.hostname === '0.0.0.0'
+  const isLiffEnabled = window.endpoint?.enableLiff && !isLocalhost
+  
+  if (!isLiffEnabled || !isLiffInitialized.value || typeof liff === 'undefined') {
+    console.log('⚠️ LIFF 環境不可用，無法檢查')
+    return
+  }
+  
+  try {
+    if (!liff.isLoggedIn()) {
+      console.log('⚠️ 用戶未登入，無法檢查')
+      return
+    }
+    
+    // 強制重新檢查好友狀態
+    const checks = []
+    for (let i = 0; i < 3; i++) {
+      checks.push(liff.getFriendship())
+    }
+    const results = await Promise.all(checks)
+    
+    // 檢查所有結果是否都為 true
+    const allTrue = results.every(r => r && r.friendFlag === true)
+    const hasFalse = results.some(r => !r || r.friendFlag !== true)
+    const currentFriendStatus = !hasFalse && allTrue
+    
+    console.log('🔍 頁面可見性檢查結果:', currentFriendStatus)
+    console.log('🔍 檢查結果詳情:', results.map((r, i) => `檢查${i+1}: ${r?.friendFlag}`))
+    
+    if (currentFriendStatus) {
+      console.log('✅ 檢測到已加入好友！自動進入上傳頁面')
+      
+      // 更新好友狀態
+      isFriend.value = true
+      isWaitingForFriend.value = false
+      
+      // 停止定期檢查
+      if (friendCheckInterval.value) {
+        clearInterval(friendCheckInterval.value)
+        friendCheckInterval.value = null
+      }
+      
+      // 刷新使用量
+      if (userId.value) {
+        try {
+          await refreshUserUsage()
+          console.log('✅ 進入上傳頁面，使用量已刷新:', userUsage.value)
+        } catch (error) {
+          console.error('❌ 刷新使用量失敗:', error)
+        }
+      }
+      
+      // 進入上傳頁面
+      currentStep.value = 'upload'
+    }
+  } catch (error) {
+    console.error('❌ 檢查好友狀態時發生錯誤:', error)
+  }
 }
 
 // 在掛載前執行初始化
@@ -399,6 +475,42 @@ onMounted(async () => {
   if (userId.value && isInitialized.value) {
     await refreshUserUsage()
   }
+  
+  // 添加頁面可見性監聽器
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible' && isWaitingForFriend.value) {
+      console.log('👁️ 頁面從隱藏變為可見，檢查好友狀態')
+      // 延遲一點時間再檢查，確保 LIFF 環境已準備好
+      setTimeout(() => {
+        checkFriendStatusOnReturn()
+      }, 500)
+    }
+  }
+  
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  
+  // 保存清理函數以便在卸載時使用
+  window._cleanupVisibilityListener = () => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }
+})
+
+// 組件卸載前的清理
+onBeforeUnmount(() => {
+  // 清理頁面可見性監聽器
+  if (window._cleanupVisibilityListener) {
+    window._cleanupVisibilityListener()
+    delete window._cleanupVisibilityListener
+  }
+  
+  // 清理好友狀態檢查定時器
+  if (friendCheckInterval.value) {
+    clearInterval(friendCheckInterval.value)
+    friendCheckInterval.value = null
+  }
+  
+  // 重置等待狀態
+  isWaitingForFriend.value = false
 })
 
 // 進入臉部交換工具
@@ -489,13 +601,20 @@ async function enterFaceSwap() {
     if (currentFriendStatus === false) {
       // 明確檢查到非好友狀態，導向官方帳號
       console.log('🔗 打開官方帳號頁面...')
+      
+      // 設置等待好友狀態
+      isWaitingForFriend.value = true
+      
+      // 打開官方帳號頁面
       openOfficialAccount()
       
       // 啟動定期檢查機制
-      console.log('🔄 啟動好友狀態檢查機制...')
+      console.log('🔄 啟動好友狀態檢查機制（定期檢查 + 頁面可見性檢查）...')
       checkFriendStatusWithPolling(30000, 2000).then((isFriendNow) => {
         if (isFriendNow) {
           console.log('✅ 用戶已加入好友，自動進入上傳頁面')
+          // 重置等待狀態
+          isWaitingForFriend.value = false
           // 刷新使用量
           if (userId.value) {
             refreshUserUsage().then(() => {
@@ -508,10 +627,14 @@ async function enterFaceSwap() {
           currentStep.value = 'upload'
         } else {
           console.log('⏰ 檢查超時或失敗，顯示提示訊息')
+          // 重置等待狀態
+          isWaitingForFriend.value = false
           alert('請先加入官方帳號為好友，才能使用此功能。如果已加入好友，請重新點擊進入。')
         }
       }).catch((error) => {
         console.error('❌ 檢查好友狀態過程發生錯誤:', error)
+        // 重置等待狀態
+        isWaitingForFriend.value = false
         alert('無法檢查好友狀態，請稍後再試。如果已加入好友，請重新點擊進入。')
       })
     } else {
