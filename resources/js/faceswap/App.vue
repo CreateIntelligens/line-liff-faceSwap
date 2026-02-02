@@ -274,6 +274,12 @@ async function refreshUserUsage() {
 async function checkAndHandleFriendStatus() {
   console.log('🔍 進入網址時立即檢查好友狀態...')
   
+  // 如果初始化時已經檢查過是好友，跳過重複檢查
+  if (isFriend.value === true) {
+    console.log('✅ 初始化時已確認是好友，跳過重複檢查')
+    return
+  }
+  
   // 檢查是否在 LIFF 環境中
   const isLocalhost = window.location.hostname === 'localhost' || 
                      window.location.hostname === '127.0.0.1' ||
@@ -291,6 +297,19 @@ async function checkAndHandleFriendStatus() {
       return
     }
     
+    // 防重複導向機制：檢查是否在短時間內已經導向過
+    const lastRedirectTime = sessionStorage.getItem('lastFriendRedirectTime')
+    const now = Date.now()
+    const REDIRECT_COOLDOWN = 5000 // 5 秒冷卻時間
+    
+    if (lastRedirectTime) {
+      const timeSinceLastRedirect = now - parseInt(lastRedirectTime, 10)
+      if (timeSinceLastRedirect < REDIRECT_COOLDOWN) {
+        console.log(`⏳ 距離上次導向僅 ${Math.round(timeSinceLastRedirect / 1000)} 秒，跳過導向（冷卻時間：${REDIRECT_COOLDOWN / 1000} 秒）`)
+        return
+      }
+    }
+    
     // 檢查好友狀態
     console.log('🔍 開始檢查好友狀態...')
     const checks = []
@@ -301,12 +320,12 @@ async function checkAndHandleFriendStatus() {
     console.log('🔍 多次檢查的結果:', results)
     console.log('🔍 每次檢查的 friendFlag:', results.map(r => r?.friendFlag))
     
-    // 檢查所有結果是否都為 true
-    const allTrue = results.every(r => r && r.friendFlag === true)
-    const hasFalse = results.some(r => !r || r.friendFlag !== true)
-    const currentFriendStatus = !hasFalse && allTrue
+    // 改進檢查邏輯：只要有一次檢查返回 true，就認為是好友（適應 API 快取延遲）
+    const hasTrue = results.some(r => r && typeof r.friendFlag === 'boolean' && r.friendFlag === true)
+    const currentFriendStatus = hasTrue
     
     console.log('🔍 進入網址時檢查結果:', currentFriendStatus)
+    console.log('🔍 是否有任何檢查返回 true:', hasTrue)
     
     // 更新好友狀態
     isFriend.value = currentFriendStatus
@@ -314,10 +333,14 @@ async function checkAndHandleFriendStatus() {
     // 如果不是好友，立即打開官方帳號頁面
     if (!currentFriendStatus) {
       console.log('❌ 檢測到非好友狀態，立即導向官方帳號')
+      // 記錄導向時間
+      sessionStorage.setItem('lastFriendRedirectTime', now.toString())
       openOfficialAccount()
       alert('請先加入官方帳號為好友，才能使用此功能。')
     } else {
       console.log('✅ 用戶是好友，可以正常使用')
+      // 清除導向時間記錄（因為已經是好友了）
+      sessionStorage.removeItem('lastFriendRedirectTime')
     }
   } catch (error) {
     console.error('❌ 檢查好友狀態時發生錯誤:', error)
@@ -609,20 +632,15 @@ async function enterFaceSwap() {
         console.log('🔍 最後一次檢查的好友狀態物件:', lastResult)
         console.log('🔍 最後一次檢查的 friendFlag:', lastResult?.friendFlag)
         
-        // 只有當所有檢查都返回 true 時，才認為是好友（更嚴格）
-        // 同時檢查結果是否存在且 friendFlag 為 true
-        const allTrue = results.every(r => r && r.friendFlag === true)
-        console.log('🔍 所有檢查結果是否都為 true:', allTrue)
-        console.log('🔍 檢查結果詳情:', results.map((r, i) => `檢查${i+1}: ${r?.friendFlag}`))
+        // 改進檢查邏輯：只要有一次檢查返回 true，就認為是好友（適應 API 快取延遲）
+        const hasTrue = results.some(r => r && typeof r.friendFlag === 'boolean' && r.friendFlag === true)
+        console.log('🔍 是否有任何檢查返回 true:', hasTrue)
+        console.log('🔍 檢查結果詳情:', results.map((r, i) => `檢查${i+1}: friendFlag=${r?.friendFlag}, 類型=${typeof r?.friendFlag}`))
         
-        // 如果任何一次檢查返回 false，就認為不是好友
-        const hasFalse = results.some(r => !r || r.friendFlag !== true)
-        console.log('🔍 是否有任何檢查返回 false:', hasFalse)
-        
-        currentFriendStatus = !hasFalse && allTrue
+        currentFriendStatus = hasTrue
         // 更新 isFriend.value 以便後續使用（確保狀態同步）
         isFriend.value = currentFriendStatus
-        console.log('🔍 多次檢查結果（全部為 true 才通過）:', allTrue)
+        console.log('🔍 檢查結果（只要有一次為 true 就通過）:', hasTrue)
         console.log('🔍 更新後的 isFriend.value:', isFriend.value)
         console.log('🔍 更新後的 currentFriendStatus:', currentFriendStatus)
         console.log('🔍 currentFriendStatus === false:', currentFriendStatus === false)
