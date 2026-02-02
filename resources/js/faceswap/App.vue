@@ -263,6 +263,123 @@ async function refreshUserUsage() {
   }
 }
 
+// 打開官方帳號連結
+function openOfficialAccount() {
+  const basicId = window.endpoint?.basicId || '@299fvzdf'
+  
+  // 檢查是否在 LINE App 內
+  const isInClient = typeof liff !== 'undefined' && liff.isInClient()
+  
+  let accountUrl
+  if (isInClient) {
+    // 在 LINE App 內使用深度連結
+    accountUrl = `line://ti/p/${basicId}`
+  } else {
+    // 在瀏覽器中使用網頁版連結
+    accountUrl = `https://line.me/R/ti/p/${basicId}`
+  }
+  
+  console.log('🔗 打開官方帳號連結:', accountUrl)
+  console.log('📱 環境:', isInClient ? 'LINE App 內' : '瀏覽器')
+  
+  try {
+    if (isInClient && typeof liff !== 'undefined' && liff.openWindow) {
+      // 在 LINE App 內使用 liff.openWindow
+      liff.openWindow({ url: accountUrl, external: true })
+    } else {
+      // 在瀏覽器中使用 window.open
+      window.open(accountUrl, '_blank')
+    }
+  } catch (error) {
+    console.error('❌ 打開官方帳號連結失敗:', error)
+    // 降級處理：直接使用 window.open
+    window.open(accountUrl, '_blank')
+  }
+}
+
+// 定期檢查好友狀態，直到加入好友或超時
+async function checkFriendStatusWithPolling(timeout = 30000, interval = 2000) {
+  return new Promise((resolve) => {
+    const startTime = Date.now()
+    let checkInterval = null
+    let isResolved = false
+    
+    const cleanup = () => {
+      if (checkInterval) {
+        clearInterval(checkInterval)
+        checkInterval = null
+      }
+    }
+    
+    const checkStatus = async () => {
+      // 檢查是否超時
+      if (Date.now() - startTime >= timeout) {
+        cleanup()
+        if (!isResolved) {
+          isResolved = true
+          console.log('⏰ 檢查好友狀態超時')
+          resolve(false)
+        }
+        return
+      }
+      
+      // 檢查是否在 LIFF 環境中
+      const isLocalhost = window.location.hostname === 'localhost' || 
+                         window.location.hostname === '127.0.0.1' ||
+                         window.location.hostname === '0.0.0.0'
+      const isLiffEnabled = window.endpoint?.enableLiff && !isLocalhost
+      
+      if (!isLiffEnabled || !isLiffInitialized.value || typeof liff === 'undefined') {
+        console.log('⚠️ LIFF 環境不可用，停止檢查')
+        cleanup()
+        if (!isResolved) {
+          isResolved = true
+          resolve(false)
+        }
+        return
+      }
+      
+      try {
+        if (!liff.isLoggedIn()) {
+          console.log('⚠️ 用戶未登入，停止檢查')
+          cleanup()
+          if (!isResolved) {
+            isResolved = true
+            resolve(false)
+          }
+          return
+        }
+        
+        // 檢查好友狀態
+        const friendship = await liff.getFriendship()
+        console.log('🔍 檢查好友狀態:', friendship?.friendFlag)
+        
+        if (friendship && friendship.friendFlag === true) {
+          console.log('✅ 檢測到已加入好友！')
+          cleanup()
+          // 更新好友狀態
+          isFriend.value = true
+          if (!isResolved) {
+            isResolved = true
+            resolve(true)
+          }
+        }
+      } catch (error) {
+        console.error('❌ 檢查好友狀態時發生錯誤:', error)
+        // 發生錯誤時繼續檢查，不中斷
+      }
+    }
+    
+    // 立即執行第一次檢查
+    checkStatus()
+    
+    // 設置定期檢查
+    checkInterval = setInterval(checkStatus, interval)
+    
+    console.log(`🔄 開始定期檢查好友狀態（每 ${interval / 1000} 秒檢查一次，超時時間：${timeout / 1000} 秒）`)
+  })
+}
+
 // 在掛載前執行初始化
 onBeforeMount(async () => {
   await initializeLiff() // 先初始化 LIFF
@@ -362,16 +479,41 @@ async function enterFaceSwap() {
   // 只有明確為 true 時才允許進入
   // 使用檢查後的最新狀態來判斷
   if (currentFriendStatus !== true) {
-    console.log('❌ 檢測到非好友狀態，顯示提示並阻止進入')
+    console.log('❌ 檢測到非好友狀態，導向官方帳號並啟動檢查機制')
     console.log('❌ currentFriendStatus 值:', currentFriendStatus)
     console.log('❌ currentFriendStatus 類型:', typeof currentFriendStatus)
     // 確保 isFriend.value 也被更新為 false，避免下次點擊時使用錯誤的值
     isFriend.value = false
     
-    // 根據 currentFriendStatus 顯示不同的錯誤訊息
+    // 根據 currentFriendStatus 顯示不同的處理方式
     if (currentFriendStatus === false) {
-      // 明確檢查到非好友狀態
-      alert('請先加入官方帳號為好友，才能使用此功能。')
+      // 明確檢查到非好友狀態，導向官方帳號
+      console.log('🔗 打開官方帳號頁面...')
+      openOfficialAccount()
+      
+      // 啟動定期檢查機制
+      console.log('🔄 啟動好友狀態檢查機制...')
+      checkFriendStatusWithPolling(30000, 2000).then((isFriendNow) => {
+        if (isFriendNow) {
+          console.log('✅ 用戶已加入好友，自動進入上傳頁面')
+          // 刷新使用量
+          if (userId.value) {
+            refreshUserUsage().then(() => {
+              console.log('✅ 進入上傳頁面，使用量已刷新:', userUsage.value)
+            }).catch((error) => {
+              console.error('❌ 刷新使用量失敗:', error)
+            })
+          }
+          // 進入上傳頁面
+          currentStep.value = 'upload'
+        } else {
+          console.log('⏰ 檢查超時或失敗，顯示提示訊息')
+          alert('請先加入官方帳號為好友，才能使用此功能。如果已加入好友，請重新點擊進入。')
+        }
+      }).catch((error) => {
+        console.error('❌ 檢查好友狀態過程發生錯誤:', error)
+        alert('無法檢查好友狀態，請稍後再試。如果已加入好友，請重新點擊進入。')
+      })
     } else {
       // 檢查失敗的情況（可能是網路問題）
       alert('無法檢查好友狀態，請稍後再試。如果已加入好友，請重新點擊進入。')
