@@ -100,26 +100,34 @@ class LiffService {
       
       if (!liff.isLoggedIn()) {
         const isInClient = liff.isInClient()
+        const redirectUrl = window.location.origin + window.location.pathname
         
         if (isInClient) {
-          const redirectUrl = window.location.origin + window.location.pathname
-          liff.login({ redirectUri: redirectUrl })
+          // 在 LINE App 內使用 bot_prompt: "aggressive"
+          // 若未加好友，登入後會跳出確認視窗詢問是否加好友
+          liff.login({ 
+            redirectUri: redirectUrl,
+            bot_prompt: "aggressive"
+          })
       return {
         success: false,
         isLoggedIn: false,
         isFriend: false,
-        message: '用戶未登入，已重定向至登入頁面'
+        message: '用戶未登入，已重定向至登入頁面（含加好友提示）'
       }
         } else {
-          const redirectUrl = window.location.origin + window.location.pathname
-          liff.login({ redirectUri: redirectUrl })
+          // 在瀏覽器中也使用 bot_prompt
+          liff.login({ 
+            redirectUri: redirectUrl,
+            bot_prompt: "aggressive"
+          })
           
           return {
             success: false,
             isLoggedIn: false,
             isFriend: false,
             userId: null,
-            message: '在瀏覽器中嘗試 LINE 登入，已跳轉到登入頁面'
+            message: '在瀏覽器中嘗試 LINE 登入，已跳轉到登入頁面（含加好友提示）'
           }
         }
       }
@@ -253,16 +261,22 @@ class LiffService {
   /**
    * 登入
    * @param {string} redirectUri - 登入後重定向的 URI
+   * @param {string} bot_prompt - 加好友提示模式："normal" 或 "aggressive"
    */
-  login(redirectUri = null) {
+  login(redirectUri = null, bot_prompt = "aggressive") {
     if (!this.isInitialized || typeof liff === 'undefined') {
       return
     }
 
     if (redirectUri) {
-      liff.login({ redirectUri })
+      liff.login({ 
+        redirectUri,
+        bot_prompt: bot_prompt
+      })
     } else {
-      liff.login()
+      liff.login({ 
+        bot_prompt: bot_prompt
+      })
     }
   }
 
