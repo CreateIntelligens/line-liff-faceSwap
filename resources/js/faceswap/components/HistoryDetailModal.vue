@@ -163,7 +163,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close', 'regenerate', 'download'])
+const emit = defineEmits(['close', 'regenerate', 'download', 'update'])
 
 const isLoading = ref(false)
 const error = ref(null)
@@ -794,6 +794,18 @@ async function downloadToOfficial() {
 function closeModal() {
   // 清除定時器
   clearTaskStatusInterval()
+  
+  // 如果 historyDetail 有更新，emit update 事件傳遞更新後的數據
+  if (historyDetail.value) {
+    emit('update', {
+      id: historyDetail.value.id,
+      image: historyDetail.value.image || historyDetail.value.image_url || historyDetail.value.result_image || historyDetail.value.generated_image,
+      status: historyDetail.value.status,
+      created_at: historyDetail.value.created_at,
+      template_id: historyDetail.value.template_id
+    })
+  }
+  
   emit('close')
 }
 </script>

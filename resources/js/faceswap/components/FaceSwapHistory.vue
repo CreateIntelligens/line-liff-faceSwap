@@ -8,6 +8,7 @@
     :userId="props.userId"
     @close="closeDetailModal"
     @regenerate="handleRegenerate"
+    @update="handleHistoryUpdate"
   />
 
   <!-- History List Page -->
@@ -277,6 +278,29 @@ function viewHistoryItem(item) {
   console.log('查看歷史項目:', item)
   selectedHistoryItem.value = item
   showDetailModal.value = true
+}
+
+// 處理歷史項目更新
+function handleHistoryUpdate(updatedItem) {
+  if (!updatedItem || !updatedItem.id) {
+    return
+  }
+  
+  // 在 historyData 中找到對應的項目並更新
+  const index = historyData.value.findIndex(item => item.id === updatedItem.id)
+  if (index !== -1) {
+    // 更新對應項目的數據
+    historyData.value[index] = {
+      ...historyData.value[index],
+      image: updatedItem.image || historyData.value[index].image,
+      status: updatedItem.status || historyData.value[index].status,
+      created_at: updatedItem.created_at || historyData.value[index].created_at,
+      template_id: updatedItem.template_id || historyData.value[index].template_id
+    }
+    console.log('✅ 歷史列表項目已更新:', historyData.value[index])
+  } else {
+    console.warn('⚠️ 未找到要更新的歷史項目，ID:', updatedItem.id)
+  }
 }
 
 // 關閉詳情彈窗
