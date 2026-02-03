@@ -138,11 +138,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
 import FaceSwapHistory from './FaceSwapHistory.vue'
 import UsageCounter from './UsageCounter.vue'
 import { roadshowService } from '../../services/roadshowService.js'
 import { imageUrls } from '@/config/imageUrls'
+import { appConfig } from '@/config/appConfig'
 
 // 記錄是否已經嘗試從歷史紀錄中查找
 const hasTriedHistoryFallback = ref(false)
@@ -192,6 +193,9 @@ const loadingSubMessage = ref('請稍候')
 
 // 下載相關狀態
 const isDownloading = ref(false)
+
+// 任務狀態檢查定時器
+const taskStatusCheckInterval = ref(null)
 
 // 顯示訊息函數
 function showMessage(message, type = 'info') {
@@ -283,8 +287,9 @@ async function shareViaLiff() {
 
 // 監聽taskId變化
 watch(() => props.taskId, (newTaskId, oldTaskId) => {
-  // 當 taskId 變化時，重置完成標記
+  // 當 taskId 變化時，清除舊的定時器
   if (newTaskId !== oldTaskId) {
+    clearTaskStatusInterval()
     isTaskCompleted.value = false
     generatedImages.value = []
     originalImages.value = []
@@ -322,6 +327,8 @@ async function checkTaskStatus() {
   // 如果任務已經完成且有圖片，不再檢查（防止後續錯誤覆蓋成功結果）
   if (isTaskCompleted.value && generatedImages.value.length > 0) {
     console.log('✅ 任務已完成，跳過後續檢查')
+    // 確保清除定時器
+    clearTaskStatusInterval()
     return
   }
   
@@ -423,6 +430,9 @@ async function checkTaskStatus() {
                   isTaskCompleted.value = true;
                   error.value = null;
                   
+                  // 清除定時器，因為任務已完成
+                  clearTaskStatusInterval();
+                  
                   console.log('✅ 成功從歷史紀錄中獲取圖片，任務標記為完成');
                   return; // 成功獲取，不再顯示錯誤
                 } catch (processError) {
@@ -482,6 +492,38 @@ async function checkTaskStatus() {
   }
 }
 
+// 清理任務狀態檢查定時器
+function clearTaskStatusInterval() {
+  if (taskStatusCheckInterval.value) {
+    clearInterval(taskStatusCheckInterval.value)
+    taskStatusCheckInterval.value = null
+    console.log('🧹 已清除任務狀態檢查定時器')
+  }
+}
+
+// 啟動任務狀態檢查輪詢
+function startTaskStatusPolling(interval = 2000) {
+  // 先清除舊的定時器（如果存在）
+  clearTaskStatusInterval()
+  
+  // 如果任務已完成，不啟動輪詢
+  if (isTaskCompleted.value) {
+    return
+  }
+  
+  // 啟動新的輪詢
+  taskStatusCheckInterval.value = setInterval(() => {
+    // 如果任務已完成，停止輪詢
+    if (isTaskCompleted.value && generatedImages.value.length > 0) {
+      clearTaskStatusInterval()
+      return
+    }
+    checkTaskStatus()
+  }, interval)
+  
+  console.log(`🔄 已啟動任務狀態檢查輪詢（每 ${interval / 1000} 秒檢查一次）`)
+}
+
 // 處理任務狀態
 async function handleTaskStatus(data) {
   const status = data.status
@@ -490,22 +532,25 @@ async function handleTaskStatus(data) {
     case 'pending':
       loadingMessage.value = '任務等待中'
       loadingSubMessage.value = '正在排隊處理...'
-      // 如果任務未完成，延遲後再次檢查
+      // 如果任務未完成，啟動持續輪詢
       if (!isTaskCompleted.value) {
-        setTimeout(checkTaskStatus, 3000)
+        startTaskStatusPolling(3000)
       }
       break
       
     case 'processing':
       loadingMessage.value = '正在處理中'
       loadingSubMessage.value = '請稍候，正在生成您的頭像...'
-      // 如果任務未完成，延遲後再次檢查
+      // 如果任務未完成，啟動持續輪詢
       if (!isTaskCompleted.value) {
-        setTimeout(checkTaskStatus, 2000)
+        startTaskStatusPolling(2000)
       }
       break
       
     case 'completed':
+      // 立即清除輪詢定時器
+      clearTaskStatusInterval()
+      
       loadingMessage.value = '生成完成！'
       loadingSubMessage.value = ''
       // 新 API 可能返回 image（單數）或 images（複數）
@@ -558,6 +603,8 @@ async function handleTaskStatus(data) {
       break
       
     case 'failed':
+      // 任務失敗時也清除輪詢
+      clearTaskStatusInterval()
       error.value = '任務處理失敗，請重新生成'
       console.error('❌ 任務處理失敗')
       break
@@ -573,8 +620,24 @@ function retryCheckStatus() {
   checkTaskStatus()
 }
 
+// 檢查是否為 dev_user（不受限制）
+const isDevUser = computed(() => {
+  return props.userId && props.userId.startsWith('dev_user_')
+})
+
+// 檢查是否已達生成限制
+const isAtLimit = computed(() => {
+  return !isDevUser.value && props.userUsage >= appConfig.maxUsageLimit
+})
+
 // Handle regenerate button click
 function regenerate() {
+  // 檢查是否已達生成限制
+  if (isAtLimit.value) {
+    alert('已達個人生成上限，感謝您的參與')
+    return
+  }
+  
   emit('regenerate')
 }
 
@@ -665,6 +728,42 @@ onMounted(() => {
   isTaskCompleted.value = false
   if (props.taskId) {
     checkTaskStatus()
+  }
+  
+  // 添加頁面可見性監聽器
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      // 頁面重新可見時，如果任務還在進行中，重新啟動輪詢
+      if (props.taskId && !isTaskCompleted.value && !taskStatusCheckInterval.value) {
+        console.log('👁️ 頁面重新可見，重新啟動任務狀態檢查輪詢')
+        checkTaskStatus()
+      } else if (props.taskId && !isTaskCompleted.value && taskStatusCheckInterval.value) {
+        // 如果已經有輪詢在運行，確保它繼續運行
+        console.log('👁️ 頁面重新可見，輪詢已在運行中')
+      }
+    } else {
+      // 頁面隱藏時，可以選擇暫停輪詢（但不清除定時器，讓它繼續運行）
+      console.log('👁️ 頁面已隱藏，輪詢將繼續在背景運行')
+    }
+  }
+  
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  
+  // 保存清理函數以便在卸載時使用
+  window._cleanupTaskStatusVisibilityListener = () => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }
+})
+
+// 組件卸載前清理
+onBeforeUnmount(() => {
+  // 清理任務狀態檢查定時器
+  clearTaskStatusInterval()
+  
+  // 清理頁面可見性監聽器
+  if (window._cleanupTaskStatusVisibilityListener) {
+    window._cleanupTaskStatusVisibilityListener()
+    delete window._cleanupTaskStatusVisibilityListener
   }
 })
 </script>

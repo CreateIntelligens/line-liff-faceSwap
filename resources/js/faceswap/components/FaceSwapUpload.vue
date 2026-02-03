@@ -265,7 +265,7 @@ const showThirdDialog = ref(false);
 
 // GIF 動畫顯示時間追蹤
 const gifStartTime = ref(null);
-const minGifDuration = 8000; // 最少顯示 5 秒（毫秒）
+const minGifDuration = 7000; // 最少顯示 5 秒（毫秒）
 const taskStatusCheckInterval = ref(null);
 const currentTaskId = ref(null);
 
@@ -349,6 +349,10 @@ function handleDrop(event) {
 function handleLotsClick() {
   // 檢查是否可以生成
   if (!canGenerate.value) {
+    // 如果已達限制，顯示提示訊息
+    if (isAtLimit.value) {
+      alert('已達個人生成上限，感謝您的參與')
+    }
     return;
   }
   // 觸發生成流程
@@ -509,7 +513,7 @@ async function checkTaskStatusWhileShowingGif() {
 async function generateFaceSwap() {
   // 檢查是否已達上限（dev_user 不受限制）- 在函數開頭立即檢查
   if (isAtLimit.value) {
-    alert('已達到生成限制');
+    alert('已達個人生成上限，感謝您的參與')
     return;
   }
   

@@ -79,9 +79,22 @@
             </template>
             <div v-else class="w-full h-60 bg-gray-700 rounded-md flex items-center justify-center">
               <div class="text-center" style="color: #E0BE91;">
-                <div class="text-lg font-bold mb-2">無法載入圖片</div>
-                <div class="text-xs mt-2">歷史項目: {{ historyDetail?.id || '無ID' }}</div>
-                <div class="text-xs">圖片字段: {{ historyDetail?.image || historyDetail?.image_url || historyDetail?.result_image || '無' }}</div>
+                <!-- 如果任務還在處理中，顯示處理中狀態 -->
+                <template v-if="historyDetail?.status === 'processing' || historyDetail?.status === 'pending'">
+                  <div class="animate-spin rounded-full h-12 w-12 border-b-2 mb-4 mx-auto" style="border-color: #E0BE91;"></div>
+                  <div class="text-lg font-bold mb-2">
+                    {{ historyDetail?.status === 'pending' ? '任務等待中' : '正在處理中' }}
+                  </div>
+                  <div class="text-sm">
+                    {{ historyDetail?.status === 'pending' ? '正在排隊處理...' : '請稍候，正在生成您的頭像...' }}
+                  </div>
+                </template>
+                <!-- 如果任務已完成但沒有圖片，顯示無法載入 -->
+                <template v-else>
+                  <div class="text-lg font-bold mb-2">無法載入圖片</div>
+                  <div class="text-xs mt-2">歷史項目: {{ historyDetail?.id || '無ID' }}</div>
+                  <div class="text-xs">圖片字段: {{ historyDetail?.image || historyDetail?.image_url || historyDetail?.result_image || '無' }}</div>
+                </template>
               </div>
             </div>
           </div>
@@ -125,10 +138,11 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue'
 import { roadshowService } from '../../services/roadshowService.js'
 import { imageUrls } from '@/config/imageUrls'
 import UsageCounter from './UsageCounter.vue'
+import { appConfig } from '@/config/appConfig'
 
 const props = defineProps({
   isVisible: {
@@ -158,6 +172,11 @@ const imageLoadErrors = ref({})
 
 // 截圖相關狀態
 const isDownloading = ref(false)
+
+// 任務狀態檢查定時器
+const taskStatusCheckInterval = ref(null)
+const isTaskCompleted = ref(false) // 標記任務是否已完成
+const isLoadingDetail = ref(false) // 防止重複載入
 
 // 使用截圖 composable
 // 顯示訊息函數
@@ -262,17 +281,34 @@ async function shareViaLiff() {
 }
 
 // 監聽彈窗顯示狀態和歷史項目變化
-watch(() => props.isVisible, (newValue) => {
+watch(() => props.isVisible, (newValue, oldValue) => {
   if (newValue && props.historyItem) {
-    console.log('🔄 HistoryDetailModal - 彈窗顯示，接收到歷史項目:', props.historyItem)
-    loadHistoryDetail()
+    // 只有在從隱藏變為顯示時才載入（避免重複載入）
+    if (oldValue === false || oldValue === undefined) {
+      console.log('🔄 HistoryDetailModal - 彈窗顯示，接收到歷史項目:', props.historyItem)
+      // 清除舊的定時器
+      clearTaskStatusInterval()
+      loadHistoryDetail()
+    }
+  } else if (!newValue) {
+    // 彈窗關閉時，清除定時器
+    clearTaskStatusInterval()
+    isLoadingDetail.value = false // 重置載入標記
   }
 }, { immediate: true })
 
-watch(() => props.historyItem, (newItem) => {
+watch(() => props.historyItem, (newItem, oldItem) => {
   if (props.isVisible && newItem) {
-    console.log('🔄 HistoryDetailModal - 歷史項目更新:', newItem)
-    loadHistoryDetail()
+    // 如果歷史項目 ID 改變，清除舊的定時器並載入
+    if (oldItem && oldItem.id !== newItem.id) {
+      clearTaskStatusInterval()
+      isTaskCompleted.value = false
+      isLoadingDetail.value = false // 重置載入標記
+      console.log('🔄 HistoryDetailModal - 歷史項目 ID 改變，載入新項目:', newItem)
+      loadHistoryDetail()
+    }
+    // 如果 ID 相同但狀態改變（例如從 processing 變為 failed），不需要重新載入
+    // 因為 checkHistoryTaskStatus 會更新狀態
   }
 }, { immediate: true })
 
@@ -282,7 +318,188 @@ onMounted(() => {
     console.log('🚀 HistoryDetailModal - 組件掛載，載入歷史詳情')
     loadHistoryDetail()
   }
+  
+  // 添加頁面可見性監聽器
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      // 頁面重新可見時，如果任務還在進行中，重新啟動輪詢
+      if (historyDetail.value?.id && !isTaskCompleted.value && !taskStatusCheckInterval.value) {
+        const taskStatus = historyDetail.value.status
+        if (taskStatus === 'pending' || taskStatus === 'processing') {
+          console.log('👁️ HistoryDetailModal - 頁面重新可見，重新啟動任務狀態檢查輪詢')
+          const interval = taskStatus === 'pending' ? 3000 : 2000
+          startTaskStatusPolling(interval)
+          checkHistoryTaskStatus()
+        }
+      } else if (historyDetail.value?.id && !isTaskCompleted.value && taskStatusCheckInterval.value) {
+        // 如果已經有輪詢在運行，確保它繼續運行
+        console.log('👁️ HistoryDetailModal - 頁面重新可見，輪詢已在運行中')
+      }
+    } else {
+      // 頁面隱藏時，輪詢將繼續在背景運行
+      console.log('👁️ HistoryDetailModal - 頁面已隱藏，輪詢將繼續在背景運行')
+    }
+  }
+  
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  
+  // 保存清理函數以便在卸載時使用
+  window._cleanupHistoryDetailVisibilityListener = () => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }
 })
+
+// 組件卸載前清理
+onBeforeUnmount(() => {
+  // 清理任務狀態檢查定時器
+  clearTaskStatusInterval()
+  
+  // 清理頁面可見性監聽器
+  if (window._cleanupHistoryDetailVisibilityListener) {
+    window._cleanupHistoryDetailVisibilityListener()
+    delete window._cleanupHistoryDetailVisibilityListener
+  }
+})
+
+// 清理任務狀態檢查定時器
+function clearTaskStatusInterval() {
+  if (taskStatusCheckInterval.value) {
+    clearInterval(taskStatusCheckInterval.value)
+    taskStatusCheckInterval.value = null
+    console.log('🧹 HistoryDetailModal - 已清除任務狀態檢查定時器')
+  }
+}
+
+// 啟動任務狀態檢查輪詢
+function startTaskStatusPolling(interval = 2000) {
+  // 先清除舊的定時器（如果存在）
+  clearTaskStatusInterval()
+  
+  // 如果任務已完成，不啟動輪詢
+  if (isTaskCompleted.value) {
+    return
+  }
+  
+  // 如果沒有任務 ID，無法輪詢
+  if (!historyDetail.value?.id) {
+    return
+  }
+  
+  // 如果任務狀態是 completed 且有圖片，不啟動輪詢
+  if (historyDetail.value.status === 'completed') {
+    const imageUrl = getHistoryImage(historyDetail.value)
+    if (imageUrl) {
+      isTaskCompleted.value = true
+      console.log('✅ HistoryDetailModal - 任務已完成且有圖片，不啟動輪詢')
+      return
+    }
+  }
+  
+  // 啟動新的輪詢
+  taskStatusCheckInterval.value = setInterval(() => {
+    // 如果任務已完成，停止輪詢
+    if (isTaskCompleted.value) {
+      clearTaskStatusInterval()
+      return
+    }
+    checkHistoryTaskStatus()
+  }, interval)
+  
+  console.log(`🔄 HistoryDetailModal - 已啟動任務狀態檢查輪詢（每 ${interval / 1000} 秒檢查一次）`)
+}
+
+// 檢查歷史任務狀態
+async function checkHistoryTaskStatus() {
+  if (!historyDetail.value?.id) {
+    return
+  }
+  
+  // 如果任務已完成且有圖片，不再檢查
+  if (isTaskCompleted.value) {
+    clearTaskStatusInterval()
+    return
+  }
+  
+  // 如果任務狀態是 completed 且有圖片，標記為完成並停止輪詢
+  if (historyDetail.value.status === 'completed') {
+    const imageUrl = getHistoryImage(historyDetail.value)
+    if (imageUrl) {
+      isTaskCompleted.value = true
+      clearTaskStatusInterval()
+      console.log('✅ HistoryDetailModal - 任務已完成且有圖片，停止輪詢')
+      return
+    }
+  }
+  
+  try {
+    console.log('🔍 HistoryDetailModal - 開始檢查任務狀態，taskId:', historyDetail.value.id)
+    const result = await roadshowService.checkTaskStatus(historyDetail.value.id)
+    console.log('📥 HistoryDetailModal - 任務狀態檢查結果:', result)
+    
+    // 檢查是否有錯誤
+    if (result && result.error) {
+      const errorStatus = result.error.status
+      
+      // 如果任務已經完成且有圖片，即使 API 返回錯誤也停止輪詢
+      // （可能是因為後端不再提供已完成任務的狀態檢查）
+      if (historyDetail.value.status === 'completed') {
+        const imageUrl = getHistoryImage(historyDetail.value)
+        if (imageUrl) {
+          isTaskCompleted.value = true
+          clearTaskStatusInterval()
+          console.log('✅ HistoryDetailModal - 任務已完成且有圖片，即使 API 返回錯誤也停止輪詢')
+          return
+        }
+      }
+      
+      // 如果是 500 錯誤，可能是暫時的服務器問題，繼續輪詢
+      if (errorStatus === 500) {
+        console.warn('⚠️ HistoryDetailModal - 檢查任務狀態返回 500 錯誤，繼續輪詢...')
+        return
+      }
+      // 其他錯誤也繼續輪詢（可能是網路問題）
+      console.warn('⚠️ HistoryDetailModal - 檢查任務狀態失敗，繼續輪詢:', result.error)
+      return
+    }
+    
+    // 更新歷史詳情
+    if (result && (result.success !== false) && result.status) {
+      // 更新歷史詳情數據
+      historyDetail.value = {
+        ...historyDetail.value,
+        status: result.status,
+        image: result.images?.[0] || result.image || historyDetail.value.image,
+        image_url: result.images?.[0] || result.image || historyDetail.value.image_url,
+        result_image: result.images?.[0] || result.image || historyDetail.value.result_image,
+        generated_image: result.images?.[0] || result.image || historyDetail.value.generated_image
+      }
+      
+      console.log('✅ HistoryDetailModal - 歷史詳情已更新:', historyDetail.value)
+      
+      // 根據狀態處理
+      if (result.status === 'completed') {
+        // 任務完成，清除輪詢
+        isTaskCompleted.value = true
+        clearTaskStatusInterval()
+        console.log('✅ HistoryDetailModal - 任務已完成，停止輪詢')
+      } else if (result.status === 'pending' || result.status === 'processing') {
+        // 任務還在進行中，繼續輪詢（定時器已在運行）
+        console.log(`🔄 HistoryDetailModal - 任務狀態: ${result.status}，繼續輪詢`)
+      } else if (result.status === 'failed') {
+        // 任務失敗，停止輪詢
+        isTaskCompleted.value = true
+        clearTaskStatusInterval()
+        error.value = '任務處理失敗，請重新生成'
+        console.error('❌ HistoryDetailModal - 任務處理失敗')
+        // 確保 isLoading 為 false，以便顯示錯誤訊息
+        isLoading.value = false
+      }
+    }
+  } catch (err) {
+    console.error('❌ HistoryDetailModal - 檢查任務狀態時發生錯誤:', err)
+    // 發生錯誤時繼續輪詢（可能是網路問題）
+  }
+}
 
 // 載入歷史詳情
 async function loadHistoryDetail() {
@@ -292,23 +509,53 @@ async function loadHistoryDetail() {
     return
   }
 
+  // 防止重複載入
+  if (isLoadingDetail.value) {
+    console.log('⏳ HistoryDetailModal - 正在載入中，跳過重複調用')
+    return
+  }
+
   try {
+    isLoadingDetail.value = true
     isLoading.value = true
     error.value = null
     
     console.log('📥 開始載入歷史詳情:', props.historyItem)
     console.log('📋 歷史項目完整數據:', JSON.stringify(props.historyItem, null, 2))
     
+    // 重置完成標記
+    isTaskCompleted.value = false
+    
     // 直接使用傳入的歷史項目數據
     historyDetail.value = {
       ...props.historyItem
     }
     
+    // 檢查任務狀態
+    const taskStatus = historyDetail.value.status
+    
     // 檢查圖片 URL
     const imageUrl = getHistoryImage(historyDetail.value)
     console.log('🖼️ 獲取到的圖片 URL:', imageUrl)
     
-    if (!imageUrl) {
+    // 如果任務已完成且有圖片，標記為完成並清除定時器
+    if (taskStatus === 'completed' && imageUrl) {
+      isTaskCompleted.value = true
+      clearTaskStatusInterval() // 確保清除任何可能存在的定時器
+      console.log('✅ 歷史詳情載入完成（任務已完成，停止輪詢）:', historyDetail.value)
+    } else if (taskStatus === 'pending' || taskStatus === 'processing') {
+      // 任務還在進行中，啟動輪詢檢查
+      console.log(`🔄 任務狀態為 ${taskStatus}，啟動輪詢檢查`)
+      const interval = taskStatus === 'pending' ? 3000 : 2000
+      startTaskStatusPolling(interval)
+      // 立即執行一次檢查
+      checkHistoryTaskStatus()
+    } else if (taskStatus === 'completed' && !imageUrl) {
+      // 任務已完成但沒有圖片，可能是數據還沒同步，嘗試輪詢幾次
+      console.log('⚠️ 任務已完成但沒有圖片，嘗試輪詢獲取')
+      startTaskStatusPolling(2000)
+      checkHistoryTaskStatus()
+    } else if (!imageUrl) {
       console.warn('⚠️ 無法獲取圖片 URL，歷史項目數據:', historyDetail.value)
     }
     
@@ -319,6 +566,7 @@ async function loadHistoryDetail() {
     error.value = `載入失敗: ${err.message}`
   } finally {
     isLoading.value = false
+    isLoadingDetail.value = false
   }
 }
 
@@ -475,8 +723,24 @@ function getStatusText(status) {
   return statusMap[status] || status || '未知'
 }
 
+// 檢查是否為 dev_user（不受限制）
+const isDevUser = computed(() => {
+  return props.userId && props.userId.startsWith('dev_user_')
+})
+
+// 檢查是否已達生成限制
+const isAtLimit = computed(() => {
+  return !isDevUser.value && props.userUsage >= appConfig.maxUsageLimit
+})
+
 // 重新生成
 function regenerate() {
+  // 檢查是否已達生成限制
+  if (isAtLimit.value) {
+    alert('已達個人生成上限，感謝您的參與')
+    return
+  }
+  
   console.log('🔄 重新生成歷史項目')
   emit('regenerate', historyDetail.value)
 }
@@ -528,6 +792,8 @@ async function downloadToOfficial() {
 
 // 關閉彈窗
 function closeModal() {
+  // 清除定時器
+  clearTaskStatusInterval()
   emit('close')
 }
 </script>
