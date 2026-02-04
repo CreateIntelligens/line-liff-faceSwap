@@ -110,12 +110,26 @@ async function initializeLiff() {
         console.log('🔍 result 完整物件:', result)
         console.log('🔍 result.isFriend 原始值:', result.isFriend)
         console.log('🔍 result.isFriend 類型:', typeof result.isFriend)
-        // 只有明確為 true 時才設置為 true，其他情況（false, undefined, null）都設為 false
-        isFriend.value = result.isFriend === true
-        console.log('✅ LIFF 用戶 ID 已設置:', userId.value)
-        console.log('👥 好友狀態:', isFriend.value ? '是好友' : '非好友')
-        console.log('🔍 isFriend.value 最終值:', isFriend.value)
-        console.log('🔍 isFriend.value === false:', isFriend.value === false)
+        
+        // 改進好友狀態處理邏輯：
+        // - 如果明確為 true，設置為 true
+        // - 如果明確為 false，設置為 false
+        // - 如果是 undefined（檢查結果不確定），不立即設置為 false，等待後續檢查
+        if (result.isFriend === true) {
+          isFriend.value = true
+          console.log('✅ LIFF 用戶 ID 已設置:', userId.value)
+          console.log('👥 好友狀態: 是好友（初始化時確認）')
+        } else if (result.isFriend === false) {
+          isFriend.value = false
+          console.log('✅ LIFF 用戶 ID 已設置:', userId.value)
+          console.log('👥 好友狀態: 非好友（初始化時確認）')
+        } else {
+          // result.isFriend === undefined，檢查結果不確定
+          // 不立即設置 isFriend.value，保持為初始值（false），等待後續檢查
+          console.log('✅ LIFF 用戶 ID 已設置:', userId.value)
+          console.log('👥 好友狀態: 檢查結果不確定，等待後續檢查')
+          console.log('🔍 isFriend.value 保持為:', isFriend.value)
+        }
         console.log('📋 如需在本地測試，請將此 userId 複製到 index.html 的 testUserId 配置中:')
         console.log(`   testUserId: '${result.userId}',`)
         
@@ -169,9 +183,17 @@ async function initializeLiff() {
     isLiffInitialized.value = true
     console.log('🔧 LIFF 初始化完成，userId:', userId.value, 'userName:', userName.value)
     
-    // 初始化完成後，立即檢查好友狀態並處理
+    // 初始化完成後，根據好友狀態決定是否需要檢查
     if (isLiffInitialized.value && userId.value) {
-      await checkAndHandleFriendStatus()
+      // 如果初始化時好友狀態不確定（undefined），才調用 checkAndHandleFriendStatus()
+      // 如果初始化時已確認是好友（true），跳過檢查
+      // 如果初始化時已確認非好友（false），也需要檢查（可能是快取延遲）
+      if (isFriend.value === undefined || isFriend.value === false) {
+        console.log('🔄 初始化時好友狀態不確定或為非好友，執行後續檢查')
+        await checkAndHandleFriendStatus()
+      } else {
+        console.log('✅ 初始化時已確認是好友，跳過後續檢查')
+      }
     }
   } catch (error) {
     console.error('❌ LIFF 初始化過程發生錯誤:', error)
@@ -270,6 +292,65 @@ async function refreshUserUsage() {
   }
 }
 
+// 使用序列重試機制檢查好友狀態
+async function checkFriendshipWithRetry(retries = 5, delay = 300) {
+  // 檢查是否在 LIFF 環境中
+  const isLocalhost = window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1' ||
+                     window.location.hostname === '0.0.0.0'
+  const isLiffEnabled = window.endpoint?.enableLiff && !isLocalhost
+  
+  if (!isLiffEnabled || !isLiffInitialized.value || typeof liff === 'undefined') {
+    console.warn('⚠️ LIFF 環境不可用，無法檢查好友狀態')
+    return undefined
+  }
+
+  if (!liff.isLoggedIn()) {
+    console.warn('⚠️ 用戶未登入，無法檢查好友狀態')
+    return undefined
+  }
+
+  let hasError = false
+
+  for (let i = 0; i < retries; i++) {
+    try {
+      const friendship = await liff.getFriendship()
+      console.log(`🔍 好友狀態檢查 (${i + 1}/${retries}):`, friendship?.friendFlag)
+      
+      // 如果檢查到是好友，立即返回 true
+      if (friendship && friendship.friendFlag === true) {
+        console.log(`✅ 在第 ${i + 1} 次檢查時確認是好友`)
+        return true
+      }
+      
+      // 如果檢查到明確為 false，記錄但繼續重試（可能是快取延遲）
+      if (friendship && friendship.friendFlag === false) {
+        console.log(`⚠️ 第 ${i + 1} 次檢查返回 false，繼續重試...`)
+      }
+    } catch (error) {
+      console.error(`❌ 第 ${i + 1} 次好友狀態檢查失敗:`, error)
+      hasError = true
+      // 發生錯誤時繼續重試，不中斷
+    }
+    
+    // 如果不是最後一次嘗試，等待一段時間再重試
+    if (i < retries - 1) {
+      await new Promise(resolve => setTimeout(resolve, delay))
+    }
+  }
+
+  // 所有嘗試都完成
+  if (hasError) {
+    // 如果過程中發生錯誤，返回 undefined 表示檢查結果不確定
+    console.warn('⚠️ 好友狀態檢查過程中發生錯誤，結果不確定')
+    return undefined
+  }
+
+  // 所有檢查都返回 false，明確為非好友
+  console.log('❌ 所有檢查都返回 false，確認非好友狀態')
+  return false
+}
+
 // 檢查好友狀態並處理（進入網址時立即檢查）
 async function checkAndHandleFriendStatus() {
   console.log('🔍 進入網址時立即檢查好友狀態...')
@@ -298,6 +379,7 @@ async function checkAndHandleFriendStatus() {
     }
     
     // 防重複導向機制：檢查是否在短時間內已經導向過
+    // 但只有在明確檢查到非好友狀態時才設置冷卻時間
     const lastRedirectTime = sessionStorage.getItem('lastFriendRedirectTime')
     const now = Date.now()
     const REDIRECT_COOLDOWN = 5000 // 5 秒冷卻時間
@@ -310,40 +392,37 @@ async function checkAndHandleFriendStatus() {
       }
     }
     
-    // 檢查好友狀態
-    console.log('🔍 開始檢查好友狀態...')
-    const checks = []
-    for (let i = 0; i < 3; i++) {
-      checks.push(liff.getFriendship())
-    }
-    const results = await Promise.all(checks)
-    console.log('🔍 多次檢查的結果:', results)
-    console.log('🔍 每次檢查的 friendFlag:', results.map(r => r?.friendFlag))
-    
-    // 改進檢查邏輯：只要有一次檢查返回 true，就認為是好友（適應 API 快取延遲）
-    const hasTrue = results.some(r => r && typeof r.friendFlag === 'boolean' && r.friendFlag === true)
-    const currentFriendStatus = hasTrue
+    // 使用序列重試機制檢查好友狀態
+    console.log('🔍 開始使用序列重試機制檢查好友狀態...')
+    const currentFriendStatus = await checkFriendshipWithRetry(5, 300)
     
     console.log('🔍 進入網址時檢查結果:', currentFriendStatus)
-    console.log('🔍 是否有任何檢查返回 true:', hasTrue)
     
-    // 更新好友狀態
-    isFriend.value = currentFriendStatus
-    
-    // 如果不是好友，立即打開官方帳號頁面
-    if (!currentFriendStatus) {
+    // 根據檢查結果處理
+    if (currentFriendStatus === true) {
+      // 檢查到是好友
+      console.log('✅ 用戶是好友，可以正常使用')
+      isFriend.value = true
+      // 清除導向時間記錄（因為已經是好友了）
+      sessionStorage.removeItem('lastFriendRedirectTime')
+    } else if (currentFriendStatus === false) {
+      // 明確檢查到非好友狀態
       console.log('❌ 檢測到非好友狀態，立即導向官方帳號')
-      // 記錄導向時間
+      isFriend.value = false
+      // 記錄導向時間（只有在明確非好友時才設置）
       sessionStorage.setItem('lastFriendRedirectTime', now.toString())
       openOfficialAccount()
       alert('請先加入官方帳號為好友，才能使用此功能。')
     } else {
-      console.log('✅ 用戶是好友，可以正常使用')
-      // 清除導向時間記錄（因為已經是好友了）
-      sessionStorage.removeItem('lastFriendRedirectTime')
+      // currentFriendStatus === undefined，檢查結果不確定
+      console.warn('⚠️ 好友狀態檢查結果不確定，可能是網路問題或 API 快取延遲，不設置冷卻時間')
+      // 不更新 isFriend.value，保持當前狀態
+      // 不設置冷卻時間，允許立即重新檢查
+      // 不導向官方帳號，避免誤判
     }
   } catch (error) {
     console.error('❌ 檢查好友狀態時發生錯誤:', error)
+    // 發生錯誤時不設置冷卻時間，允許重新檢查
   }
 }
 

@@ -112,7 +112,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { roadshowService } from '../../services/roadshowService.js'
 import HistoryDetailModal from './HistoryDetailModal.vue'
 import UsageCounter from './UsageCounter.vue'
@@ -138,6 +138,9 @@ const error = ref(null)
 // 彈窗相關狀態
 const showDetailModal = ref(false)
 const selectedHistoryItem = ref(null)
+
+// 圖片刷新時間戳（用於強制刷新圖片）
+const imageRefreshTimestamp = ref(Date.now())
 
 // 獲取用戶歷史圖片
 async function loadUserHistory() {
@@ -217,14 +220,17 @@ function getHistoryImage(item) {
     if (params.width) queryParams.append('width', params.width);
     if (params.height) queryParams.append('height', params.height);
     
+    // 添加時間戳參數以強制刷新圖片（當頁面重新可見時）
+    queryParams.append('_t', imageRefreshTimestamp.value.toString());
+    
     const processedImageUrl = `${apiUrl}?${queryParams.toString()}`;
     console.log('🔄 歷史圖片使用處理 API:', processedImageUrl);
     
     return processedImageUrl;
   } catch (error) {
     console.error('❌ 處理歷史圖片時發生錯誤:', error);
-    // 如果處理失敗，返回原始圖片
-    return imageUrl;
+    // 如果處理失敗，返回原始圖片（也添加時間戳）
+    return `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}_t=${imageRefreshTimestamp.value}`;
   }
 }
 
@@ -329,12 +335,42 @@ watch(() => props.userId, (newUserId, oldUserId) => {
   }
 }, { immediate: false }); // 改為 false，避免無限迴圈
 
+// 處理頁面可見性變化
+function handleVisibilityChange() {
+  if (document.visibilityState === 'visible') {
+    console.log('👁️ 頁面重新可見，重新載入歷史列表並刷新圖片');
+    // 更新時間戳以強制刷新圖片
+    imageRefreshTimestamp.value = Date.now();
+    // 重新載入歷史列表
+    if (props.userId && props.userId !== '') {
+      loadUserHistory();
+    }
+  }
+}
+
 // 組件掛載時載入歷史
 onMounted(() => {
   if (props.userId && props.userId !== '') {
     loadUserHistory();
   } else {
     error.value = '沒有用戶ID，無法載入歷史';
+  }
+  
+  // 添加頁面可見性監聽器
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  
+  // 保存清理函數以便在卸載時使用
+  window._cleanupHistoryVisibilityListener = () => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+  };
+});
+
+// 組件卸載前清理
+onBeforeUnmount(() => {
+  // 清理頁面可見性監聽器
+  if (window._cleanupHistoryVisibilityListener) {
+    window._cleanupHistoryVisibilityListener();
+    delete window._cleanupHistoryVisibilityListener;
   }
 });
 </script>

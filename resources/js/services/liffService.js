@@ -15,6 +15,64 @@ class LiffService {
   }
 
   /**
+   * 使用序列重試機制檢查好友狀態
+   * @param {number} retries - 重試次數，預設為 5
+   * @param {number} delay - 延遲時間（毫秒），預設為 300
+   * @returns {Promise<boolean|undefined>} 好友狀態，true 為好友，false 為非好友，undefined 為檢查結果不確定
+   */
+  async getFriendshipWithRetry(retries = 5, delay = 300) {
+    if (typeof liff === 'undefined' || !this.isInitialized) {
+      console.warn('⚠️ LIFF 未初始化，無法檢查好友狀態')
+      return undefined
+    }
+
+    if (!liff.isLoggedIn()) {
+      console.warn('⚠️ 用戶未登入，無法檢查好友狀態')
+      return undefined
+    }
+
+    let hasError = false
+
+    for (let i = 0; i < retries; i++) {
+      try {
+        const friendship = await liff.getFriendship()
+        console.log(`🔍 好友狀態檢查 (${i + 1}/${retries}):`, friendship?.friendFlag)
+        
+        // 如果檢查到是好友，立即返回 true
+        if (friendship && friendship.friendFlag === true) {
+          console.log(`✅ 在第 ${i + 1} 次檢查時確認是好友`)
+          return true
+        }
+        
+        // 如果檢查到明確為 false，記錄但繼續重試（可能是快取延遲）
+        if (friendship && friendship.friendFlag === false) {
+          console.log(`⚠️ 第 ${i + 1} 次檢查返回 false，繼續重試...`)
+        }
+      } catch (error) {
+        console.error(`❌ 第 ${i + 1} 次好友狀態檢查失敗:`, error)
+        hasError = true
+        // 發生錯誤時繼續重試，不中斷
+      }
+      
+      // 如果不是最後一次嘗試，等待一段時間再重試
+      if (i < retries - 1) {
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+    }
+
+    // 所有嘗試都完成
+    if (hasError) {
+      // 如果過程中發生錯誤，返回 undefined 表示檢查結果不確定
+      console.warn('⚠️ 好友狀態檢查過程中發生錯誤，結果不確定')
+      return undefined
+    }
+
+    // 所有檢查都返回 false，明確為非好友
+    console.log('❌ 所有檢查都返回 false，確認非好友狀態')
+    return false
+  }
+
+  /**
    * 完整的 LIFF 初始化流程（包含登入驗證）
    * @param {Object} options - 配置選項
    * @param {string} options.userId - 用戶 ID 響應式變數
@@ -142,18 +200,23 @@ class LiffService {
       }
       
       this.userId = window.uid
+      this.isInitialized = true
       
-      const friendship = await liff.getFriendship()
-      console.log('🔍 完整的好友狀態物件:', friendship)
-      console.log('🔍 friendFlag 值:', friendship.friendFlag)
-      console.log('🔍 friendFlag 類型:', typeof friendship.friendFlag)
+      // 使用序列重試機制檢查好友狀態
+      console.log('🔍 開始使用序列重試機制檢查好友狀態...')
+      const friendStatus = await this.getFriendshipWithRetry(5, 300)
       
-      if (!friendship.friendFlag) {
+      if (friendStatus === true) {
+        console.log('✅ 用戶是好友')
+        return {
+          success: true,
+          isLoggedIn: true,
+          isFriend: true,
+          userId: this.userId,
+          message: 'LIFF 初始化成功'
+        }
+      } else if (friendStatus === false) {
         console.log('❌ 用戶未加入好友或已封鎖')
-        let localmbtiType = ''
-        let externalUserId = ''
-        const urlParams = new URLSearchParams(window.location.search)
-        
         return {
           success: true,
           isLoggedIn: true,
@@ -161,18 +224,16 @@ class LiffService {
           userId: this.userId,
           message: '用戶已登入但未加入好友'
         }
-      }
-      
-      console.log('✅ 用戶是好友')
-      
-      this.isInitialized = true
-      
-      return {
-        success: true,
-        isLoggedIn: true,
-        isFriend: true,
-        userId: this.userId,
-        message: 'LIFF 初始化成功'
+      } else {
+        // friendStatus === undefined，檢查結果不確定
+        console.warn('⚠️ 好友狀態檢查結果不確定，可能是網路問題或 API 快取延遲')
+        return {
+          success: true,
+          isLoggedIn: true,
+          isFriend: undefined,
+          userId: this.userId,
+          message: '用戶已登入，但好友狀態檢查結果不確定'
+        }
       }
       
     } catch (error) {
