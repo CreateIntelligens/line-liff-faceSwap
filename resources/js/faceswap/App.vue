@@ -51,6 +51,7 @@ const currentStep = ref('faceswap-home') // 初始狀態設定為換臉首頁
 const isInitialized = ref(false)
 const userUsage = ref(0) // 用戶已生成的圖片數量
 const isLiffInitialized = ref(false)
+const isLiffInitializing = ref(false) // LIFF 初始化中狀態
 const isFriend = ref(false) // 好友狀態，默認為 false，等待 LIFF 初始化後確認
 const startWithHistory = ref(false) // 是否在結果頁直接顯示歷史紀錄
 const isWaitingForFriend = ref(false) // 是否正在等待用戶加入好友
@@ -96,6 +97,7 @@ function addDevPrefixIfNeeded(userIdValue) {
 // LIFF 初始化函數
 async function initializeLiff() {
   try {
+    isLiffInitializing.value = true
     console.log('🔧 開始初始化 LIFF...')
     
     // 使用完整的 LIFF 初始化流程
@@ -181,6 +183,7 @@ async function initializeLiff() {
     }
     
     isLiffInitialized.value = true
+    isLiffInitializing.value = false
     console.log('🔧 LIFF 初始化完成，userId:', userId.value, 'userName:', userName.value)
     
     // 初始化完成後，根據好友狀態決定是否需要檢查
@@ -197,6 +200,7 @@ async function initializeLiff() {
     }
   } catch (error) {
     console.error('❌ LIFF 初始化過程發生錯誤:', error)
+    isLiffInitializing.value = false
     // 錯誤時使用測試值或配置的測試 ID
     const testUserId = window.endpoint?.testUserId
     if (testUserId && testUserId.trim() !== '') {
@@ -212,6 +216,7 @@ async function initializeLiff() {
     isFriend.value = false
     console.log('👥 好友狀態: 初始化錯誤，無法檢查')
     isLiffInitialized.value = true
+    isLiffInitializing.value = false
   }
 }
 
@@ -680,6 +685,25 @@ async function enterFaceSwap() {
   console.log('🔍 當前 isFriend.value:', isFriend.value)
   console.log('🔍 isFriend.value === false:', isFriend.value === false)
   console.log('🔍 typeof isFriend.value:', typeof isFriend.value)
+  
+  // 如果 LIFF 還在初始化中，等待初始化完成
+  if (isLiffInitializing.value) {
+    console.log('⏳ LIFF 正在初始化中，等待初始化完成...')
+    // 輪詢等待初始化完成，最多等待 10 秒
+    const maxWaitTime = 10000 // 10 秒
+    const checkInterval = 100 // 每 100ms 檢查一次
+    const startTime = Date.now()
+    
+    while (isLiffInitializing.value && (Date.now() - startTime) < maxWaitTime) {
+      await new Promise(resolve => setTimeout(resolve, checkInterval))
+    }
+    
+    if (isLiffInitializing.value) {
+      console.warn('⚠️ 等待初始化超時，繼續執行')
+    } else {
+      console.log('✅ LIFF 初始化已完成，繼續執行')
+    }
+  }
   
   // 強制重新檢查好友狀態（不依賴快取）
   // 只在 LIFF 已啟用且已初始化的情況下才重新檢查
