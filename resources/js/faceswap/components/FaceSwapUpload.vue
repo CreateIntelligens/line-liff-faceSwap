@@ -302,6 +302,7 @@ const gifStartTime = ref(null);
 const minGifDuration = 7000; // 最少顯示 5 秒（毫秒）
 const taskStatusCheckInterval = ref(null);
 const currentTaskId = ref(null);
+const hasShownFailedAlert = ref(false); // 防止重複顯示失敗訊息
 
 
 // 檢查是否為 dev_user（不受限制）
@@ -434,6 +435,7 @@ function goBack() {
   }
   gifStartTime.value = null;
   currentTaskId.value = null;
+  hasShownFailedAlert.value = false;
   emit("back");
 }
 
@@ -446,6 +448,44 @@ async function performSingleStatusCheck() {
   
   try {
     const result = await roadshowService.checkTaskStatus(currentTaskId.value);
+    
+    // 檢查任務狀態是否為 failed
+    const isFailed = result && (
+      result.status === 'failed' || 
+      result.result?.status === 'failed' ||
+      (result.originalResponse && result.originalResponse.result?.status === 'failed')
+    );
+    
+    // 如果任務失敗，立即停止
+    if (isFailed) {
+      console.error('❌ 任務狀態為 failed，停止生成流程');
+      
+      // 清除定時器
+      if (taskStatusCheckInterval.value) {
+        clearInterval(taskStatusCheckInterval.value);
+        taskStatusCheckInterval.value = null;
+      }
+      
+      // 重置狀態
+      isGenerating.value = false;
+      showFirstDialog.value = false;
+      showSecondDialog.value = false;
+      showThirdDialog.value = false;
+      gifStartTime.value = null;
+      currentTaskId.value = null;
+      
+      // 只顯示一次錯誤訊息
+      if (!hasShownFailedAlert.value) {
+        hasShownFailedAlert.value = true;
+        alert('生成失敗：任務處理失敗，請稍後再試');
+        // 延遲重置標記，確保不會重複顯示
+        setTimeout(() => {
+          hasShownFailedAlert.value = false;
+        }, 1000);
+      }
+      
+      return { shouldStop: true };
+    }
     
     // 檢查任務是否完成
     const isCompleted = result && 
@@ -464,6 +504,9 @@ async function performSingleStatusCheck() {
         taskStatusCheckInterval.value = null;
       }
       
+      // 任務真正完成後才刷新使用量
+      emit('refreshUsage');
+      
       // 跳轉到結果頁面
       emit("generate", {
         uploadedImage: uploadedImage.value,
@@ -473,6 +516,7 @@ async function performSingleStatusCheck() {
       // 重置狀態
       gifStartTime.value = null;
       currentTaskId.value = null;
+      hasShownFailedAlert.value = false;
       return { shouldStop: true };
     } else if (isCompleted && !hasMinDuration) {
       // 任務已完成但還沒達到最少顯示時間，繼續等待
@@ -523,7 +567,15 @@ async function performSingleStatusCheck() {
       gifStartTime.value = null;
       currentTaskId.value = null;
       
-      alert(`生成失敗：${result.error.message || '任務處理失敗'}`);
+      // 只顯示一次錯誤訊息
+      if (!hasShownFailedAlert.value) {
+        hasShownFailedAlert.value = true;
+        alert(`生成失敗：${result.error.message || '任務處理失敗'}`);
+        setTimeout(() => {
+          hasShownFailedAlert.value = false;
+        }, 1000);
+      }
+      
       return { shouldStop: true };
     }
     
@@ -541,6 +593,9 @@ async function checkTaskStatusWhileShowingGif() {
     console.error('❌ 沒有 taskId，無法檢查任務狀態');
     return;
   }
+  
+  // 重置失敗標記（開始新的檢查流程）
+  hasShownFailedAlert.value = false;
   
   // 清除之前的定時器（如果存在）
   if (taskStatusCheckInterval.value) {
@@ -600,11 +655,11 @@ async function generateFaceSwap() {
       const result = await roadshowService.generateAvatar(formData);
       
       if (result && (result.success || result.status === 'success')) {
-        // 生成請求成功後，立即通知父組件刷新使用量
-        // 確保使用量數字及時更新，與服務器數據一致
-        emit('refreshUsage');
+        // 重置失敗標記
+        hasShownFailedAlert.value = false;
         
         // 保存 taskId 用於狀態檢查
+        // 注意：不在這裡刷新使用量，等任務真正完成（status === 'completed'）時才刷新
         currentTaskId.value = result.result?.task_id || result.result?.id || result.task_id;
         
         // 立即調用一次 check status API
@@ -687,6 +742,7 @@ async function generateFaceSwap() {
       }
       gifStartTime.value = null;
       currentTaskId.value = null;
+      hasShownFailedAlert.value = false;
       
       if (error.message.includes('生成限制')) {
         // 再次刷新使用量以確保數據同步
@@ -714,6 +770,7 @@ onUnmounted(() => {
   // 重置狀態
   gifStartTime.value = null;
   currentTaskId.value = null;
+  hasShownFailedAlert.value = false;
 });
 </script>
 
