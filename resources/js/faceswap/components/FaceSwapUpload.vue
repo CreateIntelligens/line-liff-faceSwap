@@ -223,6 +223,39 @@
         </div>
       </div>
     </div>
+
+    <!-- 服務關閉警告模態框 -->
+    <div
+      v-if="showServiceClosedModal"
+      class="fixed inset-0 flex items-center justify-center z-50 bg-white bg-opacity-50"
+      @click.self="closeServiceClosedModal"
+    >
+      <div class="bg-white rounded-md p-6 w-[320px] max-w-[90%] flex flex-col items-center justify-center gap-4">
+        <!-- 警告訊息內容 -->
+        <div class="flex flex-col items-center gap-3 text-center">
+          <div class="text-lg font-bold text-gray-800 cp-font">
+            感謝大家熱烈支持~
+          </div>
+          <div class="text-base font-medium text-gray-800 cp-font">
+            活動太受歡迎提前截止!
+          </div>
+          <div class="text-base font-medium text-gray-800 cp-font">
+            歡迎關注<span class="font-bold">【Fanpokka 粉絲通行證】</span>
+          </div>
+          <div class="text-base font-medium text-gray-800 cp-font">
+            獲取更多活動資訊,期待下次再相見!
+          </div>
+        </div>
+        
+        <!-- 取消按鈕 -->
+        <button
+          @click="closeServiceClosedModal"
+          class="mt-2 px-6 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-gray-800 font-medium transition-colors cp-font"
+        >
+          確定
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -262,6 +295,7 @@ const isGenerating = ref(false);
 const showFirstDialog = ref(false);
 const showSecondDialog = ref(false);
 const showThirdDialog = ref(false);
+const showServiceClosedModal = ref(false);
 
 // GIF 動畫顯示時間追蹤
 const gifStartTime = ref(null);
@@ -289,6 +323,19 @@ const canGenerate = computed(() => {
 // 計算是否已達上限（dev_user 不受限制）
 const isAtLimit = computed(() => {
   return !isDevUser.value && props.userUsage >= appConfig.maxUsageLimit;
+});
+
+// 檢查服務是否已關閉
+const isServiceClosed = computed(() => {
+  if (typeof window === 'undefined' || !window.endpoint) {
+    return false;
+  }
+  const isClosed = window.endpoint.isClosed;
+  // 處理字串 'true'/'false' 或布林值
+  if (typeof isClosed === 'string') {
+    return isClosed === 'true';
+  }
+  return Boolean(isClosed);
 });
 
 // 檔案大小和格式限制
@@ -347,6 +394,12 @@ function handleDrop(event) {
 
 // 處理求籤圖點擊事件
 function handleLotsClick() {
+  // 優先檢查服務是否已關閉
+  if (isServiceClosed.value) {
+    showServiceClosedModal.value = true;
+    return;
+  }
+  
   // 檢查是否可以生成
   if (!canGenerate.value) {
     // 如果已達限制，顯示提示訊息
@@ -359,7 +412,10 @@ function handleLotsClick() {
   generateFaceSwap();
 }
 
-
+// 關閉服務關閉警告模態框
+function closeServiceClosedModal() {
+  showServiceClosedModal.value = false;
+}
 
 function goBack() {
   if (uploadedImagePreview.value) {
@@ -511,6 +567,12 @@ async function checkTaskStatusWhileShowingGif() {
 }
 
 async function generateFaceSwap() {
+  // 優先檢查服務是否已關閉（雙重保護）
+  if (isServiceClosed.value) {
+    showServiceClosedModal.value = true;
+    return;
+  }
+  
   // 檢查是否已達上限（dev_user 不受限制）- 在函數開頭立即檢查
   if (isAtLimit.value) {
     alert('已達個人生成上限，感謝您的參與')

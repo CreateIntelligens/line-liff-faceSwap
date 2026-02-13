@@ -47,6 +47,10 @@
       timeout: 30000,
       // 調試模式 - 設為 true 可以在控制台看到詳細日誌
       debug: true,
+      // 從後端傳遞是否關閉服務的狀態（開發時預設為 false，後端會用 Blade 模板語法覆蓋）
+      isClosed: true,
+      // Fanpokka 粉絲通行證連結（預留功能，後端可配置）
+      fanpokkaLink: '#',
       
       // ===== 圖片處理 API 配置 =====
       // 圖片處理 API 端點 - 修改這裡來改變圖片處理服務器
