@@ -16,6 +16,10 @@ import drawlotsbgImg from '../../images/drawlotsbg.png'
 import drawAgainImg from '../../images/draw_again.png'
 import shareImg from '../../images/share.png'
 import disableImg from '../../images/disable.png'
+import enterpriseImg from '../../images/enterprise.png'
+import enterpriseImageImg from '../../images/enterpriseImage.png'
+import enterpriseButtonClayImg from '../../images/enterprisebuttonclay.png'
+import enterpriseButtonGrayImg from '../../images/enterprisebuttongray.png'
 
 // 使用 Vite 的動態導入來獲取圖片 URL，建置時會自動處理雜湊
 export const imageUrls = {
@@ -39,4 +43,8 @@ export const imageUrls = {
   drawAgain: drawAgainImg,
   share: shareImg,
   disable: disableImg,
+  enterprise: enterpriseImg,
+  enterpriseImage: enterpriseImageImg,
+  enterpriseButtonClay: enterpriseButtonClayImg,
+  enterpriseButtonGray: enterpriseButtonGrayImg,
 };

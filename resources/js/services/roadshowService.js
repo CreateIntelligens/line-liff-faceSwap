@@ -64,7 +64,25 @@ export const roadshowService = {
     async getUserHistory(userId) {
         try {
             const config = getApiConfig();
-            const url = `${config.baseURL}/2026_draw_face_swap/user/${userId}/avatars`;
+            
+            // 檢查是否為 Email 模式（email 格式）
+            const isEmail = userId && userId.includes('@');
+            
+            // 檢查是否為本地開發環境
+            const isLocalhost = typeof window !== 'undefined' && 
+                               (window.location.hostname === 'localhost' || 
+                                window.location.hostname === '127.0.0.1' ||
+                                window.location.hostname === '0.0.0.0');
+            
+            // Email 模式 + 本地開發環境：使用測試 ID（後端還不支援 email）
+            let effectiveUserId = userId;
+            if (isEmail && isLocalhost) {
+                effectiveUserId = (typeof window !== 'undefined' && window.endpoint?.testUserId) || 'dev_user_';
+                console.log('🔧 Email 模式（本地開發）：使用測試 userId 查詢歷史（後端尚未支援 email）:', effectiveUserId);
+                console.log('📧 原始 email:', userId);
+            }
+            
+            const url = `${config.baseURL}/2026_draw_face_swap/user/${effectiveUserId}/avatars`;
             
             const response = await fetch(url, {
                 method: 'GET',
@@ -123,13 +141,36 @@ export const roadshowService = {
             const config = getApiConfig();
             const url = `${config.baseURL}/2026_draw_face_swap`;
             
-            // 處理測試用戶 ID：如果前端有 dev_user_ 前綴，使用後端支援的測試格式
+            // 處理用戶 ID
             const userId = formData.get('userId');
-            if (userId && userId.startsWith('dev_user_')) {
+            
+            // 檢查是否為 Email 模式（email 格式）
+            const isEmail = userId && userId.includes('@');
+            
+            // 檢查是否為本地開發環境
+            const isLocalhost = typeof window !== 'undefined' && 
+                               (window.location.hostname === 'localhost' || 
+                                window.location.hostname === '127.0.0.1' ||
+                                window.location.hostname === '0.0.0.0');
+            
+            // Email 模式 + 本地開發環境：使用測試 ID（後端還不支援 email）
+            if (isEmail && isLocalhost) {
+                const testUserId = (typeof window !== 'undefined' && window.endpoint?.testUserId) || 'dev_user_';
+                formData.set('userId', testUserId);
+                console.log('🔧 Email 模式（本地開發）：使用測試 userId（後端尚未支援 email）:', testUserId);
+                console.log('📧 原始 email:', userId);
+            }
+            // 處理測試用戶 ID：如果前端有 dev_user_ 前綴，使用後端支援的測試格式
+            else if (userId && userId.startsWith('dev_user_')) {
                 // 使用後端支援的測試 user id 格式：dev_user_
                 const testUserId = (typeof window !== 'undefined' && window.endpoint?.testUserId) || 'dev_user_';
                 formData.set('userId', testUserId);
                 console.log('🔧 使用測試 userId（後端支援格式）:', testUserId);
+            }
+            // Email 模式（非本地環境）：提示後端尚未支援
+            else if (isEmail && !isLocalhost) {
+                console.warn('⚠️ Email 模式：後端 API 尚未支援 email 作為 userId');
+                // 繼續使用 email，讓後端返回錯誤（如果後端已更新則可以正常運作）
             }
             
             const response = await fetch(url, {

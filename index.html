@@ -48,7 +48,7 @@
       // 調試模式 - 設為 true 可以在控制台看到詳細日誌
       debug: true,
       // 從後端傳遞是否關閉服務的狀態（開發時預設為 false，後端會用 Blade 模板語法覆蓋）
-      isClosed: true,
+      isClosed: false,
       // Fanpokka 粉絲通行證連結（預留功能，後端可配置）
       fanpokkaLink: '#',
       
@@ -74,7 +74,13 @@
       basicId: '@299fvzdf',
       // 是否啟用 LIFF 功能
       enableLiff: true,
-      testUserId: 'dev_user_'
+      testUserId: 'dev_user_',
+      
+      // ===== 模式配置 =====
+      // 模式：'auto' 自動偵測 | 'liff' 強制 LIFF 模式 | 'email' 強制 Email 模式
+      // 自動偵測邏輯：檢查是否在 LIFF 環境，是則使用 'liff'，否則使用 'email'
+      // 也可以透過 URL 參數 ?mode=liff 或 ?mode=email 來覆蓋此設定
+      mode: 'auto'
     };
     
     // 動態設定 OG / LINE 圖片與 URL

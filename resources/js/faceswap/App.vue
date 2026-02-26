@@ -1,6 +1,12 @@
 <template>
   <!-- iphone15 -->
   <div class="app">
+    <!-- Email 表單頁面（Email 模式專用） -->
+    <EmailForm
+      v-if="currentStep === 'email-form'"
+      @submit="handleEmailSubmit"
+    />
+
     <!-- Face Swap Homepage -->
     <FaceSwapHomepage
       v-if="currentStep === 'faceswap-home'"
@@ -39,8 +45,10 @@ import { ref, onMounted, onBeforeMount, onBeforeUnmount, nextTick } from 'vue'
 import FaceSwapHomepage from './components/FaceSwapHomepage.vue'
 import FaceSwapUpload from './components/FaceSwapUpload.vue'
 import FaceSwapResult from './components/FaceSwapResult.vue'
+import EmailForm from './components/EmailForm.vue'
 import { roadshowService } from '../services/roadshowService.js'
 import { liffService } from '../services/liffService.js'
+import { modeService } from '../services/modeService.js'
 import { API_CONFIG } from '../config/config.js'
 
 // 狀態
@@ -56,6 +64,7 @@ const isFriend = ref(false) // 好友狀態，默認為 false，等待 LIFF 初�
 const startWithHistory = ref(false) // 是否在結果頁直接顯示歷史紀錄
 const isWaitingForFriend = ref(false) // 是否正在等待用戶加入好友
 const friendCheckInterval = ref(null) // 好友狀態檢查定時器的引用
+const currentMode = ref(null) // 當前模式：'liff' 或 'email'
 
 // 檢查是否為本地開發環境
 function isLocalDevEnvironment() {
@@ -622,10 +631,50 @@ async function checkFriendStatusOnReturn() {
   }
 }
 
+// 模式初始化函數
+function initializeMode() {
+  console.log('🔧 開始初始化模式服務...')
+  const result = modeService.initialize()
+  if (result.success) {
+    currentMode.value = result.mode
+    console.log('✅ 模式服務初始化完成，當前模式:', currentMode.value)
+    
+    // Email 模式：不需要 LIFF 初始化，但保持首頁狀態
+    if (currentMode.value === 'email') {
+      console.log('📧 Email 模式：從首頁開始')
+      return true // 返回 true 表示不需要繼續 LIFF 初始化
+    }
+    
+    // LIFF 模式：繼續原有流程
+    console.log('📱 LIFF 模式：繼續原有流程')
+    return false // 返回 false 表示需要繼續 LIFF 初始化
+  }
+  return false
+}
+
 // 在掛載前執行初始化
 onBeforeMount(async () => {
-  await initializeLiff() // 先初始化 LIFF
-  await initializeApp() // 再初始化應用程序
+  // 先初始化模式服務
+  const skipLiff = initializeMode()
+  
+  if (!skipLiff) {
+    // LIFF 模式：初始化 LIFF
+    await initializeLiff()
+  } else {
+    // Email 模式：不需要 LIFF 初始化，但需要設置 userId（從 sessionStorage 讀取或等待表單提交）
+    const savedEmail = sessionStorage.getItem('faceswap_email')
+    if (savedEmail) {
+      userId.value = savedEmail
+      console.log('📧 從 sessionStorage 讀取 email:', savedEmail)
+      // 如果有保存的 email，查詢使用量
+      await refreshUserUsage()
+    }
+  }
+  
+  // 初始化應用程序（Email 模式時會跳過，因為 currentStep 已經是 'email-form'）
+  if (currentStep.value !== 'email-form') {
+    await initializeApp()
+  }
 })
 
 // 組件掛載後的額外處理
@@ -682,6 +731,15 @@ onBeforeUnmount(() => {
 // 進入臉部交換工具
 async function enterFaceSwap() {
   console.log('🔍 enterFaceSwap 被調用')
+  
+  // Email 模式：直接進入表單頁面
+  if (currentMode.value === 'email') {
+    console.log('📧 Email 模式：進入表單頁面')
+    currentStep.value = 'email-form'
+    return
+  }
+  
+  // LIFF 模式：繼續原有流程（檢查好友狀態等）
   console.log('🔍 當前 isFriend.value:', isFriend.value)
   console.log('🔍 isFriend.value === false:', isFriend.value === false)
   console.log('🔍 typeof isFriend.value:', typeof isFriend.value)
@@ -885,10 +943,35 @@ async function handleShowHistory() {
   currentStep.value = 'result'
 }
 
+// 處理 Email 表單提交
+async function handleEmailSubmit(data) {
+  console.log('📧 Email 表單已提交:', data)
+  
+  // 設置 userId 為 email
+  userId.value = data.userId
+  userName.value = data.userInfo.name || data.userId
+  
+  // 查詢用戶使用量
+  try {
+    await refreshUserUsage()
+    console.log('✅ 用戶使用量已更新:', userUsage.value)
+  } catch (error) {
+    console.error('❌ 查詢用戶使用量失敗:', error)
+  }
+  
+  // 進入上傳頁面
+  currentStep.value = 'upload'
+}
+
 // 返回上一步
 function goBack() {
   if (currentStep.value === 'upload') {
-    currentStep.value = 'faceswap-home'
+    // Email 模式：返回表單頁面；LIFF 模式：返回首頁
+    if (currentMode.value === 'email') {
+      currentStep.value = 'email-form'
+    } else {
+      currentStep.value = 'faceswap-home'
+    }
   } else if (currentStep.value === 'result') {
     currentStep.value = 'upload'
   }

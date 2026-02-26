@@ -142,6 +142,7 @@ import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
 import FaceSwapHistory from './FaceSwapHistory.vue'
 import UsageCounter from './UsageCounter.vue'
 import { roadshowService } from '../../services/roadshowService.js'
+import { modeService } from '../../services/modeService.js'
 import { imageUrls } from '@/config/imageUrls'
 import { appConfig } from '@/config/appConfig'
 
@@ -282,6 +283,32 @@ async function shareViaLiff() {
   // 根據官方文件，result 為 null 代表使用者取消
   if (result === null) {
     throw new Error('已取消分享')
+  }
+}
+
+// 透過 Web Share API 分享（Email 模式使用）
+async function shareViaWeb() {
+  if (!navigator.share) {
+    throw new Error('目前裝置暫不支援分享功能')
+  }
+
+  const shareUrl = (window.endpoint && window.endpoint.domain) 
+    ? `${window.endpoint.domain}`
+    : 'https://line-liff-face-swap-draw-lots-2026.vercel.app'
+  const shareText = '面相指路，靈籤定運\n從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~\n開始測算：' + shareUrl
+
+  try {
+    await navigator.share({
+      title: '面相指路，靈籤定運',
+      text: shareText,
+      url: shareUrl
+    })
+  } catch (error) {
+    // 如果用戶取消分享，navigator.share 會拋出 AbortError
+    if (error.name === 'AbortError') {
+      throw new Error('已取消分享')
+    }
+    throw error
   }
 }
 
@@ -676,28 +703,59 @@ async function downloadToOfficial() {
   try {
     isDownloading.value = true
     
-    // 本地測試：顯示分享文字
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      const shareUrl = (window.endpoint && window.endpoint.domain) 
-        ? `${window.endpoint.domain}`
-        : 'https://line-liff-face-swap-draw-lots-2026.vercel.app'
-      const shareText = '面相指路，靈籤定運\n從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~\n開始測算：' + shareUrl
-      console.log('📤 分享內容:', shareText)
-      alert('分享內容：\n\n' + shareText)
-      showMessage('分享內容已顯示（本地測試模式）', 'success')
-      return
+    // 初始化模式服務（如果尚未初始化）
+    if (!modeService.isInitialized) {
+      modeService.initialize()
     }
     
-    // 生產環境：透過 LIFF 分享
+    // 根據模式選擇分享方式
+    const currentMode = modeService.getMode()
     loadingMessage.value = '正在分享...'
     
-    console.log('📤 準備分享文字和連結')
-    await shareViaLiff()
-    showMessage('已成功分享！', 'success')
+    console.log('📤 準備分享文字和連結，當前模式:', currentMode)
+    
+    if (currentMode === 'liff') {
+      // LIFF 模式：使用 LIFF 分享
+      await shareViaLiff()
+      showMessage('已成功分享！', 'success')
+    } else {
+      // Email 模式：使用 Web Share API
+      try {
+        await shareViaWeb()
+        showMessage('已成功分享！', 'success')
+      } catch (webShareError) {
+        // Web Share API 不支援或失敗時，降級為顯示分享文字
+        console.warn('⚠️ Web Share API 不可用，降級為顯示分享文字:', webShareError)
+        const shareUrl = (window.endpoint && window.endpoint.domain) 
+          ? `${window.endpoint.domain}`
+          : 'https://line-liff-face-swap-draw-lots-2026.vercel.app'
+        const shareText = '面相指路，靈籤定運\n從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~\n開始測算：' + shareUrl
+        
+        // 在手機瀏覽器上，嘗試複製到剪貼簿
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          try {
+            await navigator.clipboard.writeText(shareText)
+            showMessage('分享內容已複製到剪貼簿', 'success')
+            console.log('📋 分享內容已複製到剪貼簿')
+          } catch (clipboardError) {
+            // 複製失敗，顯示 alert
+            alert('分享內容：\n\n' + shareText)
+            showMessage('分享內容已顯示', 'success')
+          }
+        } else {
+          // 不支援剪貼簿，直接顯示 alert
+          alert('分享內容：\n\n' + shareText)
+          showMessage('分享內容已顯示', 'success')
+        }
+      }
+    }
     
   } catch (error) {
     console.error('❌ 分享流程失敗:', error)
-    showMessage(`分享失敗: ${error.message}`, 'error')
+    
+    if (error.message !== '已取消分享') {
+      showMessage(`分享失敗: ${error.message}`, 'error')
+    }
   } finally {
     isDownloading.value = false
     loadingMessage.value = '檢查任務狀態...'
