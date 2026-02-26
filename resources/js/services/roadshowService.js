@@ -22,8 +22,12 @@ const getApiConfig = () => {
 
 /**
  * 將 email 轉換為後端 ID
- * 由於後端目前只接受純 dev_user_ 格式，我們使用統一的後端 ID
+ * 
+ * ⚠️ 臨時方案：由於後端目前只接受純 dev_user_ 格式，我們使用統一的後端 ID
  * 但會在前端使用 localStorage 來追蹤每個 email 的使用量
+ * 
+ * TODO: 等待後端 API 支援 email 作為 userId 後，可以直接使用 email，並移除前端 localStorage 追蹤邏輯
+ * 
  * @param {string} email - 用戶 email
  * @returns {string} 後端 ID（統一使用 dev_user_）
  */
@@ -32,12 +36,14 @@ function emailToBackendId(email) {
         return email; // 如果不是 email，直接返回
     }
     
-    // 後端目前只接受純 dev_user_ 格式
+    // ⚠️ 臨時方案：後端目前只接受純 dev_user_ 格式
     // 我們使用統一的後端 ID，但會在前端使用 localStorage 來追蹤每個 email 的使用量
+    // TODO: 當後端支援 email 作為 userId 後，可以直接返回 email
     const backendId = (typeof window !== 'undefined' && window.endpoint?.testUserId) || 'dev_user_';
     
     console.log('🔧 Email 模式：使用統一後端 ID（前端會追蹤每個 email 的使用量）:', backendId);
     console.log('📧 原始 email:', email);
+    console.log('⚠️ 注意：這是臨時方案，等待後端支援 email 作為 userId');
     
     return backendId;
 }
@@ -90,13 +96,14 @@ export const roadshowService = {
             // 檢查是否為 Email 模式（email 格式）
             const isEmail = userId && userId.includes('@');
             
-            // Email 模式：將 email 轉換為唯一的後端 ID
-            // 這樣不同 email 會有不同的後端 ID，不會共享使用量限制
-            // TODO: 當後端 API 直接支援 email 後，可以直接使用 email
+            // ⚠️ 臨時方案：Email 模式將 email 轉換為後端 ID
+            // 由於後端目前只接受 dev_user_ 格式，我們使用統一的後端 ID
+            // 使用量由前端 localStorage 追蹤（見 App.vue 的 refreshUserUsage）
+            // TODO: 當後端 API 支援 email 作為 userId 後，可以直接使用 email
             let effectiveUserId = userId;
             if (isEmail) {
                 effectiveUserId = emailToBackendId(userId);
-                console.log('🔧 Email 模式：使用唯一後端 ID 查詢歷史:', effectiveUserId);
+                console.log('🔧 Email 模式：使用統一後端 ID 查詢歷史（前端會追蹤使用量）:', effectiveUserId);
                 console.log('📧 原始 email:', userId);
             }
             
@@ -165,16 +172,16 @@ export const roadshowService = {
             // 檢查是否為 Email 模式（email 格式）
             const isEmail = userId && userId.includes('@');
             
-            // Email 模式：將 email 轉換為唯一的後端 ID
-            // 這樣不同 email 會有不同的後端 ID，不會共享使用量限制
-            // 使用 dev_user_${hash} 格式以符合後端格式要求
-            // TODO: 當後端 API 直接支援 email 後，可以直接使用 email
+            // ⚠️ 臨時方案：Email 模式將 email 轉換為後端 ID
+            // 由於後端目前只接受 dev_user_ 格式，我們使用統一的後端 ID
+            // 使用量限制由前端 localStorage 追蹤（見 App.vue 的 refreshUserUsage 和 incrementEmailUsage）
+            // TODO: 當後端 API 支援 email 作為 userId 後，可以直接使用 email，並移除前端追蹤邏輯
             let isEmailMode = false;
             if (isEmail) {
                 const backendId = emailToBackendId(userId);
                 formData.set('userId', backendId);
                 isEmailMode = true;
-                console.log('🔧 Email 模式：使用唯一後端 ID:', backendId);
+                console.log('🔧 Email 模式：使用統一後端 ID（前端會追蹤使用量）:', backendId);
                 console.log('📧 原始 email:', userId);
             }
             // 處理測試用戶 ID：如果前端是純 dev_user_（沒有 hash 後綴），使用後端支援的測試格式

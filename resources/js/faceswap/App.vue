@@ -284,7 +284,9 @@ async function initializeApp() {
 // 添加一個單獨的函數來刷新用戶使用量
 async function refreshUserUsage() {
   try {
-    // Email 模式：使用 localStorage 追蹤每個 email 的使用量
+    // ⚠️ 臨時方案：Email 模式使用 localStorage 追蹤每個 email 的使用量
+    // 由於後端目前只接受 dev_user_ 格式，無法區分不同 email，所以在前端追蹤
+    // TODO: 當後端 API 支援 email 作為 userId 後，可以改為從後端獲取使用量，移除此 localStorage 邏輯
     if (currentMode.value === 'email' && userId.value && userId.value.includes('@')) {
       const storageKey = `email_usage_${userId.value}`;
       const storedUsage = localStorage.getItem(storageKey);
@@ -317,7 +319,9 @@ async function refreshUserUsage() {
   }
 }
 
-// Email 模式：增加使用量（在生成成功後調用）
+// ⚠️ 臨時方案：Email 模式增加使用量（在生成成功後調用）
+// 由於後端目前只接受 dev_user_ 格式，無法區分不同 email，所以在前端追蹤
+// TODO: 當後端 API 支援 email 作為 userId 後，可以移除此函數，改為從後端獲取使用量
 function incrementEmailUsage() {
   if (currentMode.value === 'email' && userId.value && userId.value.includes('@')) {
     const storageKey = `email_usage_${userId.value}`;
