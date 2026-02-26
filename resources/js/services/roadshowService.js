@@ -20,6 +20,40 @@ const getApiConfig = () => {
     };
 };
 
+/**
+ * 將 email 轉換為唯一的後端 ID
+ * 使用簡單的 hash 函數生成唯一 ID，確保不同 email 有不同的後端 ID
+ * @param {string} email - 用戶 email
+ * @returns {string} 唯一的後端 ID（格式：email_${hash}）
+ */
+function emailToBackendId(email) {
+    if (!email || !email.includes('@')) {
+        return email; // 如果不是 email，直接返回
+    }
+    
+    // 使用簡單的 hash 函數生成唯一 ID
+    // 使用 email 的 hash 值，確保相同 email 總是生成相同的 ID
+    let hash = 0;
+    for (let i = 0; i < email.length; i++) {
+        const char = email.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // 轉換為 32 位整數
+    }
+    
+    // 轉換為正數並轉為 36 進制（0-9a-z），取前 12 位
+    const hashStr = Math.abs(hash).toString(36).substring(0, 12);
+    
+    // 生成後端 ID：email_${hash}
+    const backendId = `email_${hashStr}`;
+    
+    console.log('🔧 Email 轉換為後端 ID:', {
+        email: email,
+        backendId: backendId
+    });
+    
+    return backendId;
+}
+
 export const roadshowService = {
     /**
      * 獲取模板列表
@@ -68,12 +102,13 @@ export const roadshowService = {
             // 檢查是否為 Email 模式（email 格式）
             const isEmail = userId && userId.includes('@');
             
-            // Email 模式：暫時使用測試 ID（後端還不支援 email）
-            // TODO: 當後端 API 支援 email 後，移除此邏輯
+            // Email 模式：將 email 轉換為唯一的後端 ID
+            // 這樣不同 email 會有不同的後端 ID，不會共享使用量限制
+            // TODO: 當後端 API 直接支援 email 後，可以直接使用 email
             let effectiveUserId = userId;
             if (isEmail) {
-                effectiveUserId = (typeof window !== 'undefined' && window.endpoint?.testUserId) || 'dev_user_';
-                console.log('🔧 Email 模式：使用測試 userId 查詢歷史（後端尚未支援 email）:', effectiveUserId);
+                effectiveUserId = emailToBackendId(userId);
+                console.log('🔧 Email 模式：使用唯一後端 ID 查詢歷史:', effectiveUserId);
                 console.log('📧 原始 email:', userId);
             }
             
@@ -142,12 +177,13 @@ export const roadshowService = {
             // 檢查是否為 Email 模式（email 格式）
             const isEmail = userId && userId.includes('@');
             
-            // Email 模式：暫時使用測試 ID（後端還不支援 email）
-            // TODO: 當後端 API 支援 email 後，移除此邏輯
+            // Email 模式：將 email 轉換為唯一的後端 ID
+            // 這樣不同 email 會有不同的後端 ID，不會共享使用量限制
+            // TODO: 當後端 API 直接支援 email 後，可以直接使用 email
             if (isEmail) {
-                const testUserId = (typeof window !== 'undefined' && window.endpoint?.testUserId) || 'dev_user_';
-                formData.set('userId', testUserId);
-                console.log('🔧 Email 模式：使用測試 userId（後端尚未支援 email）:', testUserId);
+                const backendId = emailToBackendId(userId);
+                formData.set('userId', backendId);
+                console.log('🔧 Email 模式：使用唯一後端 ID:', backendId);
                 console.log('📧 原始 email:', userId);
             }
             // 處理測試用戶 ID：如果前端有 dev_user_ 前綴，使用後端支援的測試格式
