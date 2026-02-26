@@ -284,6 +284,17 @@ async function initializeApp() {
 // 添加一個單獨的函數來刷新用戶使用量
 async function refreshUserUsage() {
   try {
+    // Email 模式：使用 localStorage 追蹤每個 email 的使用量
+    if (currentMode.value === 'email' && userId.value && userId.value.includes('@')) {
+      const storageKey = `email_usage_${userId.value}`;
+      const storedUsage = localStorage.getItem(storageKey);
+      const usageCount = storedUsage ? parseInt(storedUsage, 10) : 0;
+      userUsage.value = usageCount;
+      console.log('📧 Email 模式：從 localStorage 讀取使用量:', usageCount);
+      return usageCount;
+    }
+    
+    // LIFF 模式：從後端獲取使用量
     const data = await roadshowService.getUserHistory(userId.value)
     
     // 使用與FaceSwapHistory相同的相容性檢查
@@ -303,6 +314,18 @@ async function refreshUserUsage() {
   } catch (error) {
     console.error('❌ 刷新用戶使用量失敗:', error)
     return 0
+  }
+}
+
+// Email 模式：增加使用量（在生成成功後調用）
+function incrementEmailUsage() {
+  if (currentMode.value === 'email' && userId.value && userId.value.includes('@')) {
+    const storageKey = `email_usage_${userId.value}`;
+    const currentUsage = userUsage.value || 0;
+    const newUsage = currentUsage + 1;
+    localStorage.setItem(storageKey, newUsage.toString());
+    userUsage.value = newUsage;
+    console.log('📧 Email 模式：使用量已增加:', newUsage);
   }
 }
 
@@ -903,14 +926,18 @@ async function handleGenerate(data) {
   // 從上傳流程進入結果頁，不預設顯示歷史
   startWithHistory.value = false
   
-  // 在生成請求成功返回後立即從服務器刷新使用量
-  // 確保顯示的數字與服務器數據一致
-  try {
-    await refreshUserUsage()
-    console.log('✅ 生成請求成功後，使用量已刷新:', userUsage.value)
-  } catch (error) {
-    console.error('❌ 刷新使用量失敗:', error)
-    // 即使刷新失敗，也繼續導航到結果頁面
+  // Email 模式：增加本地使用量
+  if (currentMode.value === 'email') {
+    incrementEmailUsage()
+  } else {
+    // LIFF 模式：從服務器刷新使用量
+    try {
+      await refreshUserUsage()
+      console.log('✅ 生成請求成功後，使用量已刷新:', userUsage.value)
+    } catch (error) {
+      console.error('❌ 刷新使用量失敗:', error)
+      // 即使刷新失敗，也繼續導航到結果頁面
+    }
   }
   
   // 生成完成後導航到結果頁面

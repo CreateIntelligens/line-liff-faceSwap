@@ -21,38 +21,23 @@ const getApiConfig = () => {
 };
 
 /**
- * 將 email 轉換為唯一的後端 ID
- * 使用簡單的 hash 函數生成唯一 ID，確保不同 email 有不同的後端 ID
- * 使用 dev_user_ 前綴以符合後端格式要求
+ * 將 email 轉換為後端 ID
+ * 由於後端目前只接受純 dev_user_ 格式，我們使用統一的後端 ID
+ * 但會在前端使用 localStorage 來追蹤每個 email 的使用量
  * @param {string} email - 用戶 email
- * @returns {string} 唯一的後端 ID（格式：dev_user_email_${hash}）
+ * @returns {string} 後端 ID（統一使用 dev_user_）
  */
 function emailToBackendId(email) {
     if (!email || !email.includes('@')) {
         return email; // 如果不是 email，直接返回
     }
     
-    // 使用簡單的 hash 函數生成唯一 ID
-    // 使用 email 的 hash 值，確保相同 email 總是生成相同的 ID
-    let hash = 0;
-    for (let i = 0; i < email.length; i++) {
-        const char = email.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // 轉換為 32 位整數
-    }
+    // 後端目前只接受純 dev_user_ 格式
+    // 我們使用統一的後端 ID，但會在前端使用 localStorage 來追蹤每個 email 的使用量
+    const backendId = (typeof window !== 'undefined' && window.endpoint?.testUserId) || 'dev_user_';
     
-    // 轉換為正數並轉為 36 進制（0-9a-z），取前 12 位
-    const hashStr = Math.abs(hash).toString(36).substring(0, 12);
-    
-    // 生成後端 ID：dev_user_${hash}
-    // 使用 dev_user_ 前綴以符合後端格式要求，同時為每個 email 生成唯一 ID
-    // 簡化格式，移除 "email" 字串，使用純 hash 後綴
-    const backendId = `dev_user_${hashStr}`;
-    
-    console.log('🔧 Email 轉換為後端 ID:', {
-        email: email,
-        backendId: backendId
-    });
+    console.log('🔧 Email 模式：使用統一後端 ID（前端會追蹤每個 email 的使用量）:', backendId);
+    console.log('📧 原始 email:', email);
     
     return backendId;
 }

@@ -21,7 +21,7 @@
             :src="imageUrls.header1"
             class="h-30 object-contain"
             alt="面相指路 靈籤定運"
-          />
+          />1k
         </div>
       </div>
 
