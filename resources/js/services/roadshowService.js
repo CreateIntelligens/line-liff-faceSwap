@@ -23,8 +23,9 @@ const getApiConfig = () => {
 /**
  * 將 email 轉換為唯一的後端 ID
  * 使用簡單的 hash 函數生成唯一 ID，確保不同 email 有不同的後端 ID
+ * 使用 dev_user_ 前綴以符合後端格式要求
  * @param {string} email - 用戶 email
- * @returns {string} 唯一的後端 ID（格式：email_${hash}）
+ * @returns {string} 唯一的後端 ID（格式：dev_user_email_${hash}）
  */
 function emailToBackendId(email) {
     if (!email || !email.includes('@')) {
@@ -43,8 +44,10 @@ function emailToBackendId(email) {
     // 轉換為正數並轉為 36 進制（0-9a-z），取前 12 位
     const hashStr = Math.abs(hash).toString(36).substring(0, 12);
     
-    // 生成後端 ID：email_${hash}
-    const backendId = `email_${hashStr}`;
+    // 生成後端 ID：dev_user_${hash}
+    // 使用 dev_user_ 前綴以符合後端格式要求，同時為每個 email 生成唯一 ID
+    // 簡化格式，移除 "email" 字串，使用純 hash 後綴
+    const backendId = `dev_user_${hashStr}`;
     
     console.log('🔧 Email 轉換為後端 ID:', {
         email: email,
@@ -179,27 +182,39 @@ export const roadshowService = {
             
             // Email 模式：將 email 轉換為唯一的後端 ID
             // 這樣不同 email 會有不同的後端 ID，不會共享使用量限制
+            // 使用 dev_user_${hash} 格式以符合後端格式要求
             // TODO: 當後端 API 直接支援 email 後，可以直接使用 email
+            let isEmailMode = false;
             if (isEmail) {
                 const backendId = emailToBackendId(userId);
                 formData.set('userId', backendId);
+                isEmailMode = true;
                 console.log('🔧 Email 模式：使用唯一後端 ID:', backendId);
                 console.log('📧 原始 email:', userId);
             }
-            // 處理測試用戶 ID：如果前端有 dev_user_ 前綴，使用後端支援的測試格式
-            else if (userId && userId.startsWith('dev_user_')) {
+            // 處理測試用戶 ID：如果前端是純 dev_user_（沒有 hash 後綴），使用後端支援的測試格式
+            else if (userId && userId === 'dev_user_') {
                 // 使用後端支援的測試 user id 格式：dev_user_
                 const testUserId = (typeof window !== 'undefined' && window.endpoint?.testUserId) || 'dev_user_';
                 formData.set('userId', testUserId);
                 console.log('🔧 使用測試 userId（後端支援格式）:', testUserId);
             }
             
+            // 準備請求 headers
+            const headers = {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${config.authToken}`
+            };
+            
+            // 如果是 Email 模式，添加 header 標識（如果後端支援）
+            if (isEmailMode) {
+                headers['X-User-Mode'] = 'email';
+                console.log('🔧 添加 Email 模式標識 header');
+            }
+            
             const response = await fetch(url, {
                 method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${config.authToken}`
-                },
+                headers: headers,
                 body: formData
             });
             
