@@ -409,128 +409,16 @@ async function checkTaskStatus() {
         // 重試次數用完，嘗試從歷史紀錄中獲取圖片
         console.warn('⚠️ 重試次數已用完，嘗試從歷史紀錄中查找圖片...');
         
-        if (!hasTriedHistoryFallback.value && props.userId) {
-          hasTriedHistoryFallback.value = true;
-          loadingMessage.value = '從歷史紀錄中查找圖片...';
-          loadingSubMessage.value = '請稍候';
-          
-          try {
-            const historyResult = await roadshowService.getUserHistory(props.userId);
-            let avatars = [];
-            
-            if (Array.isArray(historyResult)) {
-              avatars = historyResult;
-            } else if (historyResult && typeof historyResult === 'object') {
-              avatars = historyResult.result?.avatars || historyResult.data?.avatars || historyResult.avatars || [];
-            }
-            
-            const serverUsageCount = avatars.length;
-            
-            // 條件 1：伺服器上的使用量必須與前端顯示一致，且至少有一筆紀錄（代表這次真的有新增）
-            if (!serverUsageCount || serverUsageCount !== props.userUsage) {
-              console.warn('⚠️ 使用量不一致或沒有紀錄，放棄歷史 fallback：', {
-                serverUsageCount,
-                frontUsage: props.userUsage
-              });
-            } else {
-              // 查找匹配的 taskId
-              let matchedAvatar = avatars.find(avatar => {
-                const avatarId = avatar.task_id || avatar.id;
-                return avatarId === props.taskId;
-              });
-              
-              const WINDOW_MS = 2 * 60 * 1000; // 2 分鐘時間窗
-              const startedAt = props.generationStartedAt || 0;
-              
-              // 如果找不到完全匹配的 taskId，改用「最新一筆已完成的紀錄」作為 fallback
-              if (!matchedAvatar && avatars.length > 0) {
-                console.log('⚠️ 歷史紀錄中未找到匹配的 taskId，改找最新完成的紀錄');
-                let completedAvatars = avatars.filter(avatar => avatar.status === 'completed');
-                
-                // 如果有時間視窗，先過濾出在時間窗內的紀錄
-                if (startedAt && completedAvatars.length > 0) {
-                  const windowFiltered = completedAvatars.filter(avatar => {
-                    if (!avatar.created_at) return false;
-                    const createdTime = new Date(avatar.created_at).getTime();
-                    if (isNaN(createdTime)) return false;
-                    return Math.abs(createdTime - startedAt) <= WINDOW_MS;
-                  });
-                  
-                  if (windowFiltered.length > 0) {
-                    completedAvatars = windowFiltered;
-                  }
-                }
-                
-                if (completedAvatars.length > 0) {
-                  // 如果有多筆完成紀錄，選擇 created_at 最新的一筆
-                  matchedAvatar = completedAvatars.reduce((latest, current) => {
-                    const latestTime = latest && latest.created_at ? new Date(latest.created_at).getTime() : 0;
-                    const currentTime = current && current.created_at ? new Date(current.created_at).getTime() : 0;
-                    return currentTime > latestTime ? current : latest;
-                  }, completedAvatars[0]);
-                }
-              }
-            
-            if (matchedAvatar) {
-              console.log('✅ 從歷史紀錄中找到可用的任務圖片:', matchedAvatar);
-              
-              // 獲取圖片 URL
-              const imageUrl = matchedAvatar.image_url || matchedAvatar.result_image || matchedAvatar.image || matchedAvatar.generated_image;
-              
-              if (imageUrl) {
-                // 處理圖片 URL（使用圖片處理 API）
-                try {
-                  const config = window.endpoint || {};
-                  const apiUrl = config.imageProcessApi || 'https://stg-api.fanpokka.ai/api/static-resource';
-                  const params = config.imageProcessParams || { scale: 2, format: 'jpg', quality: 90, width: 800, height: 600 };
-                  
-                  const queryParams = new URLSearchParams();
-                  queryParams.append('url', imageUrl);
-                  if (params.scale) queryParams.append('scale', params.scale);
-                  if (params.format) queryParams.append('format', params.format);
-                  if (params.quality) queryParams.append('quality', params.quality);
-                  if (params.width) queryParams.append('width', params.width);
-                  if (params.height) queryParams.append('height', params.height);
-                  
-                  const processedImageUrl = `${apiUrl}?${queryParams.toString()}`;
-                  
-                  // 設置圖片和任務結果
-                  originalImages.value = [imageUrl];
-                  generatedImages.value = [processedImageUrl];
-                  taskResult.value = {
-                    success: true,
-                    id: matchedAvatar.task_id || matchedAvatar.id,
-                    status: 'completed',
-                    images: [imageUrl]
-                  };
-                  isTaskCompleted.value = true;
-                  error.value = null;
-                  
-                  // 推送圖片生成成功事件（只推送一次）
-                  if (!hasPushedGenerationSuccess.value) {
-                    pushImageGenerationSuccess({
-                      taskId: props.taskId || matchedAvatar.task_id || matchedAvatar.id,
-                      userMode: modeService.getMode()
-                    })
-                    hasPushedGenerationSuccess.value = true
-                  }
-                  
-                  // 清除定時器，因為任務已完成
-                  clearTaskStatusInterval();
-                  
-                  console.log('✅ 成功從歷史紀錄中獲取圖片，任務標記為完成');
-                  return; // 成功獲取，不再顯示錯誤
-                } catch (processError) {
-                  console.error('❌ 處理歷史圖片時發生錯誤:', processError);
-                }
-              }
-            } else {
-              // 歷史紀錄中沒有任何可用的紀錄（記錄於 console，避免中斷流程）
-              console.log('History fallback: no usable record found in avatars');
-            }
-          } catch (historyError) {
-            console.error('❌ 從歷史紀錄中查找失敗:', historyError);
-          }
+        const usedFallback = await useHistoryFallback({
+          errorMessage,
+          userId: props.userId,
+          userUsage: props.userUsage,
+          taskId: props.taskId,
+          generationStartedAt: props.generationStartedAt
+        });
+        
+        if (usedFallback) {
+          return; // 已成功從歷史紀錄取得圖片
         }
         
         // 如果從歷史紀錄中找不到，才顯示錯誤
@@ -575,6 +463,140 @@ async function checkTaskStatus() {
     console.error('❌ 檢查任務狀態時發生錯誤:', err)
   } finally {
     isLoading.value = false
+  }
+}
+
+// 嘗試從歷史紀錄中取得圖片（500 錯誤時的 fallback）
+async function useHistoryFallback({ errorMessage, userId, userUsage, taskId, generationStartedAt }) {
+  try {
+    if (hasTriedHistoryFallback.value || !userId) {
+      return false;
+    }
+    
+    hasTriedHistoryFallback.value = true;
+    loadingMessage.value = '從歷史紀錄中查找圖片...';
+    loadingSubMessage.value = '請稍候';
+    
+    const historyResult = await roadshowService.getUserHistory(userId);
+    let avatars = [];
+    
+    if (Array.isArray(historyResult)) {
+      avatars = historyResult;
+    } else if (historyResult && typeof historyResult === 'object') {
+      avatars = historyResult.result?.avatars || historyResult.data?.avatars || historyResult.avatars || [];
+    }
+    
+    const serverUsageCount = avatars.length;
+    
+    // 條件 1：伺服器上的使用量必須與前端顯示一致，且至少有一筆紀錄（代表這次真的有新增）
+    if (!serverUsageCount || serverUsageCount !== userUsage) {
+      console.warn('⚠️ 使用量不一致或沒有紀錄，放棄歷史 fallback：', {
+        serverUsageCount,
+        frontUsage: userUsage
+      });
+      return false;
+    }
+    
+    // 查找匹配的 taskId
+    let matchedAvatar = avatars.find(avatar => {
+      const avatarId = avatar.task_id || avatar.id;
+      return avatarId === taskId;
+    });
+    
+    const WINDOW_MS = 2 * 60 * 1000; // 2 分鐘時間窗
+    const startedAt = generationStartedAt || 0;
+    
+    // 如果找不到完全匹配的 taskId，改用「最新一筆已完成的紀錄」作為 fallback
+    if (!matchedAvatar && avatars.length > 0) {
+      console.log('⚠️ 歷史紀錄中未找到匹配的 taskId，改找最新完成的紀錄');
+      let completedAvatars = avatars.filter(avatar => avatar.status === 'completed');
+      
+      // 如果有時間視窗，先過濾出在時間窗內的紀錄
+      if (startedAt && completedAvatars.length > 0) {
+        const windowFiltered = completedAvatars.filter(avatar => {
+          if (!avatar.created_at) return false;
+          const createdTime = new Date(avatar.created_at).getTime();
+          if (isNaN(createdTime)) return false;
+          return Math.abs(createdTime - startedAt) <= WINDOW_MS;
+        });
+        
+        if (windowFiltered.length > 0) {
+          completedAvatars = windowFiltered;
+        }
+      }
+      
+      if (completedAvatars.length > 0) {
+        // 如果有多筆完成紀錄，選擇 created_at 最新的一筆
+        matchedAvatar = completedAvatars.reduce((latest, current) => {
+          const latestTime = latest && latest.created_at ? new Date(latest.created_at).getTime() : 0;
+          const currentTime = current && current.created_at ? new Date(current.created_at).getTime() : 0;
+          return currentTime > latestTime ? current : latest;
+        }, completedAvatars[0]);
+      }
+    }
+    
+    if (!matchedAvatar) {
+      console.log('History fallback: no usable record found in avatars');
+      return false;
+    }
+    
+    console.log('✅ 從歷史紀錄中找到可用的任務圖片:', matchedAvatar);
+    
+    // 獲取圖片 URL
+    const imageUrl = matchedAvatar.image_url || matchedAvatar.result_image || matchedAvatar.image || matchedAvatar.generated_image;
+    
+    if (!imageUrl) {
+      return false;
+    }
+    
+    try {
+      const config = window.endpoint || {};
+      const apiUrl = config.imageProcessApi || 'https://stg-api.fanpokka.ai/api/static-resource';
+      const params = config.imageProcessParams || { scale: 2, format: 'jpg', quality: 90, width: 800, height: 600 };
+      
+      const queryParams = new URLSearchParams();
+      queryParams.append('url', imageUrl);
+      if (params.scale) queryParams.append('scale', params.scale);
+      if (params.format) queryParams.append('format', params.format);
+      if (params.quality) queryParams.append('quality', params.quality);
+      if (params.width) queryParams.append('width', params.width);
+      if (params.height) queryParams.append('height', params.height);
+      
+      const processedImageUrl = `${apiUrl}?${queryParams.toString()}`;
+      
+      // 設置圖片和任務結果
+      originalImages.value = [imageUrl];
+      generatedImages.value = [processedImageUrl];
+      taskResult.value = {
+        success: true,
+        id: matchedAvatar.task_id || matchedAvatar.id,
+        status: 'completed',
+        images: [imageUrl]
+      };
+      isTaskCompleted.value = true;
+      error.value = null;
+      
+      // 推送圖片生成成功事件（只推送一次）
+      if (!hasPushedGenerationSuccess.value) {
+        pushImageGenerationSuccess({
+          taskId: taskId || matchedAvatar.task_id || matchedAvatar.id,
+          userMode: modeService.getMode()
+        })
+        hasPushedGenerationSuccess.value = true
+      }
+      
+      // 清除定時器，因為任務已完成
+      clearTaskStatusInterval();
+      
+      console.log('✅ 成功從歷史紀錄中獲取圖片，任務標記為完成');
+      return true;
+    } catch (processError) {
+      console.error('❌ 處理歷史圖片時發生錯誤:', processError);
+      return false;
+    }
+  } catch (historyError) {
+    console.error('❌ 從歷史紀錄中查找失敗:', historyError);
+    return false;
   }
 }
 
