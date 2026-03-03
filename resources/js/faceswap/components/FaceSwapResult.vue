@@ -525,7 +525,8 @@ async function checkTaskStatus() {
                 }
               }
             } else {
-              console.log('⚠️ 歷史紀錄中沒有任何可用的紀錄');
+              // 歷史紀錄中沒有任何可用的紀錄（記錄於 console，避免中斷流程）
+              console.log('History fallback: no usable record found in avatars');
             }
           } catch (historyError) {
             console.error('❌ 從歷史紀錄中查找失敗:', historyError);
