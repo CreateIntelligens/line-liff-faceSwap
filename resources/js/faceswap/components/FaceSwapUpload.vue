@@ -684,6 +684,20 @@ async function generateFaceSwap() {
         }
       }
       
+      // 👉 除錯用：在手機上直接顯示目前要送到後端的參數
+      try {
+        const debugInfo = [
+          `userId: ${formData.get('userId')}`,
+          `hasFile: ${formData.has('file')}`,
+          `name: ${formData.get('name') || '(無)'}`,
+          `company: ${formData.get('company') || '(無)'}`,
+          `phone: ${formData.get('phone') || '(無)'}`
+        ].join('\n');
+        alert(`即將送出的生成參數：\n${debugInfo}`);
+      } catch (e) {
+        // alert 失敗就忽略，不影響正常流程
+      }
+      
       const result = await roadshowService.generateAvatar(formData);
       
       if (result && (result.success || result.status === 'success')) {
