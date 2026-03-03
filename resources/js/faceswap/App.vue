@@ -33,6 +33,7 @@
       :taskId="taskId"
       :userId="userId"
       :userUsage="userUsage"
+      :generationStartedAt="generationStartedAt"
       :startWithHistory="startWithHistory"
       @back="goBack"
       @regenerate="handleRegenerate"
@@ -58,6 +59,7 @@ const taskId = ref('')
 const userId = ref('') // 改為空字串，等待 LIFF 初始化
 const userName = ref('') // 用戶名稱
 const userInfo = ref(null) // 用戶資訊（Email 模式：name, company, phone）
+const generationStartedAt = ref(null) // 本次生成開始時間（用於 fallback 時間窗）
 const currentStep = ref('faceswap-home') // 初始狀態設定為換臉首頁
 const isInitialized = ref(false)
 const userUsage = ref(0) // 用戶已生成的圖片數量
@@ -930,6 +932,8 @@ async function enterFaceSwap() {
 async function handleGenerate(data) {
   // 保存任務ID
   taskId.value = data.taskId
+  // 保存本次生成開始時間（用於結果頁 fallback 判斷）
+  generationStartedAt.value = data.startedAt || Date.now()
   // 從上傳流程進入結果頁，不預設顯示歷史
   startWithHistory.value = false
   

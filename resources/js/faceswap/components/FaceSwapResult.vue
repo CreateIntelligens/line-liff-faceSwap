@@ -149,6 +149,8 @@ import { pushImageGenerationSuccess } from '@/utils/gtmService.js'
 
 // 記錄是否已經嘗試從歷史紀錄中查找
 const hasTriedHistoryFallback = ref(false)
+// 記錄是否已經推送圖片生成成功事件（避免重複推送）
+const hasPushedGenerationSuccess = ref(false)
 
 // Define props
 const props = defineProps({
@@ -163,6 +165,10 @@ const props = defineProps({
   userUsage: {
     type: Number,
     default: 0
+  },
+  generationStartedAt: {
+    type: Number,
+    default: null
   },
   // 是否在載入時直接顯示歷史紀錄（從上傳頁點「抽籤紀錄」進來）
   startWithHistory: {
@@ -418,14 +424,55 @@ async function checkTaskStatus() {
               avatars = historyResult.result?.avatars || historyResult.data?.avatars || historyResult.avatars || [];
             }
             
-            // 查找匹配的 taskId
-            const matchedAvatar = avatars.find(avatar => {
-              const avatarId = avatar.task_id || avatar.id;
-              return avatarId === props.taskId;
-            });
+            const serverUsageCount = avatars.length;
+            
+            // 條件 1：伺服器上的使用量必須與前端顯示一致，且至少有一筆紀錄（代表這次真的有新增）
+            if (!serverUsageCount || serverUsageCount !== props.userUsage) {
+              console.warn('⚠️ 使用量不一致或沒有紀錄，放棄歷史 fallback：', {
+                serverUsageCount,
+                frontUsage: props.userUsage
+              });
+            } else {
+              // 查找匹配的 taskId
+              let matchedAvatar = avatars.find(avatar => {
+                const avatarId = avatar.task_id || avatar.id;
+                return avatarId === props.taskId;
+              });
+              
+              const WINDOW_MS = 2 * 60 * 1000; // 2 分鐘時間窗
+              const startedAt = props.generationStartedAt || 0;
+              
+              // 如果找不到完全匹配的 taskId，改用「最新一筆已完成的紀錄」作為 fallback
+              if (!matchedAvatar && avatars.length > 0) {
+                console.log('⚠️ 歷史紀錄中未找到匹配的 taskId，改找最新完成的紀錄');
+                let completedAvatars = avatars.filter(avatar => avatar.status === 'completed');
+                
+                // 如果有時間視窗，先過濾出在時間窗內的紀錄
+                if (startedAt && completedAvatars.length > 0) {
+                  const windowFiltered = completedAvatars.filter(avatar => {
+                    if (!avatar.created_at) return false;
+                    const createdTime = new Date(avatar.created_at).getTime();
+                    if (isNaN(createdTime)) return false;
+                    return Math.abs(createdTime - startedAt) <= WINDOW_MS;
+                  });
+                  
+                  if (windowFiltered.length > 0) {
+                    completedAvatars = windowFiltered;
+                  }
+                }
+                
+                if (completedAvatars.length > 0) {
+                  // 如果有多筆完成紀錄，選擇 created_at 最新的一筆
+                  matchedAvatar = completedAvatars.reduce((latest, current) => {
+                    const latestTime = latest && latest.created_at ? new Date(latest.created_at).getTime() : 0;
+                    const currentTime = current && current.created_at ? new Date(current.created_at).getTime() : 0;
+                    return currentTime > latestTime ? current : latest;
+                  }, completedAvatars[0]);
+                }
+              }
             
             if (matchedAvatar) {
-              console.log('✅ 從歷史紀錄中找到任務圖片:', matchedAvatar);
+              console.log('✅ 從歷史紀錄中找到可用的任務圖片:', matchedAvatar);
               
               // 獲取圖片 URL
               const imageUrl = matchedAvatar.image_url || matchedAvatar.result_image || matchedAvatar.image || matchedAvatar.generated_image;
@@ -478,7 +525,7 @@ async function checkTaskStatus() {
                 }
               }
             } else {
-              console.log('⚠️ 歷史紀錄中未找到匹配的任務');
+              console.log('⚠️ 歷史紀錄中沒有任何可用的紀錄');
             }
           } catch (historyError) {
             console.error('❌ 從歷史紀錄中查找失敗:', historyError);

@@ -684,19 +684,8 @@ async function generateFaceSwap() {
         }
       }
       
-      // 👉 除錯用：在手機上直接顯示目前要送到後端的參數
-      try {
-        const debugInfo = [
-          `userId: ${formData.get('userId')}`,
-          `hasFile: ${formData.has('file')}`,
-          `name: ${formData.get('name') || '(無)'}`,
-          `company: ${formData.get('company') || '(無)'}`,
-          `phone: ${formData.get('phone') || '(無)'}`
-        ].join('\n');
-        alert(`即將送出的生成參數：\n${debugInfo}`);
-      } catch (e) {
-        // alert 失敗就忽略，不影響正常流程
-      }
+      // 紀錄這次生成開始時間（用於結果頁 fallback 判斷）
+      const generationStartedAt = Date.now();
       
       const result = await roadshowService.generateAvatar(formData);
       
@@ -739,6 +728,13 @@ async function generateFaceSwap() {
             
             // 開始輪詢檢查任務狀態
             checkTaskStatusWhileShowingGif();
+            
+            // 將生成開始時間一併傳給父層，方便結果頁 fallback 使用
+            emit("generate", {
+              uploadedImage: uploadedImage.value,
+              taskId: currentTaskId.value,
+              startedAt: generationStartedAt
+            });
           }, 1000);
         }, 1000);
       } else if (result && result.error) {
