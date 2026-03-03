@@ -283,6 +283,10 @@ const props = defineProps({
   isFriend: {
     type: Boolean,
     default: true
+  },
+  userInfo: {
+    type: Object,
+    default: null
   }
 });
 
@@ -650,6 +654,34 @@ async function generateFaceSwap() {
         formData.append('file', file, file.name || 'upload.jpg');
       } else {
         throw new Error('請選擇要上傳的圖片');
+      }
+      
+      // Email 模式：加入表單資料（name, company, phone）
+      if (props.userInfo && props.userInfo.name && props.userInfo.company && props.userInfo.phone) {
+        formData.append('name', props.userInfo.name);
+        formData.append('company', props.userInfo.company);
+        formData.append('phone', props.userInfo.phone);
+        console.log('📧 Email 模式：已加入表單資料到 FormData:', {
+          name: props.userInfo.name,
+          company: props.userInfo.company,
+          phone: props.userInfo.phone
+        });
+      } else if (props.userId && props.userId.includes('@')) {
+        // Email 模式但沒有 userInfo，嘗試從 sessionStorage 讀取
+        const savedUserInfo = sessionStorage.getItem('faceswap_userInfo');
+        if (savedUserInfo) {
+          try {
+            const userInfo = JSON.parse(savedUserInfo);
+            if (userInfo.name && userInfo.company && userInfo.phone) {
+              formData.append('name', userInfo.name);
+              formData.append('company', userInfo.company);
+              formData.append('phone', userInfo.phone);
+              console.log('📧 Email 模式：從 sessionStorage 讀取並加入表單資料:', userInfo);
+            }
+          } catch (e) {
+            console.warn('⚠️ 無法解析 sessionStorage 中的用戶資訊:', e);
+          }
+        }
       }
       
       const result = await roadshowService.generateAvatar(formData);

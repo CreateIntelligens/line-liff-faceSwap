@@ -20,34 +20,6 @@ const getApiConfig = () => {
     };
 };
 
-/**
- * 將 email 轉換為後端 ID
- * 
- * ⚠️ 臨時方案：由於後端目前只接受純 dev_user_ 格式，我們使用統一的後端 ID
- * 但會在前端使用 localStorage 來追蹤每個 email 的使用量
- * 
- * TODO: 等待後端 API 支援 email 作為 userId 後，可以直接使用 email，並移除前端 localStorage 追蹤邏輯
- * 
- * @param {string} email - 用戶 email
- * @returns {string} 後端 ID（統一使用 dev_user_）
- */
-function emailToBackendId(email) {
-    if (!email || !email.includes('@')) {
-        return email; // 如果不是 email，直接返回
-    }
-    
-    // ⚠️ 臨時方案：後端目前只接受純 dev_user_ 格式
-    // 我們使用統一的後端 ID，但會在前端使用 localStorage 來追蹤每個 email 的使用量
-    // TODO: 當後端支援 email 作為 userId 後，可以直接返回 email
-    const backendId = (typeof window !== 'undefined' && window.endpoint?.testUserId) || 'dev_user_';
-    
-    console.log('🔧 Email 模式：使用統一後端 ID（前端會追蹤每個 email 的使用量）:', backendId);
-    console.log('📧 原始 email:', email);
-    console.log('⚠️ 注意：這是臨時方案，等待後端支援 email 作為 userId');
-    
-    return backendId;
-}
-
 export const roadshowService = {
     /**
      * 獲取模板列表
@@ -88,26 +60,14 @@ export const roadshowService = {
 
     /**
      * 獲取用戶歷史圖片
+     * 後端已支援 email 作為 userId，直接使用即可
      */
     async getUserHistory(userId) {
         try {
             const config = getApiConfig();
             
-            // 檢查是否為 Email 模式（email 格式）
-            const isEmail = userId && userId.includes('@');
-            
-            // ⚠️ 臨時方案：Email 模式將 email 轉換為後端 ID
-            // 由於後端目前只接受 dev_user_ 格式，我們使用統一的後端 ID
-            // 使用量由前端 localStorage 追蹤（見 App.vue 的 refreshUserUsage）
-            // TODO: 當後端 API 支援 email 作為 userId 後，可以直接使用 email
-            let effectiveUserId = userId;
-            if (isEmail) {
-                effectiveUserId = emailToBackendId(userId);
-                console.log('🔧 Email 模式：使用統一後端 ID 查詢歷史（前端會追蹤使用量）:', effectiveUserId);
-                console.log('📧 原始 email:', userId);
-            }
-            
-            const url = `${config.baseURL}/2026_draw_face_swap/user/${effectiveUserId}/avatars`;
+            // 後端已支援 email 作為 userId，直接使用
+            const url = `${config.baseURL}/2026_draw_face_swap/user/${userId}/avatars`;
             
             const response = await fetch(url, {
                 method: 'GET',
@@ -160,49 +120,36 @@ export const roadshowService = {
 
     /**
      * 上傳圖片生成頭像
+     * 後端已支援 email 作為 userId，並需要 name, company, phone 參數
      */
     async generateAvatar(formData) {
         try {
             const config = getApiConfig();
             const url = `${config.baseURL}/2026_draw_face_swap`;
             
-            // 處理用戶 ID
+            // 處理測試用戶 ID：如果前端是純 dev_user_，使用後端支援的測試格式
             const userId = formData.get('userId');
-            
-            // 檢查是否為 Email 模式（email 格式）
-            const isEmail = userId && userId.includes('@');
-            
-            // ⚠️ 臨時方案：Email 模式將 email 轉換為後端 ID
-            // 由於後端目前只接受 dev_user_ 格式，我們使用統一的後端 ID
-            // 使用量限制由前端 localStorage 追蹤（見 App.vue 的 refreshUserUsage 和 incrementEmailUsage）
-            // TODO: 當後端 API 支援 email 作為 userId 後，可以直接使用 email，並移除前端追蹤邏輯
-            let isEmailMode = false;
-            if (isEmail) {
-                const backendId = emailToBackendId(userId);
-                formData.set('userId', backendId);
-                isEmailMode = true;
-                console.log('🔧 Email 模式：使用統一後端 ID（前端會追蹤使用量）:', backendId);
-                console.log('📧 原始 email:', userId);
-            }
-            // 處理測試用戶 ID：如果前端是純 dev_user_（沒有 hash 後綴），使用後端支援的測試格式
-            else if (userId && userId === 'dev_user_') {
-                // 使用後端支援的測試 user id 格式：dev_user_
+            if (userId && userId === 'dev_user_') {
                 const testUserId = (typeof window !== 'undefined' && window.endpoint?.testUserId) || 'dev_user_';
                 formData.set('userId', testUserId);
                 console.log('🔧 使用測試 userId（後端支援格式）:', testUserId);
             }
+            
+            // 後端已支援 email 作為 userId，直接使用
+            // FormData 應包含：userId, file, name, company, phone
+            console.log('📤 生成頭像請求參數:', {
+                userId: formData.get('userId'),
+                hasFile: formData.has('file'),
+                name: formData.get('name'),
+                company: formData.get('company'),
+                phone: formData.get('phone')
+            });
             
             // 準備請求 headers
             const headers = {
                 'Accept': 'application/json',
                 'Authorization': `Bearer ${config.authToken}`
             };
-            
-            // 如果是 Email 模式，添加 header 標識（如果後端支援）
-            if (isEmailMode) {
-                headers['X-User-Mode'] = 'email';
-                console.log('🔧 添加 Email 模式標識 header');
-            }
             
             const response = await fetch(url, {
                 method: 'POST',

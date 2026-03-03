@@ -20,6 +20,7 @@
       :userId="userId"
       :userName="userName"
       :isFriend="isFriend"
+      :userInfo="userInfo"
       @back="goBack"
       @generate="handleGenerate"
       @showHistory="handleShowHistory"
@@ -56,6 +57,7 @@ import { pushPageView } from '../utils/gtmService.js'
 const taskId = ref('')
 const userId = ref('') // 改為空字串，等待 LIFF 初始化
 const userName = ref('') // 用戶名稱
+const userInfo = ref(null) // 用戶資訊（Email 模式：name, company, phone）
 const currentStep = ref('faceswap-home') // 初始狀態設定為換臉首頁
 const isInitialized = ref(false)
 const userUsage = ref(0) // 用戶已生成的圖片數量
@@ -283,21 +285,15 @@ async function initializeApp() {
 }
 
 // 添加一個單獨的函數來刷新用戶使用量
+// 後端已支援 email 作為 userId，統一從後端獲取使用量
 async function refreshUserUsage() {
   try {
-    // ⚠️ 臨時方案：Email 模式使用 localStorage 追蹤每個 email 的使用量
-    // 由於後端目前只接受 dev_user_ 格式，無法區分不同 email，所以在前端追蹤
-    // TODO: 當後端 API 支援 email 作為 userId 後，可以改為從後端獲取使用量，移除此 localStorage 邏輯
-    if (currentMode.value === 'email' && userId.value && userId.value.includes('@')) {
-      const storageKey = `email_usage_${userId.value}`;
-      const storedUsage = localStorage.getItem(storageKey);
-      const usageCount = storedUsage ? parseInt(storedUsage, 10) : 0;
-      userUsage.value = usageCount;
-      console.log('📧 Email 模式：從 localStorage 讀取使用量:', usageCount);
-      return usageCount;
+    if (!userId.value) {
+      console.warn('⚠️ userId 未設置，無法獲取使用量');
+      return 0;
     }
     
-    // LIFF 模式：從後端獲取使用量
+    // 統一從後端獲取使用量（LIFF 和 Email 模式都從後端獲取）
     const data = await roadshowService.getUserHistory(userId.value)
     
     // 使用與FaceSwapHistory相同的相容性檢查
@@ -313,24 +309,11 @@ async function refreshUserUsage() {
     
     // 更新用戶使用量
     userUsage.value = avatars.length
+    console.log('📊 用戶使用量已更新:', userUsage.value, '(模式:', currentMode.value, ')')
     return avatars.length
   } catch (error) {
     console.error('❌ 刷新用戶使用量失敗:', error)
     return 0
-  }
-}
-
-// ⚠️ 臨時方案：Email 模式增加使用量（在生成成功後調用）
-// 由於後端目前只接受 dev_user_ 格式，無法區分不同 email，所以在前端追蹤
-// TODO: 當後端 API 支援 email 作為 userId 後，可以移除此函數，改為從後端獲取使用量
-function incrementEmailUsage() {
-  if (currentMode.value === 'email' && userId.value && userId.value.includes('@')) {
-    const storageKey = `email_usage_${userId.value}`;
-    const currentUsage = userUsage.value || 0;
-    const newUsage = currentUsage + 1;
-    localStorage.setItem(storageKey, newUsage.toString());
-    userUsage.value = newUsage;
-    console.log('📧 Email 模式：使用量已增加:', newUsage);
   }
 }
 
@@ -694,6 +677,18 @@ onBeforeMount(async () => {
     if (savedEmail) {
       userId.value = savedEmail
       console.log('📧 從 sessionStorage 讀取 email:', savedEmail)
+      
+      // 同時讀取用戶資訊
+      const savedUserInfo = sessionStorage.getItem('faceswap_userInfo')
+      if (savedUserInfo) {
+        try {
+          userInfo.value = JSON.parse(savedUserInfo)
+          console.log('📧 從 sessionStorage 讀取用戶資訊:', userInfo.value)
+        } catch (e) {
+          console.warn('⚠️ 無法解析 sessionStorage 中的用戶資訊:', e)
+        }
+      }
+      
       // 如果有保存的 email，查詢使用量
       await refreshUserUsage()
     }
@@ -938,18 +933,13 @@ async function handleGenerate(data) {
   // 從上傳流程進入結果頁，不預設顯示歷史
   startWithHistory.value = false
   
-  // Email 模式：增加本地使用量
-  if (currentMode.value === 'email') {
-    incrementEmailUsage()
-  } else {
-    // LIFF 模式：從服務器刷新使用量
-    try {
-      await refreshUserUsage()
-      console.log('✅ 生成請求成功後，使用量已刷新:', userUsage.value)
-    } catch (error) {
-      console.error('❌ 刷新使用量失敗:', error)
-      // 即使刷新失敗，也繼續導航到結果頁面
-    }
+  // 統一從後端刷新使用量（LIFF 和 Email 模式都從後端獲取）
+  try {
+    await refreshUserUsage()
+    console.log('✅ 生成請求成功後，使用量已刷新:', userUsage.value)
+  } catch (error) {
+    console.error('❌ 刷新使用量失敗:', error)
+    // 即使刷新失敗，也繼續導航到結果頁面
   }
   
   // 生成完成後導航到結果頁面
@@ -989,6 +979,16 @@ async function handleEmailSubmit(data) {
   // 設置 userId 為 email
   userId.value = data.userId
   userName.value = data.userInfo.name || data.userId
+  
+  // 保存完整用戶資訊（用於生成 API）
+  userInfo.value = {
+    name: data.userInfo.name,
+    company: data.userInfo.company,
+    phone: data.userInfo.phone
+  }
+  
+  // 同時保存到 sessionStorage（用於頁面刷新後恢復）
+  sessionStorage.setItem('faceswap_userInfo', JSON.stringify(userInfo.value))
   
   // 查詢用戶使用量
   try {
