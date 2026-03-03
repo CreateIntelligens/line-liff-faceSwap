@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
+  <!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-TLCDNJ2');</script>
+  <!-- End Google Tag Manager -->
+  
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>面相指路，靈籤定運</title>
@@ -28,6 +36,26 @@
   <meta property="og:image:alt" content="面相指路，靈籤定運">
   <meta property="og:site_name" content="面相指路，靈籤定運">
   <meta property="og:locale" content="zh_TW">
+  
+  <!-- Twitter Card Tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="面相指路，靈籤定運">
+  <meta name="twitter:description" content="從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~">
+  <meta id="twitter-image" name="twitter:image" content="/images/draw_lots_2026/og.png">
+  
+  <!-- Canonical URL -->
+  <link id="canonical-url" rel="canonical" href="">
+  
+  <!-- Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "面相指路，靈籤定運",
+    "description": "從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~",
+    "url": ""
+  }
+  </script>
   
   <!-- LIFF SDK -->
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -117,6 +145,39 @@
             console.log('🖼️ LINE Image 已設置:', ogImagePath);
           }
         }
+        
+        // 設置 Twitter Card image
+        var twitterImage = document.getElementById('twitter-image');
+        if (twitterImage) {
+          twitterImage.setAttribute('content', ogImagePath);
+          if (window.endpoint.debug) {
+            console.log('🖼️ Twitter Image 已設置:', ogImagePath);
+          }
+        }
+        
+        // 設置 Canonical URL
+        var canonicalUrl = document.getElementById('canonical-url');
+        if (canonicalUrl && domain) {
+          canonicalUrl.setAttribute('href', domain);
+          if (window.endpoint.debug) {
+            console.log('🔗 Canonical URL 已設置:', domain);
+          }
+        }
+        
+        // 更新 Structured Data URL
+        var structuredDataScript = document.querySelector('script[type="application/ld+json"]');
+        if (structuredDataScript && domain) {
+          try {
+            var structuredData = JSON.parse(structuredDataScript.textContent);
+            structuredData.url = domain;
+            structuredDataScript.textContent = JSON.stringify(structuredData);
+            if (window.endpoint.debug) {
+              console.log('📊 Structured Data URL 已設置:', domain);
+            }
+          } catch (e) {
+            console.warn('⚠️ 更新 Structured Data 失敗:', e);
+          }
+        }
       } catch (e) {
         console.error('❌ 設定 OG / LINE 圖片失敗:', e);
       }
@@ -164,6 +225,11 @@
   </style>
 </head>
 <body>
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TLCDNJ2"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
+  
   <div id="vue-root" data-component="FaceSwapApp"></div>
 </body>
 </html>

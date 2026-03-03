@@ -50,6 +50,7 @@ import { roadshowService } from '../services/roadshowService.js'
 import { liffService } from '../services/liffService.js'
 import { modeService } from '../services/modeService.js'
 import { API_CONFIG } from '../config/config.js'
+import { pushPageView } from '../utils/gtmService.js'
 
 // 狀態
 const taskId = ref('')
@@ -711,6 +712,13 @@ onMounted(async () => {
     userId: userId.value,
     taskId: taskId.value,
     userUsage: userUsage.value
+  })
+  
+  // 推送頁面瀏覽事件
+  const pagePath = window.location.pathname || '/'
+  pushPageView({
+    pagePath: pagePath,
+    userMode: currentMode.value
   })
   
   // 組件掛載後，再次刷新用戶使用量以確保數據準確

@@ -21,10 +21,18 @@
 
 <script setup>
 import { imageUrls } from '@/config/imageUrls'
+import { pushCTAClick } from '@/utils/gtmService.js'
+import { modeService } from '@/services/modeService.js'
 
 const emit = defineEmits(['enter-face-swap'])
 
 function enterFaceSwap() {
+  // 推送 CTA 按鈕點擊事件
+  pushCTAClick({
+    buttonText: '開始抽籤',
+    userMode: modeService.getMode()
+  })
+  
   emit('enter-face-swap')
 }
 </script>

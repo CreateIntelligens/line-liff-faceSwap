@@ -158,6 +158,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { imageUrls } from '@/config/imageUrls'
+import { pushFormSubmitSuccess } from '@/utils/gtmService.js'
 
 const emit = defineEmits(['submit'])
 
@@ -302,6 +303,12 @@ async function handleSubmit() {
         company: formData.value.company.trim(),
         phone: formData.value.phone.trim()
       }
+    })
+
+    // 推送表單送出成功事件
+    pushFormSubmitSuccess({
+      formType: 'email_registration',
+      userMode: 'email'
     })
 
     // 觸發提交事件，將 email 作為 userId 傳遞

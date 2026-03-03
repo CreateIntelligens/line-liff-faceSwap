@@ -145,6 +145,7 @@ import { roadshowService } from '../../services/roadshowService.js'
 import { modeService } from '../../services/modeService.js'
 import { imageUrls } from '@/config/imageUrls'
 import { appConfig } from '@/config/appConfig'
+import { pushImageGenerationSuccess } from '@/utils/gtmService.js'
 
 // 記錄是否已經嘗試從歷史紀錄中查找
 const hasTriedHistoryFallback = ref(false)
@@ -321,6 +322,7 @@ watch(() => props.taskId, (newTaskId, oldTaskId) => {
     generatedImages.value = []
     originalImages.value = []
     error.value = null
+    hasPushedGenerationSuccess.value = false // 重置事件推送標記
     hasTriedHistoryFallback.value = false // 重置歷史紀錄查找標記
     retryCount.value = 0 // 重置重試次數
   }
@@ -456,6 +458,15 @@ async function checkTaskStatus() {
                   };
                   isTaskCompleted.value = true;
                   error.value = null;
+                  
+                  // 推送圖片生成成功事件（只推送一次）
+                  if (!hasPushedGenerationSuccess.value) {
+                    pushImageGenerationSuccess({
+                      taskId: props.taskId || matchedAvatar.task_id || matchedAvatar.id,
+                      userMode: modeService.getMode()
+                    })
+                    hasPushedGenerationSuccess.value = true
+                  }
                   
                   // 清除定時器，因為任務已完成
                   clearTaskStatusInterval();
@@ -626,6 +637,15 @@ async function handleTaskStatus(data) {
         isTaskCompleted.value = true
         error.value = null // 清除任何之前的錯誤
         console.log('✅ 任務已完成，已設置完成標記')
+        
+        // 推送圖片生成成功事件（只推送一次）
+        if (!hasPushedGenerationSuccess.value) {
+          pushImageGenerationSuccess({
+            taskId: props.taskId || data.id || data.result?.id,
+            userMode: modeService.getMode()
+          })
+          hasPushedGenerationSuccess.value = true
+        }
       }
       break
       
