@@ -1,49 +1,59 @@
 <template>
   <!-- iphone15 -->
-  <div class="app">
-    <!-- Email 表單頁面（Email 模式專用） -->
-    <EmailForm
-      v-if="currentStep === 'email-form'"
-      @submit="handleEmailSubmit"
+  <div class="relative max-w-[400px] mx-auto">
+    <!-- Email 版本專用徽章：只要是 Email 模式（非 LIFF）就顯示 -->
+    <img
+      v-if="isEmailMode"
+      :src="enterpriseIcon"
+      alt="AI Beta 企業體驗版"
+      class="absolute top-4 right-2 z-50 w-16 h-16"
     />
 
-    <!-- Face Swap Homepage -->
-    <FaceSwapHomepage
-      v-if="currentStep === 'faceswap-home'"
-      @enter-face-swap="enterFaceSwap"
-    />
+    <div class="app">
+      <!-- Email 表單頁面（Email 模式專用） -->
+      <EmailForm
+        v-if="currentStep === 'email-form'"
+        @submit="handleEmailSubmit"
+      />
 
-    <!-- Face Swap Upload -->
-    <FaceSwapUpload
-      v-if="currentStep === 'upload'"
-      :userUsage="userUsage"
-      :userId="userId"
-      :userName="userName"
-      :isFriend="isFriend"
-      :userInfo="userInfo"
-      @back="goBack"
-      @generate="handleGenerate"
-      @showHistory="handleShowHistory"
-      @refreshUsage="refreshUserUsage"
-    />
+      <!-- Face Swap Homepage -->
+      <FaceSwapHomepage
+        v-if="currentStep === 'faceswap-home'"
+        @enter-face-swap="enterFaceSwap"
+      />
 
-    <!-- Face Swap Result -->
-    <FaceSwapResult
-      v-if="currentStep === 'result'"
-      :taskId="taskId"
-      :userId="userId"
-      :userUsage="userUsage"
-      :generationStartedAt="generationStartedAt"
-      :startWithHistory="startWithHistory"
-      @back="goBack"
-      @regenerate="handleRegenerate"
-      @download="handleDownload"
-    />
+      <!-- Face Swap Upload -->
+      <FaceSwapUpload
+        v-if="currentStep === 'upload'"
+        :userUsage="userUsage"
+        :userId="userId"
+        :userName="userName"
+        :isFriend="isFriend"
+        :userInfo="userInfo"
+        @back="goBack"
+        @generate="handleGenerate"
+        @showHistory="handleShowHistory"
+        @refreshUsage="refreshUserUsage"
+      />
+
+      <!-- Face Swap Result -->
+      <FaceSwapResult
+        v-if="currentStep === 'result'"
+        :taskId="taskId"
+        :userId="userId"
+        :userUsage="userUsage"
+        :generationStartedAt="generationStartedAt"
+        :startWithHistory="startWithHistory"
+        @back="goBack"
+        @regenerate="handleRegenerate"
+        @download="handleDownload"
+      />
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeMount, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeMount, onBeforeUnmount, nextTick } from 'vue'
 import FaceSwapHomepage from './components/FaceSwapHomepage.vue'
 import FaceSwapUpload from './components/FaceSwapUpload.vue'
 import FaceSwapResult from './components/FaceSwapResult.vue'
@@ -53,6 +63,7 @@ import { liffService } from '../services/liffService.js'
 import { modeService } from '../services/modeService.js'
 import { API_CONFIG } from '../config/config.js'
 import { pushPageView } from '../utils/gtmService.js'
+import enterpriseIcon from '../../images/enterpriseicon.png'
 
 // 狀態
 const taskId = ref('')
@@ -70,6 +81,9 @@ const startWithHistory = ref(false) // 是否在結果頁直接顯示歷史紀�
 const isWaitingForFriend = ref(false) // 是否正在等待用戶加入好友
 const friendCheckInterval = ref(null) // 好友狀態檢查定時器的引用
 const currentMode = ref(null) // 當前模式：'liff' 或 'email'
+
+// 只要是 Email 模式（非 LIFF）就顯示企業版徽章
+const isEmailMode = computed(() => currentMode.value === 'email')
 
 // 檢查是否為本地開發環境
 function isLocalDevEnvironment() {

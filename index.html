@@ -106,9 +106,9 @@
       
       // ===== 模式配置 =====
       // 模式：'auto' 自動偵測 | 'liff' 強制 LIFF 模式 | 'email' 強制 Email 模式
-      // 自動偵測邏輯：檢查是否在 LIFF 環境，是則使用 'liff'，否則使用 'email'
-      // 也可以透過 URL 參數 ?mode=liff 或 ?mode=email 來覆蓋此設定
-      mode: 'auto'
+      // LIFF 版部署建議使用 'liff' 作為預設模式，確保在 LINE 內開啟時一律走 LIFF 流程
+      // 如需在同一個 URL 測試 Email 版，可於網址加上 ?mode=email（URL 參數僅用於切換到 email 模式）
+      mode: 'liff'
     };
     
     // 動態設定 OG / LINE 圖片與 URL
