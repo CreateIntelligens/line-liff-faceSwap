@@ -6,7 +6,7 @@
       v-if="isEmailMode"
       :src="enterpriseIcon"
       alt="AI Beta 企業體驗版"
-      class="absolute top-4 right-2 z-50 w-16 h-16"
+      class="absolute top-4 right-2 z-50 w-20 h-20"
     />
 
     <div class="app">
