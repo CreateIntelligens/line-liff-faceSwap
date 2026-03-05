@@ -237,7 +237,8 @@
             生成體驗已截止
           </div>
           <div class="text-base font-medium text-gray-800 cp-font">
-            如對我們的服務有興趣，請前往
+            如對我們的服務有興趣<br />
+            請前往
             <a
               href="https://aicreate360.com/contact"
               target="_blank"
@@ -246,7 +247,8 @@
             >
               創造智能官網
             </a>
-            填寫表單，將有專人與您聯繫
+            填寫表單<br />
+            將有專人與您聯繫
           </div>
         </div>
         
