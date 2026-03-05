@@ -810,11 +810,14 @@ async function downloadToOfficial() {
       showMessage('已成功分享！', 'success')
     } else {
       // Email 模式：先判斷是否為桌機（PC）
-      // 判斷方式：檢查 Web Share API 是否存在，如果不存在，視為桌機
-      const hasWebShare = typeof navigator !== 'undefined' && navigator.share
+      // 判斷方式：檢查是否為觸控裝置，如果不是觸控裝置，視為桌機
+      // 即使有 Web Share API（如 Mac Chrome），也不在桌機上執行分享
+      const isTouchDevice = 'ontouchstart' in window || 
+                           (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
+                           /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
       
-      if (!hasWebShare) {
-        // 桌機版本（沒有 Web Share API）：顯示提示訊息，不執行分享
+      if (!isTouchDevice) {
+        // 桌機版本：顯示提示訊息，不執行分享
         showMessage('分享功能請在手機上操作', 'info')
         console.log('💻 桌機版本，不執行分享功能')
         return
