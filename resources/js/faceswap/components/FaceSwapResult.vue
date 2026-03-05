@@ -810,13 +810,11 @@ async function downloadToOfficial() {
       showMessage('已成功分享！', 'success')
     } else {
       // Email 模式：先判斷是否為桌機（PC）
-      // 判斷方式：檢查是否為觸控裝置，如果不是觸控裝置且螢幕寬度大於 768px，視為桌機
-      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
-      const isWideScreen = window.innerWidth > 768
-      const isDesktop = !isTouchDevice && isWideScreen
+      // 判斷方式：檢查 Web Share API 是否存在，如果不存在，視為桌機
+      const hasWebShare = typeof navigator !== 'undefined' && navigator.share
       
-      if (isDesktop) {
-        // 桌機版本：顯示提示訊息，不執行分享
+      if (!hasWebShare) {
+        // 桌機版本（沒有 Web Share API）：顯示提示訊息，不執行分享
         showMessage('分享功能請在手機上操作', 'info')
         console.log('💻 桌機版本，不執行分享功能')
         return
@@ -840,26 +838,10 @@ async function downloadToOfficial() {
           await shareViaWeb()
           showMessage('已成功分享！', 'success')
         } catch (webShareError) {
-          // Web Share API 不支援或失敗時，降級為顯示分享文字
-          console.warn('⚠️ Web Share API 不可用，降級為顯示分享文字:', webShareError)
-          const shareUrl = (window.endpoint && window.endpoint.domain) 
-            ? `${window.endpoint.domain}`
-            : 'https://line-liff-face-swap-draw-lots-2026.vercel.app'
-          const shareText = '面相指路，靈籤定運\n從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~\n開始測算：' + shareUrl
-          
-          // 在手機瀏覽器上，嘗試複製到剪貼簿（不顯示提示訊息）
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            try {
-              await navigator.clipboard.writeText(shareText)
-              console.log('📋 分享內容已複製到剪貼簿')
-            } catch (clipboardError) {
-              // 複製失敗，顯示 alert（不顯示提示訊息）
-              alert('分享內容：\n\n' + shareText)
-            }
-          } else {
-            // 不支援剪貼簿，直接顯示 alert（不顯示提示訊息）
-            alert('分享內容：\n\n' + shareText)
-          }
+          // Web Share API 失敗時，不顯示任何提示（包括 alert）
+          // 只記錄到 console，不干擾用戶
+          console.warn('⚠️ Web Share API 失敗:', webShareError)
+          // 不執行任何降級處理，靜默失敗
         }
       }
     }
