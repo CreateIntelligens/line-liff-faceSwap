@@ -234,16 +234,19 @@
         <!-- 警告訊息內容 -->
         <div class="flex flex-col items-center gap-3 text-center">
           <div class="text-lg font-bold text-gray-800 cp-font">
-            感謝大家熱烈支持~
+            生成體驗已截止
           </div>
           <div class="text-base font-medium text-gray-800 cp-font">
-            活動太受歡迎提前截止!
-          </div>
-          <div class="text-base font-medium text-gray-800 cp-font">
-            歡迎關注<span class="font-bold">【Fanpokka 粉絲通行證】</span>
-          </div>
-          <div class="text-base font-medium text-gray-800 cp-font">
-            獲取更多活動資訊,期待下次再相見!
+            如對我們的服務有興趣，請前往
+            <a
+              href="https://aicreate360.com/contact"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-blue-600 underline font-bold"
+            >
+              創造智能官網
+            </a>
+            填寫表單，將有專人與您聯繫
           </div>
         </div>
         
