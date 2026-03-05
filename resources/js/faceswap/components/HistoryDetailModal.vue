@@ -804,7 +804,10 @@ async function downloadToOfficial() {
       showMessage('已成功分享！', 'success')
     } else {
       // Email 模式：先判斷是否為桌機（PC）
-      const isDesktop = window.innerWidth > 768 // 螢幕寬度大於 768px 視為桌機
+      // 判斷方式：檢查是否為觸控裝置，如果不是觸控裝置且螢幕寬度大於 768px，視為桌機
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+      const isWideScreen = window.innerWidth > 768
+      const isDesktop = !isTouchDevice && isWideScreen
       
       if (isDesktop) {
         // 桌機版本：顯示提示訊息，不執行分享
@@ -840,21 +843,18 @@ async function downloadToOfficial() {
             : 'https://line-liff-face-swap-draw-lots-2026.vercel.app'
           const shareText = '面相指路，靈籤定運\n從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~\n開始測算：' + shareUrl
           
-          // 在手機瀏覽器上，嘗試複製到剪貼簿
+          // 在手機瀏覽器上，嘗試複製到剪貼簿（不顯示提示訊息）
           if (navigator.clipboard && navigator.clipboard.writeText) {
             try {
               await navigator.clipboard.writeText(shareText)
-              showMessage('分享內容已複製到剪貼簿', 'success')
               console.log('📋 分享內容已複製到剪貼簿')
             } catch (clipboardError) {
-              // 複製失敗，顯示 alert
+              // 複製失敗，顯示 alert（不顯示提示訊息）
               alert('分享內容：\n\n' + shareText)
-              showMessage('分享內容已顯示', 'success')
             }
           } else {
-            // 不支援剪貼簿，直接顯示 alert
+            // 不支援剪貼簿，直接顯示 alert（不顯示提示訊息）
             alert('分享內容：\n\n' + shareText)
-            showMessage('分享內容已顯示', 'success')
           }
         }
       }
