@@ -821,9 +821,6 @@ async function downloadToOfficial() {
       await shareViaLiff()
       showMessage('已成功分享！', 'success')
     } else {
-      // Debug：Email 模式點擊分享按鈕（用於手機除錯）
-      alert('debug: 進入 Email 模式分享流程')
-      
       // Email 模式：先判斷是否為桌機（PC）
       // 判斷方式：檢查是否為觸控裝置，如果不是觸控裝置，視為桌機
       // 即使有 Web Share API（如 Mac Chrome），也不在桌機上執行分享
