@@ -821,17 +821,32 @@ async function downloadToOfficial() {
       
       // 手機版本：判斷是否在 LINE 環境內（點擊時才判斷）
       const enableLiff = window.endpoint?.enableLiff
-      const isInLineClient = enableLiff && 
-                             typeof liff !== 'undefined' && 
-                             liff.isInClient() && 
-                             liff.shareTargetPicker
+      const hasLiff = typeof liff !== 'undefined'
+      const isInLineClient = enableLiff && hasLiff && liff.isInClient()
       
       if (isInLineClient) {
-        // 在 LINE 環境內，使用 LIFF 分享
-        console.log('📱 偵測到 LINE 環境，使用 LIFF 分享')
-        await shareViaLiff()
-        console.log('✅ 分享完成')
-        showMessage('已成功分享！', 'success')
+        // 在 LINE 環境內，優先使用 LIFF 分享
+        console.log('📱 偵測到 LINE 環境，嘗試使用 LIFF 分享')
+        try {
+          await shareViaLiff()
+          console.log('✅ 分享完成')
+          showMessage('已成功分享！', 'success')
+        } catch (liffError) {
+          // LIFF 分享失敗（可能是 shareTargetPicker 不存在或其他原因）
+          console.warn('⚠️ LIFF 分享失敗，降級為 Web Share API:', liffError)
+          // 降級為 Web Share API
+          try {
+            await shareViaWeb()
+            console.log('✅ 分享完成')
+            showMessage('已成功分享！', 'success')
+          } catch (webShareError) {
+            // Web Share API 也失敗，顯示錯誤訊息
+            console.error('❌ Web Share API 也失敗:', webShareError)
+            if (webShareError.message !== '已取消分享') {
+              showMessage('分享功能暫時無法使用，請稍後再試', 'error')
+            }
+          }
+        }
       } else {
         // 不在 LINE 環境內，使用 Web Share API
         try {
