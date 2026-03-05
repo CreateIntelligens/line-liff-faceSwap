@@ -186,6 +186,8 @@ function showMessage(message, type = 'info') {
     alert(message)
   } else if (type === 'error') {
     alert(message)
+  } else if (type === 'info') {
+    alert(message)
   } else {
     console.log(message)
   }
