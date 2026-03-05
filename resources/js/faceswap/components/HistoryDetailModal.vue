@@ -884,10 +884,11 @@ async function downloadToOfficial() {
           console.log('✅ 分享完成')
           showMessage('已成功分享！', 'success')
         } catch (webShareError) {
-          // Web Share API 失敗時，不顯示任何提示（包括 alert）
-          // 只記錄到 console，不干擾用戶
+          // Web Share API 失敗時，顯示錯誤訊息（方便在 Android / 手機上除錯）
           console.warn('⚠️ Web Share API 失敗:', webShareError)
-          // 不執行任何降級處理，靜默失敗
+          if (webShareError.message !== '已取消分享') {
+            showMessage('分享功能暫時無法使用，請稍後再試', 'error')
+          }
         }
       }
     }
