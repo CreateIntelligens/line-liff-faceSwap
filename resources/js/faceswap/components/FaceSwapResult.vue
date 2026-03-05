@@ -277,17 +277,27 @@ async function shareViaLiff() {
     : 'https://line-liff-face-swap-draw-lots-2026.vercel.app'
   const shareText = '面相指路，靈籤定運\n從五官看你馬年運勢，仙女下凡來解答！馬上點擊下方籤筒，即可得你的專屬幸運靈籤~\n開始測算：' + shareUrl
 
+  // 檢查 shareTargetPicker 是否存在
+  console.log('🔍 檢查 LIFF shareTargetPicker:', {
+    hasLiff: typeof liff !== 'undefined',
+    isInClient: liff.isInClient(),
+    hasShareTargetPicker: !!liff.shareTargetPicker
+  })
+
   if (!liff.shareTargetPicker) {
     throw new Error('目前裝置暫不支援好友分享功能')
   }
 
   // 呼叫 shareTargetPicker，讓使用者選好友／群組
+  console.log('📤 準備呼叫 liff.shareTargetPicker...')
   const result = await liff.shareTargetPicker([
     {
       type: 'text',
       text: shareText
     }
   ])
+
+  console.log('📥 shareTargetPicker 返回結果:', result)
 
   // 根據官方文件，result 為 null 代表使用者取消
   if (result === null) {
@@ -832,20 +842,35 @@ async function downloadToOfficial() {
       
       if (isInLineClient) {
         // 在 LINE 環境內，優先使用 LIFF 分享
-        console.log('📱 偵測到 LINE 環境，嘗試使用 LIFF 分享')
+        console.log('📱 偵測到 LINE 環境，嘗試使用 LIFF 分享', {
+          enableLiff,
+          hasLiff,
+          isInClient: liff.isInClient(),
+          hasShareTargetPicker: liff.shareTargetPicker ? true : false
+        })
         try {
           await shareViaLiff()
           showMessage('已成功分享！', 'success')
         } catch (liffError) {
           // LIFF 分享失敗（可能是 shareTargetPicker 不存在或其他原因）
           console.warn('⚠️ LIFF 分享失敗，降級為 Web Share API:', liffError)
+          console.warn('⚠️ 錯誤詳情:', {
+            message: liffError.message,
+            name: liffError.name,
+            stack: liffError.stack
+          })
           // 降級為 Web Share API
           try {
+            console.log('🔄 嘗試使用 Web Share API 作為降級方案...')
             await shareViaWeb()
             showMessage('已成功分享！', 'success')
           } catch (webShareError) {
             // Web Share API 也失敗，顯示錯誤訊息
             console.error('❌ Web Share API 也失敗:', webShareError)
+            console.error('❌ Web Share API 錯誤詳情:', {
+              message: webShareError.message,
+              name: webShareError.name
+            })
             if (webShareError.message !== '已取消分享') {
               showMessage('分享功能暫時無法使用，請稍後再試', 'error')
             }
