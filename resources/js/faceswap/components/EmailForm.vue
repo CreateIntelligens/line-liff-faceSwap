@@ -9,8 +9,8 @@
       backgroundRepeat: 'no-repeat'
     }"
   >
-    <!-- 主標題區域 -->
-    <div class="px-4 pb-4">
+    <!-- 主標題區域（左右不留白，讓標題圖碰到畫面邊緣） -->
+    <div class="pb-4">
       <!-- Header -->
       <div class="flex gap-5 justify-center items-center self-stretch py-6 w-full font-bold whitespace-nowrap min-h-20">
         <div
