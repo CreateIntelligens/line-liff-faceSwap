@@ -1,4 +1,5 @@
 // 應用程式配置
+import testMockImage from '../../images/test.jpg'
 const endpoint =
   typeof window !== 'undefined' && window.endpoint ? window.endpoint : {}
 
@@ -25,8 +26,8 @@ export const appConfig = {
   useMockGeneratedImage: parseBoolean(endpoint.useMockGeneratedImage, false),
 
   // 固定測試圖片路徑，可由 index.html 的 window.endpoint.mockGeneratedImagePath 控制
-  // 預設為 PM 提供的測試圖片
+  // 預設為專案內的測試圖片（透過 Vite import，確保路徑正確）
   mockGeneratedImagePath:
-    endpoint.mockGeneratedImagePath || '/resources/images/test.jpg'
+    endpoint.mockGeneratedImagePath || testMockImage
 }
 
