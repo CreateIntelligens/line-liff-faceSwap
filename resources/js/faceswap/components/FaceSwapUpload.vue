@@ -27,16 +27,8 @@
 
     <!-- Main Content Container -->
     <div class="flex-1 flex flex-col max-w-md mx-auto w-full px-5 pb-8">
-      <!-- 步驟一：上傳部分 -->
-      <div class="mb-8">
-        <div class="mb-4">
-          <img
-            :src="imageUrls.step1"
-            class="w-full h-auto object-contain"
-            alt="【步驟1】求籤前準備：呈上正面清晰照片"
-          />
-        </div>
-
+      <!-- 上傳區塊 -->
+      <div class="">
         <!-- Upload Area -->
         <div class="mb-4">
           <div
@@ -79,34 +71,17 @@
         <div class="mb-6">
           <h4 class="text-sm font-bold text-white mb-3 cp-font">求籤須知：</h4>
           <div class="text-[13px] font-normal text-white space-y-2 cp-font">
-            <div>1.上傳照片僅用於海報生成,不會改作他用</div>
+            <div>1.上傳照片僅用於海報生成，不會改作他用</div>
             <div>2.請上傳清晰、光線充足的照片以獲得最佳效果</div>
             <div>3.建議上傳正面或半側面照片</div>
             <div>4.活動期間生成的海報將保留於個人帳戶中</div>
-            <div>5.Fanpokka 保留活動最終解釋權</div>
+            <div>5.創造智能保留活動最終解釋權</div>
           </div>
         </div>
       </div>
 
-      <!-- 步驟二：閉眼默念新年願望 -->
+      <!-- 求籤區塊 -->
       <div class="mb-8">
-        <div class="mb-4">
-          <img
-            :src="imageUrls.step2"
-            class="w-full h-auto object-contain"
-            alt="【步驟2】抽取你的2026年運勢籤"
-          />
-        </div>
-        
-        <!-- 步驟二說明文字圖片 -->
-        <div class="mb-4 flex justify-center">
-          <img
-            :src="imageUrls.step2Instructions"
-            alt="閉上眼睛，默念你的新年願望。點擊下一步抽出靈籤"
-            class="w-[90%] h-auto object-contain"
-          />
-        </div>
-
         <!-- 求籤圖（可點擊觸發生成） -->
         <div class="flex justify-center items-center">
           <img
@@ -312,6 +287,20 @@ const minGifDuration = 7000; // 最少顯示 5 秒（毫秒）
 const taskStatusCheckInterval = ref(null);
 const currentTaskId = ref(null);
 const hasShownFailedAlert = ref(false); // 防止重複顯示失敗訊息
+
+// 是否啟用前端 Mock 生成模式（不實際呼叫 a1.art API）
+const isMockMode = computed(() => {
+  const flag = appConfig.useMockGeneratedImage;
+  if (typeof flag === 'string') {
+    return flag.toLowerCase() === 'true';
+  }
+  return !!flag;
+});
+
+// Mock 模式下要顯示的固定圖片路徑
+const mockGeneratedImagePath = computed(() => {
+  return appConfig.mockGeneratedImagePath || '/resources/images/test.jpg';
+});
 
 
 // 檢查是否為 dev_user（不受限制）
@@ -647,6 +636,44 @@ async function generateFaceSwap() {
     return;
   }
   
+  // Mock 模式：不實際呼叫生成 API，直接走動畫與固定圖片流程
+  if (isMockMode.value) {
+    // 立即設置生成狀態，防止重複點擊
+    isGenerating.value = true;
+    showFirstDialog.value = true;
+
+    // 紀錄這次生成開始時間（保持與正式流程一致）
+    const generationStartedAt = Date.now();
+    const mockTaskId = `mock_${generationStartedAt}`;
+
+    setTimeout(() => {
+      showFirstDialog.value = false;
+      showSecondDialog.value = true;
+      setTimeout(() => {
+        showSecondDialog.value = false;
+        showThirdDialog.value = true;
+
+        // 記錄 GIF 動畫開始顯示的時間
+        gifStartTime.value = Date.now();
+
+        // 在最少顯示時間後，結束動畫並導向結果頁
+        setTimeout(() => {
+          isGenerating.value = false;
+          showThirdDialog.value = false;
+
+          emit('generate', {
+            uploadedImage: uploadedImage.value,
+            taskId: mockTaskId,
+            startedAt: generationStartedAt,
+            mockImageUrl: mockGeneratedImagePath.value
+          });
+        }, minGifDuration);
+      }, 1000);
+    }, 1000);
+
+    return;
+  }
+
   // 立即設置生成狀態，防止重複點擊
   isGenerating.value = true;
   showFirstDialog.value = true;

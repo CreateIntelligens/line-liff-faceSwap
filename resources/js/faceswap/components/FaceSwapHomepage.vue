@@ -1,6 +1,6 @@
 <template>
   <div
-    class="relative mx-auto my-0 w-[375px] max-md:w-full max-md:max-w-screen-md max-sm:w-full cursor-pointer"
+    class="relative mx-auto my-0 w-[375px] max-md:w-full max-md:max-w-screen-md max-sm:w-full cursor-pointer flex items-center justify-center"
     @click="enterFaceSwap"
     :style="{ 
       minHeight: '100vh',

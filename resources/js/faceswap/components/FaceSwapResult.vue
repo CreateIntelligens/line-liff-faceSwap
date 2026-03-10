@@ -170,6 +170,11 @@ const props = defineProps({
     type: Number,
     default: null
   },
+  // Mock 模式下，從上傳頁傳入的固定結果圖片 URL
+  mockImageUrl: {
+    type: String,
+    default: ''
+  },
   // 是否在載入時直接顯示歷史紀錄（從上傳頁點「抽籤紀錄」進來）
   startWithHistory: {
     type: Boolean,
@@ -204,6 +209,20 @@ const isDownloading = ref(false)
 
 // 任務狀態檢查定時器
 const taskStatusCheckInterval = ref(null)
+
+// Mock 模式開關與圖片路徑
+const isMockMode = computed(() => {
+  const flag = appConfig.useMockGeneratedImage
+  if (typeof flag === 'string') {
+    return flag.toLowerCase() === 'true'
+  }
+  return !!flag
+})
+
+const effectiveMockImageUrl = computed(() => {
+  if (!isMockMode.value) return ''
+  return props.mockImageUrl || appConfig.mockGeneratedImagePath || ''
+})
 
 // 顯示訊息函數
 function showMessage(message, type = 'info') {
@@ -333,6 +352,23 @@ async function shareViaWeb() {
 
 // 監聽taskId變化
 watch(() => props.taskId, (newTaskId, oldTaskId) => {
+  // Mock 模式：直接使用固定圖片，不呼叫任務狀態 API
+  if (isMockMode.value && effectiveMockImageUrl.value) {
+    clearTaskStatusInterval()
+    isTaskCompleted.value = true
+    error.value = null
+    const imageUrl = effectiveMockImageUrl.value
+    originalImages.value = [imageUrl]
+    generatedImages.value = [imageUrl]
+    taskResult.value = {
+      success: true,
+      id: newTaskId || 'mock_task',
+      status: 'completed',
+      images: [imageUrl]
+    }
+    return
+  }
+
   // 當 taskId 變化時，清除舊的定時器
   if (newTaskId !== oldTaskId) {
     clearTaskStatusInterval()
@@ -926,7 +962,21 @@ function handleImageLoad(event) {
 onMounted(() => {
   // 重置完成標記
   isTaskCompleted.value = false
-  if (props.taskId) {
+
+  // Mock 模式下，如果有固定圖片，直接顯示結果，不檢查任務狀態
+  if (isMockMode.value && effectiveMockImageUrl.value) {
+    const imageUrl = effectiveMockImageUrl.value
+    originalImages.value = [imageUrl]
+    generatedImages.value = [imageUrl]
+    taskResult.value = {
+      success: true,
+      id: props.taskId || 'mock_task',
+      status: 'completed',
+      images: [imageUrl]
+    }
+    isTaskCompleted.value = true
+    error.value = null
+  } else if (props.taskId) {
     checkTaskStatus()
   }
   

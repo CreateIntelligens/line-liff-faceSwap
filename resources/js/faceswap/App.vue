@@ -1,14 +1,17 @@
 <template>
   <!-- iphone15 -->
+  <!-- 固定背景層：填滿整個 viewport，解決左右留白問題 -->
+  <div 
+    class="fixed inset-0 -z-10"
+    :style="{ 
+      backgroundImage: `url(${imageUrls.background1})`, 
+      backgroundSize: 'cover', 
+      backgroundPosition: 'center', 
+      backgroundRepeat: 'no-repeat' 
+    }"
+  ></div>
+  
   <div class="relative max-w-[400px] mx-auto">
-    <!-- Email 版本專用徽章：只要是 Email 模式（非 LIFF）就顯示 -->
-    <img
-      v-if="isEmailMode"
-      :src="enterpriseIcon"
-      alt="AI Beta 企業體驗版"
-      class="absolute top-4 right-2 z-50 w-20 h-20"
-    />
-
     <div class="app">
       <!-- Email 表單頁面（Email 模式專用） -->
       <EmailForm
@@ -38,15 +41,16 @@
 
       <!-- Face Swap Result -->
       <FaceSwapResult
-        v-if="currentStep === 'result'"
-        :taskId="taskId"
-        :userId="userId"
-        :userUsage="userUsage"
-        :generationStartedAt="generationStartedAt"
-        :startWithHistory="startWithHistory"
-        @back="goBack"
-        @regenerate="handleRegenerate"
-        @download="handleDownload"
+      v-if="currentStep === 'result'"
+      :taskId="taskId"
+      :userId="userId"
+      :userUsage="userUsage"
+      :generationStartedAt="generationStartedAt"
+      :startWithHistory="startWithHistory"
+      :mockImageUrl="mockImageUrl"
+      @back="goBack"
+      @regenerate="handleRegenerate"
+      @download="handleDownload"
       />
     </div>
   </div>
@@ -63,7 +67,7 @@ import { liffService } from '../services/liffService.js'
 import { modeService } from '../services/modeService.js'
 import { API_CONFIG } from '../config/config.js'
 import { pushPageView } from '../utils/gtmService.js'
-import enterpriseIcon from '../../images/enterpriseicon.png'
+import { imageUrls } from '../config/imageUrls.js'
 
 // 狀態
 const taskId = ref('')
@@ -71,6 +75,7 @@ const userId = ref('') // 改為空字串，等待 LIFF 初始化
 const userName = ref('') // 用戶名稱
 const userInfo = ref(null) // 用戶資訊（Email 模式：name, company, phone）
 const generationStartedAt = ref(null) // 本次生成開始時間（用於 fallback 時間窗）
+const mockImageUrl = ref('') // Mock 模式下的固定結果圖片
 const currentStep = ref('faceswap-home') // 初始狀態設定為換臉首頁
 const isInitialized = ref(false)
 const userUsage = ref(0) // 用戶已生成的圖片數量
@@ -948,6 +953,8 @@ async function handleGenerate(data) {
   taskId.value = data.taskId
   // 保存本次生成開始時間（用於結果頁 fallback 判斷）
   generationStartedAt.value = data.startedAt || Date.now()
+  // 如果有傳入 mock 圖片路徑，保存起來給結果頁使用
+  mockImageUrl.value = data.mockImageUrl || ''
   // 從上傳流程進入結果頁，不預設顯示歷史
   startWithHistory.value = false
   

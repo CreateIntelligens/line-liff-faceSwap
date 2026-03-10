@@ -108,7 +108,14 @@
       // 模式：'auto' 自動偵測 | 'liff' 強制 LIFF 模式 | 'email' 強制 Email 模式
       // LIFF 版部署建議使用 'liff' 作為預設模式，確保在 LINE 內開啟時一律走 LIFF 流程
       // 如需在同一個 URL 測試 Email 版，可於網址加上 ?mode=email（URL 參數僅用於切換到 email 模式）
-      mode: 'liff'
+      mode: 'email',
+
+      // ===== 生成 API Mock 開關（測試用） =====
+      // 將此值設為 true：前端不會呼叫 a1.art 相關生成 API，而是直接使用固定測試圖片
+      // 將此值設為 false：恢復正常流程，實際呼叫生成 API
+      useMockGeneratedImage: true,
+      // 固定測試圖片路徑（PM 指定圖片），部署時可視實際路徑調整
+      mockGeneratedImagePath: '/resources/images/test.jpg'
     };
     
     // 動態設定 OG / LINE 圖片與 URL
