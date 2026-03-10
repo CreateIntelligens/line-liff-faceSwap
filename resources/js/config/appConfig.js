@@ -25,9 +25,9 @@ export const appConfig = {
   // 可由 index.html 的 window.endpoint.useMockGeneratedImage 控制
   useMockGeneratedImage: parseBoolean(endpoint.useMockGeneratedImage, false),
 
-  // 固定測試圖片路徑，可由 index.html 的 window.endpoint.mockGeneratedImagePath 控制
-  // 預設為專案內的測試圖片（透過 Vite import，確保路徑正確）
-  mockGeneratedImagePath:
-    endpoint.mockGeneratedImagePath || testMockImage
+  // 固定測試圖片路徑
+  // 之後一律由前端控制，後端只負責切換 useMockGeneratedImage true/false
+  // 減少部署時因路徑錯誤造成 404 的風險
+  mockGeneratedImagePath: testMockImage
 }
 
