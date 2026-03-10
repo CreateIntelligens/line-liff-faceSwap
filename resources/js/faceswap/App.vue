@@ -1,17 +1,7 @@
 <template>
   <!-- iphone15 -->
-  <!-- 固定背景層：填滿整個 viewport，解決左右留白問題 -->
-  <div 
-    class="fixed inset-0 -z-10"
-    :style="{ 
-      backgroundImage: `url(${imageUrls.background1})`, 
-      backgroundSize: 'cover', 
-      backgroundPosition: 'center', 
-      backgroundRepeat: 'no-repeat' 
-    }"
-  ></div>
-  
-  <div class="relative max-w-[400px] mx-auto">
+  <!-- 手機寬度：內容佔滿整個螢幕；桌機寬度：限制在 400px -->
+  <div class="relative w-full md:max-w-[400px] mx-auto">
     <div class="app">
       <!-- Email 表單頁面（Email 模式專用） -->
       <EmailForm
@@ -67,7 +57,6 @@ import { liffService } from '../services/liffService.js'
 import { modeService } from '../services/modeService.js'
 import { API_CONFIG } from '../config/config.js'
 import { pushPageView } from '../utils/gtmService.js'
-import { imageUrls } from '../config/imageUrls.js'
 
 // 狀態
 const taskId = ref('')
